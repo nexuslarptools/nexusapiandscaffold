@@ -169,25 +169,9 @@ namespace NEXUSDataLayerScaffold
             services.AddMvc();
             services.AddRazorPages();
 
-            //var connectionString = "PostgreSql:Host=127.0.0.1;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!;";
-            //var dbPassword = Configuration["PostgreSql:L4RPEverywhere!"];
+            var AppName = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("ConnectionSrings")["NexusDBConnectionString"];
+            var builder = new NpgsqlConnectionStringBuilder(AppName);
 
-            //var builder = new NpgsqlConnectionStringBuilder(connectionString);
-
-            var builder = new NpgsqlConnectionStringBuilder();
-            builder.Host = "localhost";
-            builder.Port = 5432;
-            builder.Database = "NexusLARP";
-            builder.Username = "postgres";
-            builder.Password = "L4RPEverywhere!";
-
-
-
-            //{
-            //    Password = dbPassword
-            //};
-            //services.AddControllers()
-            //    .AddNewtonsoftJson();
             services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(builder.ConnectionString));
         }
 

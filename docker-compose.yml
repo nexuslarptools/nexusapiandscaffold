@@ -11,5 +11,4 @@ services:
       - product-network
 
 networks:
-    product-network:
-        driver: bridge
+    product-network: null
