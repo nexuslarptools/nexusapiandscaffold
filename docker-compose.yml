@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "6002:80"
+      - "6001:80"
     networks:
       - product-network
 
