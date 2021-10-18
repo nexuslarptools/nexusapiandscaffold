@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>23b0a002-602b-4d24-aa06-336da2a35690</UserSecretsId>
-    <DockerDefaultTargetOS>linux/arm/v7</DockerDefaultTargetOS>
+    <DockerDefaultTargetOS>Debian Buster</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
     <DockerfileRunArguments>-p 6001:443 -p 6000:80</DockerfileRunArguments>
   </PropertyGroup>
