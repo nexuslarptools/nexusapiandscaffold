@@ -175,7 +175,7 @@ namespace NEXUSDataLayerScaffold
             //var builder = new NpgsqlConnectionStringBuilder(connectionString);
 
             var builder = new NpgsqlConnectionStringBuilder();
-            builder.Host = "localhost";
+            builder.Host = "bothome";
             builder.Port = 5432;
             builder.Database = "NexusLARP";
             builder.Username = "postgres";
