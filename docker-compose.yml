@@ -1,0 +1,15 @@
+version: "3"
+services:
+  dockercomposeproductapi:
+    image: nexusdatalayerapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6002:80"
+    networks:
+      - product-network
+
+networks:
+    product-network:
+        driver: bridge
