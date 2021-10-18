@@ -9,7 +9,6 @@ services:
       - "6001:80"
     networks:
       - product-network
-    network_mode: "host"
 
 networks:
-    product-network: null
+    product-network: host
