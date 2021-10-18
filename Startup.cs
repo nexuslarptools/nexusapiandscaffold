@@ -221,6 +221,7 @@ namespace NEXUSDataLayerScaffold
             }
             else
             {
+                app.UseDeveloperExceptionPage();
                 app.UseCors(builder => builder
                 //.SetIsOriginAllowed(origin => true) // allow any origin
                 .WithOrigins("http://localhost:3000", "http://localhost:8080")
