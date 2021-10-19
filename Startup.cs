@@ -169,9 +169,25 @@ namespace NEXUSDataLayerScaffold
             services.AddMvc();
             services.AddRazorPages();
 
-            var AppName = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("ConnectionSrings")["NexusDBConnectionString"];
-            var builder = new NpgsqlConnectionStringBuilder(AppName);
+            //var connectionString = "PostgreSql:Host=127.0.0.1;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!;";
+            //var dbPassword = Configuration["PostgreSql:L4RPEverywhere!"];
 
+            //var builder = new NpgsqlConnectionStringBuilder(connectionString);
+
+            var builder = new NpgsqlConnectionStringBuilder();
+            builder.Host = "nexusapiandscaffold_db_1";
+            builder.Port = 5432;
+            builder.Database = "NexusLARP";
+            builder.Username = "postgres";
+            builder.Password = "L4RPEverywhere!";
+
+
+
+            //{
+            //    Password = dbPassword
+            //};
+            //services.AddControllers()
+            //    .AddNewtonsoftJson();
             services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(builder.ConnectionString));
         }
 
@@ -205,7 +221,6 @@ namespace NEXUSDataLayerScaffold
             }
             else
             {
-                app.UseDeveloperExceptionPage();
                 app.UseCors(builder => builder
                 //.SetIsOriginAllowed(origin => true) // allow any origin
                 .WithOrigins("http://localhost:3000", "http://localhost:8080")
