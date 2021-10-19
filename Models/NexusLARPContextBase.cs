@@ -33,7 +33,7 @@ namespace NEXUSDataLayerScaffold.Models
             if (!optionsBuilder.IsConfigured)
             {
 //warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseNpgsql("Host=nexusapiandscaffold_db_1;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!");
+                optionsBuilder.UseNpgsql("Host=host.docker.internal;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!");
             }
         }
 
