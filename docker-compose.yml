@@ -1,5 +1,20 @@
 version: "3"
+
 services:
+  db:
+    image: postgres
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - db_sql:/var/lib/pgsql
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: L4RPEverywhere!
+      POSTGRES_DB: NexusLARP
+      
+      
+
   dockercomposeproductapi:
     image: nexusdatalayerapi
     build:
@@ -7,21 +22,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "6001:80"
+    depends_on:
+      - "db"
     networks:
       - product-network
       
       
-  db:
-    image: postgres
-    ports:
-      - 5432:5432
-    restart: always
-    volumes:
-      - "db_sql:/var/lib/mysql"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: L4RPEverywhere!
-      POSTGRES_DB: NexusLARP
+
 
 networks:
     product-network:
