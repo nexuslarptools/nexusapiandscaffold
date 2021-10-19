@@ -12,6 +12,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: L4RPEverywhere!
       POSTGRES_DB: NexusLARP
+    networks:
+      - product-network
       
       
 
@@ -27,8 +29,8 @@ services:
     networks:
       - product-network
       
-  volumes:
-    db_sql:      
+volumes:
+  db_sql:      
       
 
 
