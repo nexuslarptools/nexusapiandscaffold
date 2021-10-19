@@ -11,4 +11,5 @@ services:
       - product-network
 
 networks:
-    product-network: host
+    product-network:
+        driver: bridge
