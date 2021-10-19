@@ -9,6 +9,19 @@ services:
       - "6001:80"
     networks:
       - product-network
+      
+      
+  db:
+    image: postgres
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - "db_sql:/var/lib/mysql"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: L4RPEverywhere!
+      POSTGRES_DB: NexusLARP
 
 networks:
     product-network:
