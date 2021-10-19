@@ -27,6 +27,8 @@ services:
     networks:
       - product-network
       
+  volumes:
+    db_sql:      
       
 
 
