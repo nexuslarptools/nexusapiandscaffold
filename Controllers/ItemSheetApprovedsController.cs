@@ -47,15 +47,50 @@ namespace NEXUSDataLayerScaffold.Controllers
             Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
+                var itemSheet = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Guid == guid).FirstOrDefaultAsync();
 
-                var itemSheetApproved = await _context.ItemSheetApproved.Where(isa => isa.Isactive == true && isa.Guid == guid).FirstOrDefaultAsync();
-
-                if (itemSheetApproved == null)
+                if (itemSheet == null)
                 {
                     return NotFound();
                 }
 
-                return itemSheetApproved;
+
+                var outputItem = Extensions.Item.CreateItem(itemSheet);
+
+                JsonElement tagslist = new JsonElement();
+
+                itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                if (tagslist.ValueKind.ToString() != "Undefined")
+                {
+                    var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                    foreach (var tag in TestJsonFeilds)
+                    {
+                        Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                        outputItem.Tags.Add(fullTag);
+                    }
+                }
+
+                if (outputItem.Img1 != null)
+                {
+                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + outputItem.Img1);
+                }
+
+                if (outputItem.Seriesguid != null)
+                {
+                    var connectedSeries = await _context.Series.Where(s => s.Guid == outputItem.Seriesguid).FirstOrDefaultAsync();
+                    if (connectedSeries != null)
+                    {
+                        outputItem.Series = connectedSeries.Title;
+                    }
+
+                }
+
+
+                return Ok(outputItem);
+
+
             }
             return Unauthorized();
         }

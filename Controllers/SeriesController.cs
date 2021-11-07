@@ -483,7 +483,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{guid}")]
         [Authorize]
-        public async Task<IActionResult> PutSeries(Guid guid, Seri series)
+        public async Task<IActionResult> PutSeries(Guid guid, SeriInput series)
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
@@ -511,10 +511,15 @@ namespace NEXUSDataLayerScaffold.Controllers
                     title.Titlejpn = series.Titlejpn;
                 }
 
-                if (series.Tags != null && title.Tags != null)
+                if (series.Tags != null)
                 {
-                    JsonDocument tagsDocument = JsonDocument.Parse(series.Tags.ToString());
-                    title.Tags = tagsDocument;
+                    var json = JsonSerializer.Serialize(series.Tags);
+                    json = @"{""SeriesTags"":" + json + "}";
+                    title.Tags = JsonDocument.Parse(json);
+                }
+                else
+                {
+                    title.Tags = null;
                 }
 
 
