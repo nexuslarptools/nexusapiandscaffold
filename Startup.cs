@@ -30,9 +30,11 @@ namespace NEXUSDataLayerScaffold
     public class Startup
     {
 
+        private readonly IConfiguration _config;
+
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            _config = configuration;
         }
 
         public IConfiguration Configuration { get; }
@@ -50,7 +52,7 @@ namespace NEXUSDataLayerScaffold
 
             BearerToken tok = new BearerToken();
 
-            string domain = $"https://{Configuration["Auth0:Domain"]}/";
+            string domain = $"https://{_config["Auth0:Domain"]}/";
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -60,7 +62,7 @@ namespace NEXUSDataLayerScaffold
             }).AddJwtBearer(options =>
             {
                 options.Authority = domain;
-                options.Audience = Configuration["Auth0:ApiIdentifier"];
+                options.Audience = _config["Auth0:ApiIdentifier"];
                 options.SaveToken = true;
 
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -169,18 +171,11 @@ namespace NEXUSDataLayerScaffold
             services.AddMvc();
             services.AddRazorPages();
 
-            //var connectionString = "PostgreSql:Host=127.0.0.1;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!;";
-            //var dbPassword = Configuration["PostgreSql:L4RPEverywhere!"];
 
-            //var builder = new NpgsqlConnectionStringBuilder(connectionString);
+            //var builder = new NpgsqlConnectionStringBuilder(_config.GetValue<string>("ConnectionSrings:NexusDBConnectionString"));
 
-            var builder = new NpgsqlConnectionStringBuilder();
-            builder.Host = "nexusapiandscaffold_db_1";
-            builder.Port = 5432;
-            builder.Database = "NexusLARP";
-            builder.Username = "postgres";
-            builder.Password = "L4RPEverywhere!";
-
+            //var builder = new NpgsqlConnectionStringBuilder();
+            //builder.Host = "nexusapiandscaffold_db_1...";
 
 
             //{
@@ -188,7 +183,10 @@ namespace NEXUSDataLayerScaffold
             //};
             //services.AddControllers()
             //    .AddNewtonsoftJson();
-            services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(builder.ConnectionString));
+            //services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(builder.ConnectionString));
+
+            string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
+            services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(connstring));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

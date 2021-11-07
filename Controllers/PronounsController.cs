@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -28,7 +29,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<Pronouns>>> GetPronouns()
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 return await _context.Pronouns.ToListAsync();
@@ -42,7 +43,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Pronouns>> GetPronouns(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var pronouns = await _context.Pronouns.FindAsync(guid);
@@ -65,7 +66,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutPronouns(Guid guid, Pronouns pronouns)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -105,7 +106,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Pronouns>> PostPronouns(Pronouns pronouns)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -123,7 +124,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Pronouns>> DeletePronouns(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 

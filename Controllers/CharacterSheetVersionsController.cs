@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -33,7 +34,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheetVersion>>> GetCharacterSheetVersion()
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
                 var sheetVersionInfo = await _context.CharacterSheetVersion.Select(csv => new
@@ -66,7 +67,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheetVersion>>> GetCharacterSheetVersionByGuid(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
                 var sheetVersionInfo = await _context.CharacterSheetVersion.Where(c => c.Guid == guid).Select(csv => new
@@ -102,7 +103,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
                 var characterSheetVersion = await _context.CharacterSheetVersion.FindAsync(id);
@@ -136,7 +137,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> RevertCharacterSheetVersion(int id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -192,7 +193,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutCharacterSheetVersion(int id, CharacterSheetVersion characterSheetVersion)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -234,7 +235,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -252,7 +253,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CharacterSheetVersion>> DeleteCharacterSheetVersion(int id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 var characterSheetVersion = await _context.CharacterSheetVersion.FindAsync(id);

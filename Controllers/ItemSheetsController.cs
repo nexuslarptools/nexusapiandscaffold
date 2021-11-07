@@ -13,6 +13,9 @@ using System.Web;
 using Microsoft.AspNetCore.Authorization;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
+using System.IO;
+using System.Net.Http.Headers;
+using NEXUSDataLayerScaffold.Logic;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -33,7 +36,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<ItemSheet>>> GetItemSheet([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var sheets = await _context.ItemSheet.Where(s => s.Isactive==true ).Select(sh => new { 
@@ -57,7 +60,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheet>> GetItemSheet(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var itemSheet = await _context.ItemSheet.Where(ish => ish.Isactive == true && ish.Guid == guid).FirstOrDefaultAsync();
@@ -85,6 +88,20 @@ namespace NEXUSDataLayerScaffold.Controllers
                     }
                 }
 
+                if (outputItem.Img1 != null)
+                {
+                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + outputItem.Img1);
+                }
+
+                if (outputItem.Seriesguid != null)
+                {
+                    var connectedSeries = await _context.Series.Where(s => s.Guid == outputItem.Seriesguid).FirstOrDefaultAsync();
+                    if (connectedSeries != null)
+                    {
+                        outputItem.Series = connectedSeries.Title;
+                    }
+
+}
 
 
                 return Ok(outputItem);
@@ -101,70 +118,81 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetItemListWithTags([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
-                List<IteSheet> outPutList = new List<IteSheet>();
-
-                var allSheets = await _context.ItemSheet.Where(c => c.Isactive == true).OrderBy(x => x.Name)
-                    .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
-                    .Take(pagingParameterModel.pageSize).ToListAsync();
-
-                foreach (var sheet in allSheets)
+                try
                 {
-                    IteSheet newOutputSheet = new IteSheet
+                    List<IteSheet> outPutList = new List<IteSheet>();
+
+                    var allSheets = await _context.ItemSheet.Where(c => c.Isactive == true).OrderBy(x => x.Name)
+                        .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
+                        .Take(pagingParameterModel.pageSize).ToListAsync();
+
+                    foreach (var sheet in allSheets)
                     {
-                        Guid = sheet.Guid,
-                        Name = sheet.Name,
-                        Img1 = sheet.Img1,
-                        Seriesguid = sheet.Seriesguid,
-                        Createdate = sheet.Createdate,
-                        CreatedbyuserGuid = sheet.CreatedbyuserGuid,
-                        FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
-                        SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
-                        Version = sheet.Version,
-                        Tags = new List<Tags>(),
-                    };
-
-                    if (newOutputSheet.CreatedbyuserGuid != null)
-                    {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid).FirstOrDefaultAsync();
-                        newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
-                    }
-
-                    if (newOutputSheet.FirstapprovalbyuserGuid != null)
-                    {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
-                        newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
-                    }
-
-                    if (newOutputSheet.SecondapprovalbyuserGuid != null)
-                    {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
-                        newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
-                    }
-
-                    JsonElement tagslist = new JsonElement();
-
-                    sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                    if (tagslist.ValueKind.ToString() != "Undefined")
-                    {
-                        var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                        foreach (var tag in TestJsonFeilds)
+                        IteSheet newOutputSheet = new IteSheet
                         {
-                            Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                            newOutputSheet.Tags.Add(fullTag);
+                            Guid = sheet.Guid,
+                            Name = sheet.Name,
+                            Img1 = sheet.Img1,
+                            Seriesguid = sheet.Seriesguid,
+                            Createdate = sheet.Createdate,
+                            CreatedbyuserGuid = sheet.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
+                            SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
+                            Version = sheet.Version,
+                            Tags = new List<Tags>(),
+                        };
+                        if (newOutputSheet.Img1 != null)
+                        {
+                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + sheet.Img1);
                         }
+
+                        if (newOutputSheet.CreatedbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid).FirstOrDefaultAsync();
+                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        if (newOutputSheet.FirstapprovalbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
+                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        if (newOutputSheet.SecondapprovalbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
+                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        JsonElement tagslist = new JsonElement();
+
+                        sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                        if (tagslist.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var tag in TestJsonFeilds)
+                            {
+                                Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                                newOutputSheet.Tags.Add(fullTag);
+                            }
+                        }
+
+                        outPutList.Add(newOutputSheet);
+
                     }
 
-                    outPutList.Add(newOutputSheet);
 
+                    return Ok(outPutList.OrderBy(x => x.Name));
                 }
-
-
-                return Ok(outPutList.OrderBy(x => x.Name));
+                catch (Exception e)
+                {
+                    return BadRequest(e);
+                }
             }
             return Unauthorized();
         }
@@ -177,7 +205,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetItemSheetByTag([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 List<Guid> allFound = new List<Guid>();
@@ -231,7 +259,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> ApproveItemSheet(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
 
@@ -340,10 +368,10 @@ namespace NEXUSDataLayerScaffold.Controllers
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{guid}")]
         [Authorize]
-        public async Task<IActionResult> PutItemSheet(Guid guid, [FromBody] IteSheet item)
+        public async Task<ActionResult<ItemSheet>> PutItemSheet(Guid guid, [FromBody] IteSheet item)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
             {
                 var itemSheet = await _context.ItemSheet.Where(s => s.Guid == guid).FirstOrDefaultAsync();
@@ -354,9 +382,18 @@ namespace NEXUSDataLayerScaffold.Controllers
                     return BadRequest();
                 }
 
-                if (item.Name != null)
+                if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
                 {
-                    itemSheet.Name = item.Name;
+                    itemSheet.Img1 = item.Img1;
+
+                    var folderName = Path.Combine("images", "items");
+                    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                    if (item.imagedata.Length > 0)
+                    {
+                        System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
+                    }
+
                 }
 
                 if (item.Img1 != null)
@@ -412,7 +449,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                     }
                 }
 
-                return NoContent();
+                return itemSheet;
             }
             return Unauthorized();
         }
@@ -420,25 +457,39 @@ namespace NEXUSDataLayerScaffold.Controllers
         // POST: api/ItemSheets
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPost]
+        [HttpPost, DisableRequestSizeLimit]
         [Authorize]
         public async Task<ActionResult<ItemSheet>> PostItemSheet([FromBody] IteSheet item)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
             {
 
                 ItemSheet itemSheet = new ItemSheet();
+
+                if (item.Guid != null)
+                {
+                    itemSheet.Guid = item.Guid;
+                }
 
                 if (item.Name != null)
                 {
                     itemSheet.Name = item.Name;
                 }
 
-                if (item.Img1 != null)
+                if (item.Img1 != null &&  item.imagedata != null && item.imagedata.Length != 0)
                 {
                     itemSheet.Img1 = item.Img1;
+
+                    var folderName = Path.Combine("images", "items");
+                    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                    if (item.imagedata.Length > 0)
+                    {
+                        System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
+                    }
+
                 }
 
                 if (item.Gmnotes != null)
@@ -461,7 +512,6 @@ namespace NEXUSDataLayerScaffold.Controllers
                     itemSheet.Seriesguid = item.Seriesguid;
                 }
 
-
                 itemSheet.Createdate = DateTime.Now;
                 itemSheet.CreatedbyuserGuid = result.Result.userGuid;
                 itemSheet.FirstapprovalbyuserGuid = null;
@@ -475,7 +525,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                 _context.ItemSheet.Add(itemSheet);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction("PostItemSheet", new { id = itemSheet.Guid }, itemSheet);
+                return itemSheet;
             }
             return Unauthorized();
         }
@@ -486,7 +536,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheet>> DeleteItemSheet(Guid id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 

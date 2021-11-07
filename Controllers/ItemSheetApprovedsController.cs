@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -28,7 +30,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<ItemSheetApproved>>> GetItemSheetApproved()
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 return await _context.ItemSheetApproved.Where(isa => isa.Isactive==true).ToListAsync();
@@ -42,7 +44,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheetApproved>> GetItemSheetApproved(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -66,7 +68,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutItemSheetApproved(int id, ItemSheetApproved itemSheetApproved)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -98,6 +100,94 @@ namespace NEXUSDataLayerScaffold.Controllers
             return Unauthorized();
         }
 
+
+
+        [HttpGet("ShortListWithTags")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetApprovedItemListWithTags([FromQuery] PagingParameterModel pagingParameterModel)
+        {
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            {
+                try
+                {
+                    List<IteSheet> outPutList = new List<IteSheet>();
+
+                    var allSheets = await _context.ItemSheetApproved.Where(c => c.Isactive == true).OrderBy(x => x.Name)
+                        .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
+                        .Take(pagingParameterModel.pageSize).ToListAsync();
+
+                    foreach (var sheet in allSheets)
+                    {
+                        IteSheet newOutputSheet = new IteSheet
+                        {
+                            Guid = sheet.Guid,
+                            Name = sheet.Name,
+                            Img1 = sheet.Img1,
+                            Seriesguid = sheet.Seriesguid,
+                            Createdate = sheet.Createdate,
+                            CreatedbyuserGuid = sheet.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
+                            SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
+                            Version = sheet.Version,
+                            Tags = new List<Tags>(),
+                        };
+                        if (newOutputSheet.Img1 != null)
+                        {
+                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + sheet.Img1);
+                        }
+
+                        if (newOutputSheet.CreatedbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid).FirstOrDefaultAsync();
+                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        if (newOutputSheet.FirstapprovalbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
+                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        if (newOutputSheet.SecondapprovalbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
+                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        JsonElement tagslist = new JsonElement();
+
+                        sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                        if (tagslist.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var tag in TestJsonFeilds)
+                            {
+                                Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                                newOutputSheet.Tags.Add(fullTag);
+                            }
+                        }
+
+                        outPutList.Add(newOutputSheet);
+
+                    }
+
+
+                    return Ok(outPutList.OrderBy(x => x.Name));
+                }
+                catch (Exception e)
+                {
+                    return BadRequest(e);
+                }
+            }
+            return Unauthorized();
+        }
+
+
+
         // POST: api/v1/ItemSheetApproveds
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
@@ -107,7 +197,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheetApproved>> PostItemSheetApproved(ItemSheetApproved itemSheetApproved)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 _context.ItemSheetApproved.Add(itemSheetApproved);
@@ -124,7 +214,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheetApproved>> DeleteItemSheetApproved(int id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 

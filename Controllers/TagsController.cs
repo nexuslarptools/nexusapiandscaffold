@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -28,9 +29,10 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<Tags>>> GetTags()
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
+
                 return await _context.Tags.ToListAsync();
             }
             return Unauthorized();
@@ -42,7 +44,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Tags>> GetTags(Guid id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var tags = await _context.Tags.FindAsync(id);
@@ -65,7 +67,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutTags(Guid guid, Tags tags)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -97,6 +99,33 @@ namespace NEXUSDataLayerScaffold.Controllers
             return Unauthorized();
         }
 
+        /// <summary>
+        /// Returns all Tag Types and Guids
+        /// </summary>
+        /// <returns></returns>
+        // GET: api/v1/Tags/
+        [HttpGet("AllTagsByTypeName/{TypeName}")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<TagTypes>>> GetTagTypesWithTags(string TypeName)
+        {
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            {
+                var Foundtags = await _context.Tags.Where(t => t.Tagtypegu.Name == TypeName).ToListAsync();
+
+                if (Foundtags == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(Foundtags.OrderBy(ft => ft.Name));
+            }
+
+            return Unauthorized();
+
+        }
+
         // POST: api/v1/Tags
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
@@ -105,7 +134,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Tags>> PostTags(Tags tags)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 _context.Tags.Add(tags);
@@ -122,7 +151,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Tags>> DeleteTags(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 

@@ -17,6 +17,7 @@ namespace NEXUSDataLayerScaffold.Extensions
 
             newiemSheet.Name = iSheet.Name;
             newiemSheet.Guid = iSheet.Guid;
+            newiemSheet.Seriesguid = iSheet.Seriesguid;
             newiemSheet.Img1 = iSheet.Img1;
             newiemSheet.Gmnotes = iSheet.Gmnotes;
             newiemSheet.Fields = JObject.Parse(iSheet.Fields.RootElement.ToString());
@@ -36,6 +37,7 @@ namespace NEXUSDataLayerScaffold.Extensions
 
             newiemSheet.Name = iSheet.Name;
             newiemSheet.Guid = iSheet.Guid;
+            newiemSheet.Seriesguid = iSheet.Seriesguid;
             newiemSheet.Img1 = iSheet.Img1;
             newiemSheet.Gmnotes = iSheet.Gmnotes;
             newiemSheet.Fields = JObject.Parse(iSheet.Fields.RootElement.ToString());
@@ -56,6 +58,7 @@ namespace NEXUSDataLayerScaffold.Extensions
 
             newiemSheet.Name = iSheet.Name;
             newiemSheet.Guid = iSheet.Guid;
+            newiemSheet.Seriesguid = iSheet.Seriesguid;
             newiemSheet.Img1 = iSheet.Img1;
             newiemSheet.Gmnotes = iSheet.Gmnotes;
             newiemSheet.Fields = JObject.Parse(iSheet.Fields.RootElement.ToString());

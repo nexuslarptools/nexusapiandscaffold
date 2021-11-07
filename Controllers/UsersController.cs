@@ -10,9 +10,11 @@ using System.Net.Http;
 using Microsoft.AspNetCore.Authorization;
 using System.Net.Http.Headers;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using Microsoft.AspNetCore.Authentication;
 using System.Web;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -35,70 +37,6 @@ namespace NEXUSDataLayerScaffold.Controllers
             return email;
         }
 
-        [Authorize]
-        public static async Task<AuthUser> GetUserInfo(string accessToken2)
-        {
-
-            // Get the access token.
-
-            AuthUser returnuser = new AuthUser();
-
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken2);
-
-            HttpResponseMessage responseMessage = await client.GetAsync("https://dev-3xazewbu.auth0.com/userinfo");
-            if (responseMessage.IsSuccessStatusCode)
-            {
-                var responseData = responseMessage.Content.ReadAsStringAsync().Result;
-                var JsonHoldingCell = JsonDocument.Parse(responseData);
-
-                returnuser.name = JsonHoldingCell.RootElement.GetProperty("name").ToString();
-                returnuser.email = JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/email").ToString();
-
-                List<string> permissionsholder = new List<string>();
-                for (int i = 0; i < JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/permissions").GetArrayLength(); i++)
-                {
-                    permissionsholder.Add(JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/permissions")[i].ToString());
-                }
-                returnuser.permissions = permissionsholder;
-
-                permissionsholder = new List<string>();
-                for (int i = 0; i < JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/roles").GetArrayLength(); i++)
-                {
-                    permissionsholder.Add(JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/roles")[i].ToString());
-                }
-                returnuser.roles = permissionsholder;
-
-
-                // check if the user is in the users table, if not, add them.
-                using (var context = new NexusLARPContextBase())
-                {
-                    var checkUser = context.Users.Where(u => u.Email == returnuser.email).FirstOrDefault();
-
-                    if (checkUser == null)
-                    {
-                        Users newUsers = new Users {
-                            Email = returnuser.email.ToString(),
-                            Preferredname = returnuser.name
-                        };
-
-                        context.Users.Add(newUsers);
-                        context.SaveChanges();
-
-                        returnuser.userGuid = context.Users.Where(u => u.Email == returnuser.email).FirstOrDefault().Guid;
-
-                    }
-                    else
-                    {
-                        returnuser.userGuid = checkUser.Guid;
-                    }
-                };
-
-                return returnuser;
-            }
-            return returnuser;
-
-        }
 
         public static bool UserPermissionAuth(AuthUser user, string authName)
         {
@@ -124,7 +62,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            AuthUser result = await GetUserInfo(accessToken);
+            AuthUser result = await UsersLogic.GetUserInfo(accessToken, _context);
 
 
             if (result.roles.Contains("Wizard"))
@@ -145,7 +83,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public ActionResult<IEnumerable<Users>> GetAUser(Guid id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
             if (result.Result.roles.Any(l => l.Contains("GM")) || result.Result.roles.Any(l => l.Contains("Wizard")))
             {

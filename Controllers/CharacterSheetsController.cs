@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using NEXUSDataLayerScaffold.Entities;
 using Microsoft.AspNetCore.Authentication;
 using NEXUSDataLayerScaffold.Extensions;
+using NEXUSDataLayerScaffold.Logic;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -38,7 +39,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheet([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -64,7 +65,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetWithDisabled([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -90,7 +91,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheet(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -142,7 +143,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheetBySeries([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var options = new JsonSerializerOptions
@@ -194,7 +195,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetByAbilites([FromBody] JsonElement input)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -252,7 +253,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetByTag(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -288,7 +289,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -351,7 +352,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetBySpecialSkillsTag(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 List<Guid> allFound = new List<Guid>();
@@ -405,7 +406,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheetWithSheetItem(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -480,7 +481,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheetWithAllItems(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -587,7 +588,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutCharacterSheet(Guid id, CharacterSheet characterSheet)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
             {
 
@@ -632,7 +633,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> ApproveCharacterSheet(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
 
@@ -743,7 +744,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CharacterSheet>> PostCharacterSheet([FromBody] CharSheet charSheet)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
             {
                 CharacterSheet characterSheet = new CharacterSheet();
@@ -806,7 +807,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CharacterSheet>> DeleteCharacterSheet(Guid id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 

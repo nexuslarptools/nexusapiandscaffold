@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -54,10 +55,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            AuthUser result = await UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-
-            if (!result.roles.Contains("Wizard") && !result.roles.Contains(larps.Shortname + " Head GM"))
+                if (!result.Result.roles.Contains("Wizard") && !result.Result.roles.Contains(larps.Shortname + " Head GM"))
             {
                 return Unauthorized();
             }
@@ -122,9 +122,8 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Larps>> PostLarps(Larps larps)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            AuthUser result = await UsersController.GetUserInfo(accessToken);
-
-            if (!result.roles.Contains("Wizard"))
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+                if (!result.Result.roles.Contains("Wizard"))
             {
                 return Unauthorized();
             }

@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Collections.Immutable;
 using NEXUSDataLayerScaffold.Entities;
 using Microsoft.AspNetCore.Authorization;
+using NEXUSDataLayerScaffold.Logic;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -38,7 +39,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var ser = await _context.Series.Where(s => s.Isactive == true).ToListAsync();
@@ -93,14 +94,16 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<Series>>> GetSeriesList([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
+                var none = await _context.Series.Where(s => s.Isactive == true && s.Title == "None").Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
+                    .OrderBy(x => x.Title).FirstOrDefaultAsync();
 
-                var ser = await _context.Series.Where(s => s.Isactive == true).Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
-                    .OrderBy(x => x.Title)
-                    .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
-                    .Take(pagingParameterModel.pageSize).ToListAsync();
+                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != "None" ).Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
+                    .OrderBy(x => x.Title).ToListAsync();
+
+                ser.Insert(0, none);
 
                 return Ok(ser);
 
@@ -122,7 +125,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<Series>>> GetSeriesListWithTags([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var ser = await _context.Series.Where(s => s.Isactive == true).Select(sc => new { 
@@ -191,7 +194,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -227,7 +230,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -290,7 +293,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Series>> GetSeries(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
@@ -347,7 +350,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<object>> GetSeriesWithChars(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 //var series = await _context.Series.FindAsync(id);
@@ -380,7 +383,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<object>> GetSeriesWithApprovedCharacters(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 //var series = await _context.Series.FindAsync(id);
@@ -414,7 +417,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<object>> GetSeriesWithCharsandSheetItems(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 //var series = await _context.Series.FindAsync(id);
@@ -448,7 +451,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<object>> GetSeriesWithApprovedItems(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 //var series = await _context.Series.FindAsync(id);
@@ -484,7 +487,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
             {
 
@@ -543,10 +546,10 @@ namespace NEXUSDataLayerScaffold.Controllers
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<Series>> PostSeries([FromBody] Seri input)
+        public async Task<ActionResult<Series>> PostSeries([FromBody] SeriInput input)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
             {
                 Series newSeries = new Series();
@@ -563,7 +566,9 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (input.Tags != null)
                 {
-                    newSeries.Tags = JsonDocument.Parse(input.Tags.ToString());
+                    var json = JsonSerializer.Serialize(input.Tags);
+                    json = @"{""SeriesTags"":" + json + "}";
+                    newSeries.Tags = JsonDocument.Parse(json);
                 }
 
 
@@ -582,7 +587,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 

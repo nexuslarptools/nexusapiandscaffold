@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -30,7 +31,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<ItemSheetVersion>>> GetItemSheetVersion()
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
                 var itemlist = await _context.ItemSheetVersion.Select(isv => new { 
@@ -57,7 +58,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<ItemSheetVersion>>> GetItemSheetVersionsByItemGuid(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
                 var itemlist = await _context.ItemSheetVersion.Where(iv => iv.Guid==guid).Select(isv => new {
@@ -80,7 +81,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheetVersion>> GetItemSheetVersion(int id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
             {
                 var itemSheetVersion = await _context.ItemSheetVersion.FindAsync(id);
@@ -125,7 +126,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutItemSheetVersion(int id, ItemSheetVersion itemSheetVersion)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 if (id != itemSheetVersion.Id)
@@ -171,7 +172,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> RevertItemSheetVersion(int id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -216,7 +217,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheetVersion>> PostItemSheetVersion(ItemSheetVersion itemSheetVersion)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 _context.ItemSheetVersion.Add(itemSheetVersion);
@@ -233,7 +234,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ItemSheetVersion>> DeleteItemSheetVersion(int id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 var itemSheetVersion = await _context.ItemSheetVersion.FindAsync(id);

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -33,7 +34,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<IEnumerable<TagTypes>>> GetTagTypes()
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 return await _context.TagTypes.ToListAsync();
@@ -42,6 +43,10 @@ namespace NEXUSDataLayerScaffold.Controllers
             return Unauthorized();
 
         }
+
+
+
+
         /// <summary>
         /// Accepts the Guid of a TagsType selected and returns if it exists.
         /// </summary>
@@ -53,7 +58,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<TagTypes>> GetTagsByType(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
                 var FindTagType = await _context.TagTypes.Where(tt => tt.Guid == guid).Select(t => new
@@ -90,7 +95,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutTagTypes(Guid guid, [FromBody]TagTypes tagTypes)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
@@ -135,7 +140,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<TagTypes>> PostTagTypes(TagTypes tagTypes)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 _context.TagTypes.Add(tagTypes);
@@ -156,7 +161,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<TagTypes>> DeleteTagTypes(Guid guid)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersController.GetUserInfo(accessToken);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
                 var tagTypes = await _context.TagTypes.FindAsync(guid);
