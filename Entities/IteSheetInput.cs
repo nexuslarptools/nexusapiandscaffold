@@ -1,13 +1,15 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using NEXUSDataLayerScaffold.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NEXUSDataLayerScaffold.Entities
 {
     public class IteSheetInput
     {
-
         public int Id { get; set; }
         public Guid Guid { get; set; }
         public Guid? Seriesguid { get; set; }
@@ -28,7 +30,7 @@ namespace NEXUSDataLayerScaffold.Entities
         public string Gmnotes { get; set; }
         public string Reason4edit { get; set; }
         public int? Version { get; set; }
-        public  Tags { get; set; }
+        public List<Guid> Tags { get; set; }
         public Byte[] imagedata { get; set; }
     }
 }

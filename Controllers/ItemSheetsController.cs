@@ -90,7 +90,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (outputItem.Img1 != null)
                 {
-                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + outputItem.Img1);
+                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
                 }
 
                 if (outputItem.Seriesguid != null)
@@ -146,7 +146,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                         };
                         if (newOutputSheet.Img1 != null)
                         {
-                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + sheet.Img1);
+                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
                         }
 
                         if (newOutputSheet.CreatedbyuserGuid != null)
@@ -158,13 +158,13 @@ namespace NEXUSDataLayerScaffold.Controllers
                         if (newOutputSheet.FirstapprovalbyuserGuid != null)
                         {
                             var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
-                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                            newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
                         }
 
                         if (newOutputSheet.SecondapprovalbyuserGuid != null)
                         {
                             var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
-                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                            newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
                         }
 
                         JsonElement tagslist = new JsonElement();
@@ -350,12 +350,26 @@ namespace NEXUSDataLayerScaffold.Controllers
                     _context.ItemSheetApproved.Update(theNewSheet);
                     _context.SaveChanges();
 
+
+                    if (theNewSheet.Img1 != null )
+                    {
+                        var CurrfolderName = Path.Combine("images", "items", "UnApproved");
+                        var NewfolderName = Path.Combine("images", "items", "Approved");
+                        var pathfrom = Path.Combine(Directory.GetCurrentDirectory(), CurrfolderName, theNewSheet.Img1);
+                        var pathto = Path.Combine(Directory.GetCurrentDirectory(), NewfolderName, theNewSheet.Img1);
+
+                        if (System.IO.File.Exists(pathto))
+                        {
+                            System.IO.File.Delete(pathto);
+                        }
+                        System.IO.File.Move(pathfrom, pathto);
+
+                        return Ok("{\"Approval\":\"Second\"}");
+
+                    }
+
                 }
-
-
-
-
-                return NoContent();
+                return Ok("{\"Approval\":\"First\"}");
             }
             return Unauthorized();
         }
@@ -368,29 +382,105 @@ namespace NEXUSDataLayerScaffold.Controllers
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{guid}")]
         [Authorize]
-        public async Task<ActionResult<ItemSheet>> PutItemSheet(Guid guid, [FromBody] IteSheet item)
+        public async Task<ActionResult<ItemSheet>> PutItemSheet(Guid guid, [FromBody] IteSheetInput item)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
             Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
             {
-                var itemSheet = await _context.ItemSheet.Where(s => s.Guid == guid).FirstOrDefaultAsync();
+                string pathToSave = string.Empty;
+                var itemSheet = await _context.ItemSheet.Where(s => s.Guid == guid && s.Isactive == true).FirstOrDefaultAsync();
 
         
                 if (guid != item.Guid || itemSheet == null)
                 {
-                    return BadRequest();
+                   var itemSheetApp = await _context.ItemSheetApproved.Where(s => s.Guid == guid && s.Isactive == true).FirstOrDefaultAsync();
+
+                    if (guid != item.Guid || itemSheetApp == null)
+                    {
+                        return BadRequest();
+                    }
+
+                    ItemSheet newitemSheet = new ItemSheet();
+
+                    if (item.Guid != null)
+                    {
+                        newitemSheet.Guid = item.Guid;
+                    }
+
+                    if (item.Name != null)
+                    {
+                        newitemSheet.Name = item.Name;
+                    }
+
+                    if (item.Gmnotes != null)
+                    {
+                        newitemSheet.Gmnotes = item.Gmnotes;
+                    }
+
+                    if (item.Fields != null)
+                    {
+                        newitemSheet.Fields = JsonDocument.Parse(item.Fields.ToString());
+                    }
+
+                    if (item.Reason4edit != null)
+                    {
+                        newitemSheet.Reason4edit = item.Reason4edit;
+                    }
+
+                    if (item.Seriesguid != null)
+                    {
+                        newitemSheet.Seriesguid = item.Seriesguid;
+                    }
+
+                    newitemSheet.Createdate = DateTime.Now;
+                    newitemSheet.CreatedbyuserGuid = result.Result.userGuid;
+                    newitemSheet.FirstapprovalbyuserGuid = null;
+                    newitemSheet.Firstapprovaldate = null;
+                    newitemSheet.SecondapprovalbyuserGuid = null;
+                    newitemSheet.Secondapprovaldate = null;
+                    newitemSheet.Isactive = true;
+
+                    if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
+                    {
+                        newitemSheet.Img1 = item.Img1;
+
+                        var folderName = Path.Combine("images", "items", "UnApproved");
+                        pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                    }
+
+                    _context.ItemSheet.Add(newitemSheet);
+                    await _context.SaveChangesAsync();
+
+                    if (item.imagedata.Length > 0 && pathToSave != string.Empty)
+                    {
+                        if (!Directory.Exists(pathToSave + "/"))
+                        {
+                            DirectoryInfo di = Directory.CreateDirectory(pathToSave + "/");
+                        }
+                        System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
+                    }
+
+
+
+                    return newitemSheet;
+
                 }
 
                 if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
                 {
                     itemSheet.Img1 = item.Img1;
 
-                    var folderName = Path.Combine("images", "items");
-                    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                    var folderName = Path.Combine("images", "items", "UnApproved");
+                    pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                    if (item.imagedata.Length > 0)
+                    if (item.imagedata.Length > 0 && pathToSave != string.Empty)
                     {
+                        if (!Directory.Exists(pathToSave + "/"))
+                        {
+                            DirectoryInfo di = Directory.CreateDirectory(pathToSave + "/");
+                        }
                         System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
                     }
 
@@ -482,11 +572,15 @@ namespace NEXUSDataLayerScaffold.Controllers
                 {
                     itemSheet.Img1 = item.Img1;
 
-                    var folderName = Path.Combine("images", "items");
+                    var folderName = Path.Combine("images", "items", "UnApproved");
                     var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
                     if (item.imagedata.Length > 0)
                     {
+                        if (!Directory.Exists(pathToSave + "/"))
+                        {
+                            DirectoryInfo di = Directory.CreateDirectory(pathToSave + "/");
+                        }
                         System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
                     }
 

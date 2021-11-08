@@ -14,6 +14,7 @@ using System.Collections.Immutable;
 using NEXUSDataLayerScaffold.Entities;
 using Microsoft.AspNetCore.Authorization;
 using NEXUSDataLayerScaffold.Logic;
+//using System.Web.Http;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -128,7 +129,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
-                var ser = await _context.Series.Where(s => s.Isactive == true).Select(sc => new { 
+                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != "None").Select(sc => new { 
                     sc.Guid, 
                     sc.Title, 
                     sc.Titlejpn,
@@ -221,12 +222,11 @@ namespace NEXUSDataLayerScaffold.Controllers
         /// <summary>
         /// Search for series based on partial series name.
         /// </summary>
-        /// <param name="input"></param>
         /// <returns></returns>
         // GET: api/v1/Search
-        [HttpGet("Search/{input}")]
+        [HttpGet("Search/")]
         [Authorize]
-        public async Task<ActionResult<Series>> GetSeriesSearchPartial([FromQuery]PagingParameterModel pagingParameterModel)
+        public async Task<ActionResult<Series>> GetSeriesSearchPartial([FromBody] SerTags input, [FromQuery] SeriesPagingParameterModel pagingParameterModel)
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
@@ -234,10 +234,37 @@ namespace NEXUSDataLayerScaffold.Controllers
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
 
-                var series = await _context.Series.Where(s => s.Title.ToLower().Contains(pagingParameterModel.input.ToLower()) || s.Titlejpn.ToLower().Contains(pagingParameterModel.input.ToLower()))
+                var initSeries = await _context.Series.Where(c => c.Isactive == true).ToListAsync();
+
+                var taggedSeries = new List<Series>();
+
+                if (input != null)
+                {
+                    foreach (var ser in initSeries)
+                    {
+                        if (ser.Tags != null)
+                        {
+                            var taglist = JObject.Parse(ser.Tags.RootElement.ToString())["SeriesTags"].ToList();
+                            var tags2 = taglist.Values<string>().Select(s => Guid.Parse(s)).ToList();
+                            var alltagsfound = input.SeriesTags.Intersect(tags2).Count();
+                            if (alltagsfound == input.SeriesTags.Count)
+                            {
+                                taggedSeries.Add(ser);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    taggedSeries = initSeries;
+                }
+
+                var series = taggedSeries.Where(s => s.Title != "None" 
+                && (pagingParameterModel.titleinput == null || s.Title.ToLower().Contains(pagingParameterModel.titleinput.ToLower())) 
+                && (pagingParameterModel.jpntitleinput == null || s.Titlejpn.ToLower().Contains(pagingParameterModel.jpntitleinput.ToLower())))
                     .OrderBy(x => x.Title)
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
-                    .Take(pagingParameterModel.pageSize).ToListAsync();
+                    .Take(pagingParameterModel.pageSize).ToList();
 
                 series = series.Where(ser => ser.Isactive == true).ToList();
 
@@ -246,16 +273,17 @@ namespace NEXUSDataLayerScaffold.Controllers
                     return NotFound();
                 }
 
-                List<Seri> outputSeries = new List<Seri>();
+                List<Seri> serOutPut = new List<Seri>();
 
-                foreach (Series s in series)
+                foreach (var s in series)
                 {
-                    Seri newser = new Seri();
-
-                    newser.Guid = s.Guid;
-                    newser.Title = s.Title;
-                    newser.Titlejpn = s.Titlejpn;
-                    newser.Tags = new List<Tags>();
+                    var newOutput = new Seri
+                    {
+                        Guid = s.Guid,
+                        Title = s.Title,
+                        Titlejpn = s.Titlejpn,
+                        Tags = new List<Tags>(),
+                    };
 
                     if (s.Tags != null)
                     {
@@ -265,21 +293,21 @@ namespace NEXUSDataLayerScaffold.Controllers
                             foreach (var tagguid in tag.Value)
                             {
                                 var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString())).FirstOrDefaultAsync();
-                                newser.Tags.Add(pulledtag);
+                                newOutput.Tags.Add(pulledtag);
                             }
                         }
 
 
+                        //newser.Tags
                     }
 
-                    newser.Createdate = s.Createdate;
+                    serOutPut.Add(newOutput);
+
+                
+            }
 
 
-                    outputSeries.Add(newser);
-                }
-
-
-                return Ok(series);
+                return Ok(serOutPut);
             }
             return Unauthorized();
         }

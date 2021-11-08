@@ -54,7 +54,6 @@ namespace NEXUSDataLayerScaffold.Controllers
                     return NotFound();
                 }
 
-
                 var outputItem = Extensions.Item.CreateItem(itemSheet);
 
                 JsonElement tagslist = new JsonElement();
@@ -74,7 +73,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (outputItem.Img1 != null)
                 {
-                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + outputItem.Img1);
+                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/"  + outputItem.Img1);
                 }
 
                 if (outputItem.Seriesguid != null)
@@ -86,7 +85,6 @@ namespace NEXUSDataLayerScaffold.Controllers
                     }
 
                 }
-
 
                 return Ok(outputItem);
 
@@ -170,7 +168,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                         };
                         if (newOutputSheet.Img1 != null)
                         {
-                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/" + sheet.Img1);
+                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
                         }
 
                         if (newOutputSheet.CreatedbyuserGuid != null)
@@ -182,13 +180,13 @@ namespace NEXUSDataLayerScaffold.Controllers
                         if (newOutputSheet.FirstapprovalbyuserGuid != null)
                         {
                             var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
-                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                            newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
                         }
 
                         if (newOutputSheet.SecondapprovalbyuserGuid != null)
                         {
                             var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
-                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                            newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
                         }
 
                         JsonElement tagslist = new JsonElement();
