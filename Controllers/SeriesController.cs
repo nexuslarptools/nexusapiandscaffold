@@ -226,7 +226,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         // GET: api/v1/Search
         [HttpGet("Search/")]
         [Authorize]
-        public async Task<ActionResult<Series>> GetSeriesSearchPartial([FromBody] SerTags input, [FromQuery] SeriesPagingParameterModel pagingParameterModel)
+        public async Task<ActionResult<Series>> GetSeriesSearchPartial([FromQuery] SeriesPagingParameterModel pagingParameterModel)
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
@@ -238,7 +238,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 var taggedSeries = new List<Series>();
 
-                if (input != null)
+                if (pagingParameterModel.tags != null && pagingParameterModel.tags.Length > 0)
                 {
                     foreach (var ser in initSeries)
                     {
@@ -246,8 +246,8 @@ namespace NEXUSDataLayerScaffold.Controllers
                         {
                             var taglist = JObject.Parse(ser.Tags.RootElement.ToString())["SeriesTags"].ToList();
                             var tags2 = taglist.Values<string>().Select(s => Guid.Parse(s)).ToList();
-                            var alltagsfound = input.SeriesTags.Intersect(tags2).Count();
-                            if (alltagsfound == input.SeriesTags.Count)
+                            var alltagsfound = pagingParameterModel.tags.Intersect(tags2).Count();
+                            if (alltagsfound == pagingParameterModel.tags.Length)
                             {
                                 taggedSeries.Add(ser);
                             }

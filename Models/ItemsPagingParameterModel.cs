@@ -5,17 +5,17 @@ using System.Threading.Tasks;
 
 namespace NEXUSDataLayerScaffold.Models
 {
-    public class SeriesPagingParameterModel
+    public class ItemsPagingParameterModel
     {
         const int maxPageSize = 20;
 
         public Guid guid;
 
-        public Guid[] tags { get; set; }
+        public string name { get; set; }
 
-        public string titleinput { get; set; }
+        public Guid seriesguid { get; set; }
 
-        public string jpntitleinput { get; set; }
+        public string fields { get; set; }
 
         public int pageNumber { get; set; } = 1;
 
