@@ -374,7 +374,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                     };
                     if (newOutputSheet.Img1 != null)
                     {
-                        newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                        newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
                     }
 
                     if (newOutputSheet.CreatedbyuserGuid != null)

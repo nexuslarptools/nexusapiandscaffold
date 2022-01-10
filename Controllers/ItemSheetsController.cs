@@ -203,7 +203,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
         [HttpGet("ByTag")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetItemSheetByTag([FromQuery]PagingParameterModel pagingParameterModel)
+        public async Task<ActionResult<IEnumerable<ItemSheet>>> GetItemSheetByTag([FromQuery]PagingParameterModel pagingParameterModel)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
             Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -261,7 +261,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         // GET: api/v1/Items/Search
         [HttpGet("Search/")]
         [Authorize]
-        public async Task<ActionResult<Series>> GetItemsSearchPartial([FromQuery] ItemsPagingParameterModel pagingParameterModel)
+        public async Task<ActionResult<ItemSheet>> GetItemsSearchPartial([FromQuery] ItemsPagingParameterModel pagingParameterModel)
         {
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
@@ -760,11 +760,12 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 ItemSheet itemSheet = new ItemSheet();
 
-                if (item.Guid != null)
+                if (item.Guid == null)
                 {
-                    itemSheet.Guid = item.Guid;
+                    item.Guid = Guid.NewGuid();
                 }
 
+                itemSheet.Guid = item.Guid;
                 if (item.Name != null)
                 {
                     itemSheet.Name = item.Name;
@@ -821,7 +822,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                 _context.ItemSheet.Add(itemSheet);
                 await _context.SaveChangesAsync();
 
-                return itemSheet;
+                return CreatedAtAction("GetItem", new { id = itemSheet.Guid }, itemSheet);
             }
             return Unauthorized();
         }
