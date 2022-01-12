@@ -4,13 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
-using Npgsql.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Models;
 using System.Text.Json;
-using System.Collections.Immutable;
 using NEXUSDataLayerScaffold.Entities;
 using Microsoft.AspNetCore.Authorization;
 using NEXUSDataLayerScaffold.Logic;
@@ -98,10 +95,10 @@ namespace NEXUSDataLayerScaffold.Controllers
             Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
-                var none = await _context.Series.Where(s => s.Isactive == true && s.Title == "None").Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
+                var none = await _context.Series.Where(s => s.Isactive == true && s.Title == string.Empty).Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
                     .OrderBy(x => x.Title).FirstOrDefaultAsync();
 
-                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != "None" ).Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
+                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty ).Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
                     .OrderBy(x => x.Title).ToListAsync();
 
                 ser.Insert(0, none);
@@ -129,7 +126,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             {
-                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != "None").Select(sc => new { 
+                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty).Select(sc => new { 
                     sc.Guid, 
                     sc.Title, 
                     sc.Titlejpn,
@@ -259,7 +256,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                     taggedSeries = initSeries;
                 }
 
-                var series = taggedSeries.Where(s => s.Title != "None" 
+                var series = taggedSeries.Where(s => s.Title != string.Empty
                 && (pagingParameterModel.titleinput == null || s.Title.ToLower().Contains(pagingParameterModel.titleinput.ToLower())) 
                 && (pagingParameterModel.jpntitleinput == null || s.Titlejpn.ToLower().Contains(pagingParameterModel.jpntitleinput.ToLower())))
                     .OrderBy(x => x.Title)

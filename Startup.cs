@@ -185,7 +185,21 @@ namespace NEXUSDataLayerScaffold
             //    .AddNewtonsoftJson();
             //services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(builder.ConnectionString));
 
-            string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
+             string host = Environment.GetEnvironmentVariable("Host") ?? 
+                _config.GetValue<string>("ConnectionSrings:Host");
+            string port = Environment.GetEnvironmentVariable("Port") ??
+                _config.GetValue<string>("ConnectionSrings:Port");
+            string database = Environment.GetEnvironmentVariable("Database") ??
+                _config.GetValue<string>("ConnectionSrings:Database");
+            string username = Environment.GetEnvironmentVariable("DBUsername") ??
+                _config.GetValue<string>("ConnectionSrings:DBUsername");
+            string password = Environment.GetEnvironmentVariable("Password") ??
+                _config.GetValue<string>("ConnectionSrings:Password");
+
+            string connstring = "Host=" + host + ";Port=" + port
+                + ";Database=" + database + "; Username=" + username + ";Password=" + password;
+
+           // string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
             services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(connstring));
         }
 
