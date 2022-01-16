@@ -38,6 +38,37 @@ namespace NEXUSDataLayerScaffold.Controllers
             return Unauthorized();
         }
 
+        // GET: api/v1/Tags
+        [HttpGet("groupbytype")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<TagsOutput>>> GetTagsGroupedByType()
+        {
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            {
+
+                List<TagsOutput> output = new List<TagsOutput>();
+                var tagTypes = await _context.TagTypes.ToListAsync();
+
+                foreach (var type in tagTypes)
+                {
+                    TagsOutput outp = new TagsOutput();
+                    outp.TagType = type.Name;
+
+                    List<outTag> tagList = await _context.Tags.Where(t => t.Tagtypeguid == type.Guid && t.Isactive == true)
+                        .Select(tt => new outTag(tt.Name, tt.Guid)).ToListAsync();
+
+                    outp.TagsList = tagList.OrderBy(x => x.Name).ToList();
+
+                    output.Add(outp);
+                }
+
+                return output;
+            }
+            return Unauthorized();
+        }
+
         // GET: api/v1/Tags/5
         [HttpGet("{id}")]
         [Authorize]
@@ -155,7 +186,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
-                var tags = await _context.Tags.FindAsync(guid);
+                Tags tags = await _context.Tags.Where(t => t.Guid == guid).FirstOrDefaultAsync();
                 if (tags == null)
                 {
                     return NotFound();
@@ -164,7 +195,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                 //tags.Isactive = false;
 
                 _context.Tags.Remove(tags);
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
 
                 return tags;
             }

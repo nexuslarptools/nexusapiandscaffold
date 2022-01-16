@@ -90,7 +90,10 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (outputItem.Img1 != null)
                 {
-                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
+                    if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
+                    {
+                        outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
+                    }
                 }
 
                 if (outputItem.Seriesguid != null)
@@ -147,7 +150,10 @@ namespace NEXUSDataLayerScaffold.Controllers
                         };
                         if (newOutputSheet.Img1 != null)
                         {
-                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                            if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
+                            {
+                                newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                            }
                         }
 
                         if (newOutputSheet.CreatedbyuserGuid != null)
@@ -408,7 +414,10 @@ namespace NEXUSDataLayerScaffold.Controllers
                     };
                     if (newOutputSheet.Img1 != null)
                     {
-                        newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+                        { 
+                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                        }
                     }
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
@@ -837,14 +846,14 @@ namespace NEXUSDataLayerScaffold.Controllers
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
-                var itemSheet = await _context.ItemSheet.FindAsync(id);
+                var itemSheet = await _context.ItemSheet.Where(i => i.Guid == id).FirstOrDefaultAsync();
                 if (itemSheet == null)
                 {
                     return NotFound();
                 }
 
                 _context.ItemSheet.Remove(itemSheet);
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
 
                 return itemSheet;
             }

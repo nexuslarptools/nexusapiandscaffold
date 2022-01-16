@@ -74,7 +74,10 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (outputItem.Img1 != null)
                 {
-                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/"  + outputItem.Img1);
+                    if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
+                    {
+                        outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
+                    }
                 }
 
                 if (outputItem.Seriesguid != null)
@@ -169,7 +172,10 @@ namespace NEXUSDataLayerScaffold.Controllers
                         };
                         if (newOutputSheet.Img1 != null)
                         {
-                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
+                            if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
+                            {
+                                newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
+                            }
                         }
 
                         if (newOutputSheet.CreatedbyuserGuid != null)
@@ -372,9 +378,13 @@ namespace NEXUSDataLayerScaffold.Controllers
                         Version = sheet.Version,
                         Tags = new List<Tags>(),
                     };
+
                     if (newOutputSheet.Img1 != null)
                     {
-                        newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
+                        if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
+                        {
+                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
+                        }
                     }
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
@@ -445,21 +455,21 @@ namespace NEXUSDataLayerScaffold.Controllers
         // DELETE: api/v1/ItemSheetApproveds/5
         [HttpDelete("{id}")]
         [Authorize]
-        public async Task<ActionResult<ItemSheetApproved>> DeleteItemSheetApproved(int id)
+        public async Task<ActionResult<ItemSheetApproved>> DeleteItemSheetApproved(Guid id)
         {
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
             Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
             {
 
-                var itemSheetApproved = await _context.ItemSheetApproved.FindAsync(id);
+                var itemSheetApproved = await _context.ItemSheetApproved.Where(i => i.Guid == id).FirstOrDefaultAsync();
                 if (itemSheetApproved == null)
                 {
                     return NotFound();
                 }
 
                 _context.ItemSheetApproved.Remove(itemSheetApproved);
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
 
                 return itemSheetApproved;
             }

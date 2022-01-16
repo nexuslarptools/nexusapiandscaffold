@@ -14,7 +14,7 @@ namespace NEXUSDataLayerScaffold.Models
         public string Img1 { get; set; }
         public string Img2 { get; set; }
         public JsonDocument Fields { get; set; }
-        public bool Isactive { get; set; }
+        public bool? Isactive { get; set; }
         public DateTime Createdate { get; set; }
         public Guid? CreatedbyuserGuid { get; set; }
         public Guid? FirstapprovalbyuserGuid { get; set; }
