@@ -199,8 +199,16 @@ namespace NEXUSDataLayerScaffold
             string connstring = "Host=" + host + ";Port=" + port
                 + ";Database=" + database + "; Username=" + username + ";Password=" + password;
 
+            if (host != _config.GetValue<string>("ConnectionSrings:Host"))
+            {
+                connstring += "SslMode=Require;Trust Server Certificate=true;";
+            }
+
            // string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
-            services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(connstring));
+            services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(connstring)
+                );
+            services.AddMvc(x => x.EnableEndpointRouting = false);
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -252,21 +260,23 @@ namespace NEXUSDataLayerScaffold
                 c.RoutePrefix = string.Empty;
             });
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseEndpoints(endpoints =>
+            // app.UseEndpoints(endpoints =>
+            // {
+            //     endpoints.MapControllers();
+
+            // });
+            app.UseMvc(routes =>
             {
-                endpoints.MapControllers();
-                //endpoints.MapGet("/", async context =>
-             //{
-                    //await context.Response.WriteAsync("Hello World!");
-                //});
+                routes.MapRoute(
+                    name: "default",
+                    template: "{controller=Home}/{action=Index}/{id?}");
             });
-            //app.UseHttpsRedirection();
-            
+
 
 
         }
