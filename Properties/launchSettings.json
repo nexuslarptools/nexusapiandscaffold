@@ -20,7 +20,7 @@
     "NEXUSDataLayerScaffold": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "api/v1/values",
+      "launchUrl": "index.html",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

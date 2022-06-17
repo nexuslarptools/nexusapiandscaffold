@@ -702,6 +702,12 @@ namespace NEXUSDataLayerScaffold.Controllers
                     itemSheet.Img1 = item.Img1;
                 }
 
+
+                if (item.Name != null)
+                {
+                    itemSheet.Name = item.Name;
+                }
+
                 if (item.Gmnotes != null)
                 {
                     itemSheet.Gmnotes = item.Gmnotes;
@@ -827,9 +833,15 @@ namespace NEXUSDataLayerScaffold.Controllers
                 itemSheet.Isactive = true;
 
 
-
-                _context.ItemSheet.Add(itemSheet);
-                await _context.SaveChangesAsync();
+                try
+                {
+                    _context.ItemSheet.Add(itemSheet);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                    return BadRequest(e.Message);
+                }
 
                 return CreatedAtAction("GetItem", new { id = itemSheet.Guid }, itemSheet);
             }

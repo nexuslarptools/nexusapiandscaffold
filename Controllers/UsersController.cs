@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authentication;
 using System.Web;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -91,6 +92,64 @@ namespace NEXUSDataLayerScaffold.Controllers
                 return Ok(UsersList);
             }
             return Ok("Not Authorized");
+        }
+
+
+        // PUT: api/v1/users/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for
+        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+        [HttpPut("{guid}")]
+        [Authorize]
+        public async Task<IActionResult> PutUser(Guid guid, Users user)
+        {
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+            if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
+            {
+
+                if (guid != user.Guid)
+                {
+                    return BadRequest();
+                }
+
+                var oldUserinfo = _context.Users.Where(u => u.Guid == user.Guid).FirstOrDefault();
+
+                if (oldUserinfo == null)
+                {
+                    return NotFound();
+                }
+
+                if (oldUserinfo.Firstname != user.Firstname && user.Firstname != null)
+                {
+                    oldUserinfo.Firstname = user.Firstname;
+                }
+
+                if (oldUserinfo.Lastname != user.Lastname && user.Lastname != null)
+                {
+                    oldUserinfo.Firstname = user.Firstname;
+                }
+
+                if (oldUserinfo.Preferredname != user.Preferredname && user.Preferredname != null)
+                {
+                    oldUserinfo.Preferredname = user.Preferredname;
+                }
+
+                _context.Users.Update(oldUserinfo);
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+
+                    throw;
+
+                }
+
+                return NoContent();
+            }
+            return Unauthorized();
         }
     }
 }
