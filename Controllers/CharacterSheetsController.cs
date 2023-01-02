@@ -994,7 +994,6 @@ namespace NEXUSDataLayerScaffold.Controllers
                 {
                     foreach (var tag in charSheet.Fields)
                     {
-                        JsonElement tagslist = new JsonElement();
 
                         if (tag.Key == "Tags")
                         {

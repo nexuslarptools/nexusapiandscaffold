@@ -791,8 +791,6 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                         foreach (var tag in item.Fields)
                         {
-                            JsonElement tagslist = new JsonElement();
-
                             if (tag.Key == "Tags")
                             {
                                 var TestJsonFeilds = item.Fields["Tags"];
@@ -896,7 +894,6 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                     foreach (var tag in item.Fields)
                     {
-                        JsonElement tagslist = new JsonElement();
 
                         if (tag.Key == "Tags")
                         {
@@ -1029,7 +1026,6 @@ namespace NEXUSDataLayerScaffold.Controllers
                 {
                     foreach (var tag in item.Fields)
                     {
-                        JsonElement tagslist = new JsonElement();
 
                         if (tag.Key == "Tags")
                         {
