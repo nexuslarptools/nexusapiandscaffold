@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,19 +16,22 @@ namespace NEXUSDataLayerScaffold.Controllers
 {
     [Route("api/v1/[controller]")]
     [ApiController]
-    public class PronounsController : ControllerBase
+    public class RolesController : ControllerBase
     {
         private readonly NexusLARPContextBase _context;
 
-        public PronounsController(NexusLARPContextBase context)
+        public RolesController(NexusLARPContextBase context)
         {
             _context = context;
         }
-
-        // GET: api/v1/Pronouns
+        /// <summary>
+        /// Returns all Tag Types and Guids
+        /// </summary>
+        /// <returns></returns>
+        // GET: api/v1/TagTypes
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<PronounsOut>>> GetPronouns()
+        public async Task<ActionResult<List<RoleOut>>> GetRoles()
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -34,44 +39,30 @@ namespace NEXUSDataLayerScaffold.Controllers
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
-                return await _context.Pronouns.Select(p => new PronounsOut(p.Guid, p.Pronouns1)).ToListAsync();
+                return await _context.Roles.Select(r => new RoleOut( r.Id, r.Rolename )).ToListAsync();
             }
+
             return Unauthorized();
+
         }
 
-        // GET: api/v1/Pronouns/5
-        [HttpGet("{guid}")]
-        [Authorize]
-        public async Task<ActionResult<Pronouns>> GetPronouns(Guid guid)
-        {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-            {
-                var pronouns = await _context.Pronouns.FindAsync(guid);
 
-                if (pronouns == null)
-                {
-                    return NotFound();
-                }
-
-                return pronouns;
-            }
-            return Unauthorized();
-        }
-
-        // PUT: api/vi/Pronouns/5
+        /// <summary>
+        /// Accepts a Tag type's guid and JSON schema in the body to update information.  WIZARD ACCESS ONLY.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="tagTypes"></param>
+        /// <returns></returns>
+        // PUT: api/V1/TagTypes/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{guid}")]
+        [HttpPut("{id}")]
         [Authorize]
-        public async Task<IActionResult> PutPronouns(Guid guid, Pronouns pronouns)
+        public async Task<IActionResult> PutRoles(int id, [FromBody] Roles role)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -82,12 +73,12 @@ namespace NEXUSDataLayerScaffold.Controllers
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
 
-                if (guid != pronouns.Guid)
+                if (id != role.Id)
                 {
                     return BadRequest();
                 }
 
-                _context.Entry(pronouns).State = EntityState.Modified;
+                _context.Entry(role).State = EntityState.Modified;
 
                 try
                 {
@@ -95,27 +86,27 @@ namespace NEXUSDataLayerScaffold.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!PronounsExists(guid))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
+ 
                         throw;
-                    }
+                    
                 }
 
                 return NoContent();
             }
+
             return Unauthorized();
         }
-
-        // POST: api/Pronouns
+        /// <summary>
+        /// Accepts tagtype schema JSON in the body and creates a new tag type. WIZARD ACCESS ONLY!
+        /// </summary>
+        /// <param name="tagTypes"></param>
+        /// <returns></returns>
+        // POST: api/TagTypes
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<Pronouns>> PostPronouns(Pronouns pronouns)
+        public async Task<ActionResult<Roles>> PostTagTypes(Roles role)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -125,19 +116,22 @@ namespace NEXUSDataLayerScaffold.Controllers
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
-
-                _context.Pronouns.Add(pronouns);
+                _context.Roles.Add(role);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction("GetPronouns", new { id = pronouns.Guid }, pronouns);
+                return CreatedAtAction("GetRoles", new { guid = role.Id }, role);
             }
             return Unauthorized();
         }
-
-        // DELETE: api/Pronouns/5
-        [HttpDelete("{guid}")]
+        /// <summary>
+        /// Deletes a TagType from the list WIZARD ACCESS ONLY, All related tags must be FULLY deleted first, may cause orhpaned guids in sheets!!
+        /// </summary>
+        /// <param name="tagTypes"></param>
+        /// <returns></returns>
+        // DELETE: api/TagTypes/5
+        [HttpDelete("{id}")]
         [Authorize]
-        public async Task<ActionResult<Pronouns>> DeletePronouns(Guid guid)
+        public async Task<ActionResult<Roles>> DeleteRole(int id)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -147,25 +141,23 @@ namespace NEXUSDataLayerScaffold.Controllers
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
-
-                var pronouns = await _context.Pronouns.FindAsync(guid);
-                if (pronouns == null)
+                var roles = await _context.Roles.FindAsync(id);
+                if (roles == null)
                 {
                     return NotFound();
                 }
 
-                _context.Pronouns.Remove(pronouns);
+                _context.Roles.Remove(roles);
                 await _context.SaveChangesAsync();
 
-                return pronouns;
-
+                return roles;
             }
             return Unauthorized();
         }
 
-        private bool PronounsExists(Guid id)
+        private bool TagTypesExists(int id)
         {
-            return _context.Pronouns.Any(e => e.Guid == id);
+            return _context.Roles.Any(e => e.Id == id);
         }
     }
 }

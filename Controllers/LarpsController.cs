@@ -26,10 +26,31 @@ namespace NEXUSDataLayerScaffold.Controllers
         // GET: api/Larps
         [HttpGet]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<Larps>>> GetLarps()
+        public async Task<ActionResult<List<LARPOut>>> GetLarps()
         {
-            return await _context.Larps.ToListAsync();
+            return await _context.Larps.Where(l => l.Isactive == true)
+                .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
         }
+
+        [HttpGet("GMAccess")]
+        [Authorize]
+        public async Task<ActionResult<List<LARPOut>>> GetLarpsWithGMAccess()
+        {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            {
+                return await _context.Larps.Where(l => l.Isactive == true && l.Guid != Guid.Parse("0b247b46-86fd-11ed-956d-7faf2be673cc"))
+                    .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
+            }
+
+            return await _context.Larps.Where(l => l.Isactive == true &&
+            l.Guid != Guid.Parse("0b247b46-86fd-11ed-956d-7faf2be673cc") 
+            && l.UserLarproles.Any(ulr => ulr.Roleid > 3 && ulr.Usergu.Authid == authId && ulr.Isactive == true))
+                .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
+        }
+
 
         // GET: api/Larps/5
         [HttpGet("{id}")]
@@ -54,10 +75,13 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Larps>> PutLarps(Guid id, Larps larps)
         {
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-                if (!result.Result.roles.Contains("Wizard") && !result.Result.roles.Contains(larps.Shortname + " Head GM"))
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
                 return Unauthorized();
             }
@@ -121,9 +145,14 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<Larps>> PostLarps(Larps larps)
         {
+
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-                if (!result.Result.roles.Contains("Wizard"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
                 return Unauthorized();
             }
@@ -139,17 +168,31 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<Larps>> DeleteLarps(Guid id)
         {
-            var larps = await _context.Larps.FindAsync(id);
-            if (larps == null)
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
-                return NotFound();
+                var larps = await _context.Larps.FindAsync(id);
+                if (larps == null)
+                {
+                    return NotFound();
+                }
+
+                //Change to deactivate and create new
+                //_context.Larps.Remove(larps);
+                //await _context.SaveChangesAsync();
+
+                larps.Isactive = false;
+                await _context.SaveChangesAsync();
+
+
+                return larps;
             }
-
-            //Change to deactivate and create new
-            //_context.Larps.Remove(larps);
-            //await _context.SaveChangesAsync();
-
-            return larps;
+            return Unauthorized();
         }
 
         private bool LarpsExists(Guid id)

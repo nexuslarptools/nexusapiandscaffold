@@ -1,4 +1,5 @@
-﻿using NEXUSDataLayerScaffold.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,69 @@ namespace NEXUSDataLayerScaffold.Logic
             _context = context;
         }
 
+        public static bool IsUserAuthed(string authIdValue, string accessToken, string authLevel, NexusLARPContextBase _context)
+        {
+            var foundUser = _context.Users.Where(u => u.Authid == authIdValue).FirstOrDefault();
+
+            if (foundUser == null)
+            {
+                var autheduser = GetUserInfo(accessToken, _context);
+
+                Users newUsers = new Users
+                {
+                    Email = autheduser.Result.email,
+                    Preferredname = autheduser.Result.name,
+                    Authid = autheduser.Result.authid
+                };
+
+                try
+                {
+                    _context.Users.Add(newUsers);
+                    _context.SaveChanges();
+                }
+                catch (Exception e)
+                {
+                    var huh = e;
+                }
+
+                return false;
+            }
+
+            var foundrole = _context.UserLarproles.Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Rolename == authLevel && ulr.Isactive == true).FirstOrDefault();
+
+            if (foundrole == null)
+            {
+                if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
+                {
+                    foundrole = _context.UserLarproles.Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Rolename == authLevel && ulr.Isactive == false).FirstOrDefault();
+
+                    if (foundrole == null)
+                    {
+                        foundrole = new UserLarproles()
+                        {
+                            Userguid = foundUser.Guid,
+                            Larpguid = _context.Larps.Where(l => l.Isactive == true && l.Name == "Default").Select(l => l.Guid).FirstOrDefault(),
+                            Roleid = _context.Roles.Where(r => r.Rolename == "Wizard").Select(l => l.Id).FirstOrDefault(),
+                        };
+
+                        _context.UserLarproles.Add(foundrole);
+                    }
+                    else
+                    {
+                        foundrole.Isactive = true;
+                        _context.UserLarproles.Update(foundrole);
+                    }
+
+                    _context.SaveChanges();
+                }
+
+                return false;
+            }
+
+            return true;
+        }
+
+
         public static async Task<AuthUser> GetUserInfo(string accessToken2, NexusLARPContextBase _context)
         {
             // Get the access token.
@@ -35,6 +99,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 var JsonHoldingCell = JsonDocument.Parse(responseData);
 
                 returnuser.name = JsonHoldingCell.RootElement.GetProperty("name").ToString();
+                returnuser.authid = JsonHoldingCell.RootElement.GetProperty("sub").ToString();
                 returnuser.email = JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/email").ToString();
 
                 List<string> permissionsholder = new List<string>();
@@ -51,33 +116,28 @@ namespace NEXUSDataLayerScaffold.Logic
                 }
                 returnuser.roles = permissionsholder;
 
-
-                // check if the user is in the users table, if not, add them.
-                    var checkUser = _context.Users.Where(u => u.Email == returnuser.email).FirstOrDefault();
-
-                    if (checkUser == null)
-                    {
-                        Users newUsers = new Users
-                        {
-                            Email = returnuser.email.ToString(),
-                            Preferredname = returnuser.name
-                        };
-
-                    _context.Users.Add(newUsers);
-                    _context.SaveChanges();
-
-                        returnuser.userGuid = _context.Users.Where(u => u.Email == returnuser.email).FirstOrDefault().Guid;
-
-                    }
-                    else
-                    {
-                        returnuser.userGuid = checkUser.Guid;
-                    }
-
-                return returnuser;
             }
             return returnuser;
 
+        }
+
+        public static List<Guid?> GetUserTagsList(string authIdValue, NexusLARPContextBase _context, string level, bool isWizard)
+        {
+            if (isWizard)
+            {
+               return _context.Larptags.Where(lt => lt.Isactive == true && lt.Larpguid != null).Select(lt => lt.Tagguid).ToList();
+            }
+
+            List<Guid?> returnlist = new List<Guid?>();
+
+            var querylevel =  _context.Roles.Where(r => r.Rolename == level).FirstOrDefault();
+
+            List<Guid?> userLarps = _context.UserLarproles.Where(ulr => ulr.Isactive == true && ulr.Usergu.Authid == authIdValue && ulr.Role.Id >= querylevel.Id)
+                .Select(ulr => ulr.Larpguid).ToList();
+
+            returnlist = _context.Larptags.Where(lt => lt.Isactive == true && userLarps.Contains(lt.Larpguid)).Select(lt => lt.Tagguid).ToList();
+
+            return returnlist;
         }
     }
 }

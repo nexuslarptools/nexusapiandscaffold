@@ -11,7 +11,7 @@ namespace NEXUSDataLayerScaffold.Entities
     {
 
         public Guid Guid { get; set; }
-        public Guid Seriesguid { get; set; }
+        public Guid? Seriesguid { get; set; }
         public string SeriesTitle { get; set; }
         public string Name { get; set; }
         public string Img1 { get; set; }

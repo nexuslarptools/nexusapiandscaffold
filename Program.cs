@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace NEXUSDataLayerScaffold
 {
@@ -25,9 +26,11 @@ namespace NEXUSDataLayerScaffold
 
         }
 
-        public static IWebHostBuilder CreateHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
+           {
+               webBuilder.UseStartup<Startup>().UseUrls("https://10.0.0.77:6001", "http://10.0.0.77:6002");
+           });
 
 
     }

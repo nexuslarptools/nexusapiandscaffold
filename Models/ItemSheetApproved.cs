@@ -22,7 +22,7 @@ namespace NEXUSDataLayerScaffold.Models
         public DateTime? Secondapprovaldate { get; set; }
         public string Gmnotes { get; set; }
         public string Reason4edit { get; set; }
-        public int Version { get; set; }
+        public int? Version { get; set; }
 
         public virtual Users CreatedbyuserGu { get; set; }
         public virtual Users FirstapprovalbyuserGu { get; set; }

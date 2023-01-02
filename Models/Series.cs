@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace NEXUSDataLayerScaffold.Models
 {
@@ -20,14 +19,11 @@ namespace NEXUSDataLayerScaffold.Models
         public Guid Guid { get; set; }
         public string Title { get; set; }
         public string Titlejpn { get; set; }
-
         public JsonDocument Tags { get; set; }
         public bool? Isactive { get; set; }
         public DateTime Createdate { get; set; }
         public DateTime? Deactivedate { get; set; }
 
-
-        //public virtual string TagsList { get; set; }
         public virtual ICollection<CharacterSheet> CharacterSheet { get; set; }
         public virtual ICollection<CharacterSheetApproved> CharacterSheetApproved { get; set; }
         public virtual ICollection<CharacterSheetVersion> CharacterSheetVersion { get; set; }

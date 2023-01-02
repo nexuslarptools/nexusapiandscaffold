@@ -45,7 +45,6 @@ namespace NEXUSDataLayerScaffold
             //services.AddTransient<SampleMiddleware>();
             //services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
-            services.AddCors();
             services.AddControllers().AddNewtonsoftJson();
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -86,11 +85,18 @@ namespace NEXUSDataLayerScaffold
                // };
                });
 
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.None;
+                options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
+            });
+
 
             //services.AddSwaggerGen(c =>
             //{
             //    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexus API V1", Version = "v1" });
             //});
+
 
             services.AddSwaggerGen(c =>
             {
@@ -229,23 +235,27 @@ namespace NEXUSDataLayerScaffold
                 app.UseCors(policy => policy
                     .AllowAnyHeader()
                     .AllowAnyMethod()
-                    //.SetIsOriginAllowed(origin => true) // allow any origin
-                    .WithOrigins("http://localhost:3000", "http://localhost:8080")
-                    .AllowCredentials());
+                                    //.SetIsOriginAllowed(origin => true) // allow any origin
+                                    //.WithOrigins("http://localhost:3000", "http://localhost:8080", "http://10.0.0.175:8080", "http://10.0.0.175:3000")
+                                    //.AllowCredentials()
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    );
 
                 //app.UseCors(builder => builder
-                 //   .AllowAnyOrigin()
-                 //   .AllowAnyMethod()
-                 //   .AllowAnyHeader()
-                 //   .AllowCredentials());
+                //   .AllowAnyOrigin()
+                //   .AllowAnyMethod()
+                //   .AllowAnyHeader()
+                //   .AllowCredentials());
             }
             else
             {
                 app.UseCors(builder => builder
                 //.SetIsOriginAllowed(origin => true) // allow any origin
-                .WithOrigins("http://localhost:3000", "http://localhost:8080")
+                //.WithOrigins("http://localhost:3000", "http://localhost:8080", "http://10.0.0.175:8080", "http://10.0.0.175:3000")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
+                .AllowAnyOrigin()
                 .AllowCredentials());
             }
 
@@ -261,8 +271,10 @@ namespace NEXUSDataLayerScaffold
             });
 
             //app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            //app.UseStaticFiles();
             app.UseRouting();
+            //app.UseCertificateForwarding();
+            //app.UseCookiePolicy();
             app.UseAuthentication();
             app.UseAuthorization();
             // app.UseEndpoints(endpoints =>
@@ -276,6 +288,7 @@ namespace NEXUSDataLayerScaffold
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
+
 
 
 

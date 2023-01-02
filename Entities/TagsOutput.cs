@@ -29,10 +29,18 @@ namespace NEXUSDataLayerScaffold.Entities
     {
         public string Name { get; set; }
         public Guid Guid { get; set; }
-        public outTag(string name, Guid guid)
+        public Guid Tagtypeguid { get; set; }
+        public bool? Isactive { get; set; }
+        public bool IsLocked { get; set; }
+        public List<LARPOut> LarpsTagLockedTo { get; set; }
+
+        public outTag(string name, Guid guid, Guid typeGuid, bool? isactive, bool isLocked)
         {
             this.Name = name;
             this.Guid = guid;
+            this.Tagtypeguid = typeGuid;
+            this.Isactive = isactive;
+            this.IsLocked = IsLocked;
         }
     }
 }

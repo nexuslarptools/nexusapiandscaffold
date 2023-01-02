@@ -1,13 +1,11 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.Extensions.Configuration;
 
 namespace NEXUSDataLayerScaffold.Models
 {
     public partial class NexusLARPContextBase : DbContext
     {
-
         public NexusLARPContextBase()
         {
         }
@@ -24,18 +22,21 @@ namespace NEXUSDataLayerScaffold.Models
         public virtual DbSet<ItemSheetApproved> ItemSheetApproved { get; set; }
         public virtual DbSet<ItemSheetVersion> ItemSheetVersion { get; set; }
         public virtual DbSet<Larps> Larps { get; set; }
+        public virtual DbSet<Larptags> Larptags { get; set; }
         public virtual DbSet<Pronouns> Pronouns { get; set; }
+        public virtual DbSet<Roles> Roles { get; set; }
         public virtual DbSet<Series> Series { get; set; }
         public virtual DbSet<TagTypes> TagTypes { get; set; }
         public virtual DbSet<Tags> Tags { get; set; }
+        public virtual DbSet<UserLarproles> UserLarproles { get; set; }
         public virtual DbSet<Users> Users { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-                //warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                //optionsBuilder.UseNpgsql(optionsBuilder.);
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
+                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!");
             }
         }
 
@@ -129,10 +130,6 @@ namespace NEXUSDataLayerScaffold.Models
 
             modelBuilder.Entity<CharacterSheetApproved>(entity =>
             {
-                entity.HasIndex(e => new { e.Name, e.Seriesguid })
-                    .HasName("CharacterSheetApproved_name_seriesguid_key")
-                    .IsUnique();
-
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.CharactersheetId).HasColumnName("charactersheet_id");
@@ -382,10 +379,6 @@ namespace NEXUSDataLayerScaffold.Models
 
             modelBuilder.Entity<ItemSheetApproved>(entity =>
             {
-                entity.HasIndex(e => new { e.Seriesguid, e.Name })
-                    .HasName("ItemSheetApproved_seriesguid_name_key")
-                    .IsUnique();
-
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.Createdate)
@@ -463,10 +456,6 @@ namespace NEXUSDataLayerScaffold.Models
 
             modelBuilder.Entity<ItemSheetVersion>(entity =>
             {
-                entity.HasIndex(e => new { e.Seriesguid, e.Name })
-                    .HasName("ItemSheetVersion_seriesguid_name_key")
-                    .IsUnique();
-
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.Createdate)
@@ -571,6 +560,31 @@ namespace NEXUSDataLayerScaffold.Models
                     .HasMaxLength(1000);
             });
 
+            modelBuilder.Entity<Larptags>(entity =>
+            {
+                entity.ToTable("LARPTags");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Isactive)
+                    .HasColumnName("isactive")
+                    .HasDefaultValueSql("true");
+
+                entity.Property(e => e.Larpguid).HasColumnName("larpguid");
+
+                entity.Property(e => e.Tagguid).HasColumnName("tagguid");
+
+                entity.HasOne(d => d.Larpgu)
+                    .WithMany(p => p.Larptags)
+                    .HasForeignKey(d => d.Larpguid)
+                    .HasConstraintName("LARPTags_larpguid_fkey");
+
+                entity.HasOne(d => d.Taggu)
+                    .WithMany(p => p.Larptags)
+                    .HasForeignKey(d => d.Tagguid)
+                    .HasConstraintName("LARPTags_tagguid_fkey");
+            });
+
             modelBuilder.Entity<Pronouns>(entity =>
             {
                 entity.HasKey(e => e.Guid)
@@ -583,6 +597,15 @@ namespace NEXUSDataLayerScaffold.Models
                 entity.Property(e => e.Pronouns1)
                     .HasColumnName("pronouns")
                     .HasMaxLength(1000);
+            });
+
+            modelBuilder.Entity<Roles>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Rolename)
+                    .HasColumnName("rolename")
+                    .HasMaxLength(200);
             });
 
             modelBuilder.Entity<Series>(entity =>
@@ -664,6 +687,38 @@ namespace NEXUSDataLayerScaffold.Models
                     .HasConstraintName("fk_tagtype_guid_tags");
             });
 
+            modelBuilder.Entity<UserLarproles>(entity =>
+            {
+                entity.ToTable("UserLARPRoles");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Isactive)
+                    .HasColumnName("isactive")
+                    .HasDefaultValueSql("true");
+
+                entity.Property(e => e.Larpguid).HasColumnName("larpguid");
+
+                entity.Property(e => e.Roleid).HasColumnName("roleid");
+
+                entity.Property(e => e.Userguid).HasColumnName("userguid");
+
+                entity.HasOne(d => d.Larpgu)
+                    .WithMany(p => p.UserLarproles)
+                    .HasForeignKey(d => d.Larpguid)
+                    .HasConstraintName("UserLARPRoles_larpguid_fkey");
+
+                entity.HasOne(d => d.Role)
+                    .WithMany(p => p.UserLarproles)
+                    .HasForeignKey(d => d.Roleid)
+                    .HasConstraintName("UserLARPRoles_roleid_fkey");
+
+                entity.HasOne(d => d.Usergu)
+                    .WithMany(p => p.UserLarproles)
+                    .HasForeignKey(d => d.Userguid)
+                    .HasConstraintName("UserLARPRoles_userguid_fkey");
+            });
+
             modelBuilder.Entity<Users>(entity =>
             {
                 entity.HasKey(e => e.Guid)
@@ -672,6 +727,14 @@ namespace NEXUSDataLayerScaffold.Models
                 entity.Property(e => e.Guid)
                     .HasColumnName("guid")
                     .HasDefaultValueSql("uuid_generate_v1()");
+
+                entity.Property(e => e.Authid)
+                    .HasColumnName("authid")
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Discordname)
+                    .HasColumnName("discordname")
+                    .HasMaxLength(200);
 
                 entity.Property(e => e.Email)
                     .HasColumnName("email")

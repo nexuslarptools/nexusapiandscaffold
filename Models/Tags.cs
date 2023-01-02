@@ -5,11 +5,17 @@ namespace NEXUSDataLayerScaffold.Models
 {
     public partial class Tags
     {
+        public Tags()
+        {
+            Larptags = new HashSet<Larptags>();
+        }
+
         public Guid Guid { get; set; }
         public string Name { get; set; }
         public Guid Tagtypeguid { get; set; }
         public bool? Isactive { get; set; }
 
         public virtual TagTypes Tagtypegu { get; set; }
+        public virtual ICollection<Larptags> Larptags { get; set; }
     }
 }

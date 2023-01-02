@@ -38,12 +38,29 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheet([FromQuery]PagingParameterModel pagingParameterModel)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
 
-                var ret = await _context.CharacterSheet.Where(cs => cs.Isactive == true).Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title })
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                var ret = await _context.CharacterSheet.Where(cs => cs.Isactive == true  && allowedSheets.Contains(cs.Guid)).Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title })
                     .OrderBy(x => x.Name)
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                     .Take(pagingParameterModel.pageSize).ToListAsync();
@@ -64,9 +81,13 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetWithDisabled([FromQuery]PagingParameterModel pagingParameterModel)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
 
                 var ret = await _context.CharacterSheet.Select(c => new { c.Guid, c.Name, c.Isactive })
@@ -90,10 +111,32 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheet(Guid guid)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
+
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                if(!allowedSheets.Contains(guid))
+                {
+                    return Unauthorized();
+                }
 
                 var options = new JsonSerializerOptions
                 {
@@ -106,6 +149,8 @@ namespace NEXUSDataLayerScaffold.Controllers
                 {
                     return NotFound();
                 }
+
+               
 
 
                 CharSheet outputSheet = Character.CreateCharSheet(characterSheet);
@@ -142,16 +187,33 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheetBySeries([FromQuery]PagingParameterModel pagingParameterModel)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
                 var options = new JsonSerializerOptions
                 {
                     WriteIndented = true
                 };
 
-                var characterSheets = await _context.CharacterSheet.Where(cs => cs.Isactive == true && cs.Seriesguid== pagingParameterModel.guid)
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                var characterSheets = await _context.CharacterSheet.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid) && cs.Seriesguid== pagingParameterModel.guid)
                     .OrderBy(x => x.Name)
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                     .Take(pagingParameterModel.pageSize).ToListAsync();
@@ -194,16 +256,33 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetByAbilites([FromBody] JsonElement input)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
+
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
 
                 string json = System.Text.Json.JsonSerializer.Serialize(input);
 
                 using var dynJson = JsonDocument.Parse(json);
 
-                var chars = await _context.CharacterSheet.Where(c => c.Isactive == true).ToListAsync();
+                var chars = await _context.CharacterSheet.Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
 
                 foreach (var jo in dynJson.RootElement.EnumerateObject().GetEnumerator())
                 {
@@ -252,12 +331,29 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetByTag(Guid guid)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
 
-                var chars = await _context.CharacterSheet.Where(c => c.Isactive == true && c.Fields.RootElement.GetProperty("Character_Tags").GetString().Contains(guid.ToString())).ToListAsync();
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                var chars = await _context.CharacterSheet.Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid) && c.Fields.RootElement.GetProperty("Character_Tags").GetString().Contains(guid.ToString())).ToListAsync();
 
 
                 var output = chars.Select(cha => new
@@ -288,12 +384,29 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<Series>> GetCharacterSearchPartial(string input)
         {
 
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
 
-                var testChar = await _context.CharacterSheet.Where(ch => ch.Isactive == true).Select(cha => new {
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                var testChar = await _context.CharacterSheet.Where(ch => ch.Isactive == true  && allowedSheets.Contains(ch.Guid)).Select(cha => new {
                     cha.Guid,
                     cha.Name,
                     cha.Seriesguid,
@@ -351,13 +464,31 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetBySpecialSkillsTag(Guid guid)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
+
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
                 List<Guid> allFound = new List<Guid>();
 
-                var allSheets = await _context.CharacterSheet.Where(c => c.Isactive == true).ToListAsync();
+                var allSheets = await _context.CharacterSheet.Where(c => c.Isactive == true  && allowedSheets.Contains(c.Guid)).ToListAsync();
 
                 foreach (var sheet in allSheets)
                 {
@@ -405,10 +536,34 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheetWithSheetItem(Guid guid)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
+
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                List<Guid> allFound = new List<Guid>();
+
+                if (!allowedSheets.Contains(guid))
+                {
+                    return Unauthorized();
+                }
 
 
                 var characterSheet = await _context.CharacterSheet.Where
@@ -480,11 +635,32 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<CharacterSheet>> GetCharacterSheetWithAllItems(Guid guid)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
 
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                if (!allowedSheets.Contains(guid))
+                {
+                    return Unauthorized();
+                }
 
                 var characterSheet = await _context.CharacterSheet.Where
                 (cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
@@ -587,18 +763,23 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<IActionResult> PutCharacterSheet(Guid id, CharacterSheet characterSheet)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
 
+                // This obviously needs work when we get to characters.
                 if (id != characterSheet.Guid)
                 {
                     return BadRequest();
                 }
 
                 characterSheet.Createdate = DateTime.Now;
-                characterSheet.CreatedbyuserGuid = result.Result.userGuid;
+                characterSheet.CreatedbyuserGuid = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
                 characterSheet.FirstapprovalbyuserGuid = null;
                 characterSheet.Firstapprovaldate = null;
                 characterSheet.SecondapprovalbyuserGuid = null;
@@ -632,13 +813,37 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<IActionResult> ApproveCharacterSheet(Guid guid)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBApprover"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
             {
+
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                if (!allowedSheets.Contains(guid))
+                {
+                    return Unauthorized();
+                }
 
                 CharacterSheet characterSheet = await _context.CharacterSheet.Where(cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
                 bool fullapprove = false;
+
+                var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
 
                 if (characterSheet == null)
                 {
@@ -647,9 +852,9 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (characterSheet.FirstapprovalbyuserGuid != null && characterSheet.SecondapprovalbyuserGuid == null)
                 {
-                    if (result.Result.userGuid != characterSheet.CreatedbyuserGuid && result.Result.userGuid != characterSheet.FirstapprovalbyuserGuid)
+                    if (result != characterSheet.CreatedbyuserGuid && result != characterSheet.FirstapprovalbyuserGuid)
                     {
-                        characterSheet.SecondapprovalbyuserGuid = result.Result.userGuid;
+                        characterSheet.SecondapprovalbyuserGuid = result;
                         characterSheet.Secondapprovaldate= DateTime.Now;
                         characterSheet.Isactive = false;
                         fullapprove=true;
@@ -664,10 +869,10 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (characterSheet.FirstapprovalbyuserGuid == null)
                 {
-                    if (result.Result.userGuid != characterSheet.CreatedbyuserGuid)
+                    if (result != characterSheet.CreatedbyuserGuid)
                     {
                         //characterSheet.SecondapprovalbyuserGuid = null;
-                        characterSheet.FirstapprovalbyuserGuid = result.Result.userGuid;
+                        characterSheet.FirstapprovalbyuserGuid = result;
                         characterSheet.Firstapprovaldate = DateTime.Now;
                     }
                     else
@@ -718,7 +923,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                     var theNewSheet = await _context.CharacterSheetApproved.Where(csa => csa.Guid == guid && csa.Version == maxversion).FirstOrDefaultAsync();
 
                     theNewSheet.Isactive = true;
-                    theNewSheet.SecondapprovalbyuserGuid = result.Result.userGuid;
+                    theNewSheet.SecondapprovalbyuserGuid = result;
                     theNewSheet.Secondapprovaldate = DateTime.Now;
 
                     _context.CharacterSheetApproved.Update(theNewSheet);
@@ -743,10 +948,26 @@ namespace NEXUSDataLayerScaffold.Controllers
         [HttpPost]
         public async Task<ActionResult<CharacterSheet>> PostCharacterSheet([FromBody] CharSheet charSheet)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "SheetDBWrite"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
+
+                List<TagScanContainer> legalsheets = _context.CharacterSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
                 CharacterSheet characterSheet = new CharacterSheet();
 
                 if (charSheet.Name != null)
@@ -771,6 +992,24 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 if (charSheet.Fields != null)
                 {
+                    foreach (var tag in charSheet.Fields)
+                    {
+                        JsonElement tagslist = new JsonElement();
+
+                        if (tag.Key == "Tags")
+                        {
+                            var TestJsonFeilds = charSheet.Fields["Tags"];
+
+                            foreach (Guid tagValue in TestJsonFeilds)
+                            {
+                                if (!allowedTags.Contains(tagValue))
+                                {
+                                    return Unauthorized();
+                                }
+                            }
+                        }
+
+                    }
                     characterSheet.Fields = JsonDocument.Parse(charSheet.Fields.ToString());
                 }
 
@@ -786,7 +1025,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
 
                 characterSheet.Createdate = DateTime.Now;
-                characterSheet.CreatedbyuserGuid = result.Result.userGuid;
+                characterSheet.CreatedbyuserGuid = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
                 characterSheet.FirstapprovalbyuserGuid = null;
                 characterSheet.Firstapprovaldate = null;
                 characterSheet.SecondapprovalbyuserGuid = null;
@@ -806,9 +1045,13 @@ namespace NEXUSDataLayerScaffold.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<CharacterSheet>> DeleteCharacterSheet(Guid id)
         {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
 
 

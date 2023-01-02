@@ -25,6 +25,7 @@ namespace NEXUSDataLayerScaffold.Models
             ItemSheetVersionCreatedbyuserGu = new HashSet<ItemSheetVersion>();
             ItemSheetVersionFirstapprovalbyuserGu = new HashSet<ItemSheetVersion>();
             ItemSheetVersionSecondapprovalbyuserGu = new HashSet<ItemSheetVersion>();
+            UserLarproles = new HashSet<UserLarproles>();
         }
 
         public Guid Guid { get; set; }
@@ -33,6 +34,8 @@ namespace NEXUSDataLayerScaffold.Models
         public string Preferredname { get; set; }
         public string Email { get; set; }
         public Guid? Pronounsguid { get; set; }
+        public string Discordname { get; set; }
+        public string Authid { get; set; }
 
         public virtual Pronouns Pronounsgu { get; set; }
         public virtual ICollection<CharacterSheetApproved> CharacterSheetApprovedCreatedbyuserGu { get; set; }
@@ -53,5 +56,6 @@ namespace NEXUSDataLayerScaffold.Models
         public virtual ICollection<ItemSheetVersion> ItemSheetVersionCreatedbyuserGu { get; set; }
         public virtual ICollection<ItemSheetVersion> ItemSheetVersionFirstapprovalbyuserGu { get; set; }
         public virtual ICollection<ItemSheetVersion> ItemSheetVersionSecondapprovalbyuserGu { get; set; }
+        public virtual ICollection<UserLarproles> UserLarproles { get; set; }
     }
 }
