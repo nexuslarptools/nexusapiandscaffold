@@ -226,8 +226,10 @@ namespace NEXUSDataLayerScaffold.Controllers
 
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
 
+            bool usergte = UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context);
 
-            var Rolelist = _context.UserLarproles.Where(u => u.Usergu.Authid == authId && u.Isactive == true).ToList();
+
+                var Rolelist = _context.UserLarproles.Where(u => u.Usergu.Authid == authId && u.Isactive == true).ToList();
 
             int authlevel = 0;
             foreach (var role in Rolelist)
