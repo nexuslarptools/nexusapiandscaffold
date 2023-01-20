@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NEXUSDataLayerScaffold.Models
+namespace NEXUSDataLayerScaffold.Models;
+
+public class Pronouns
 {
-    public partial class Pronouns
+    public Pronouns()
     {
-        public Pronouns()
-        {
-            Users = new HashSet<Users>();
-        }
-
-        public Guid Guid { get; set; }
-        public string Pronouns1 { get; set; }
-
-        public virtual ICollection<Users> Users { get; set; }
+        Users = new HashSet<Users>();
     }
+
+    public Guid Guid { get; set; }
+    public string Pronouns1 { get; set; }
+
+    public virtual ICollection<Users> Users { get; set; }
 }

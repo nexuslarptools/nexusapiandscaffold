@@ -10,8 +10,8 @@ services:
       - "6001:80"
     networks:
       - product-network
-      
+
 
 networks:
-    product-network:
-        driver: bridge
+  product-network:
+    driver: bridge

@@ -4,449 +4,208 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
-namespace NEXUSDataLayerScaffold.Controllers
+namespace NEXUSDataLayerScaffold.Controllers;
+
+[Route("api/v1/[controller]")]
+[ApiController]
+public class ItemSheetApprovedsController : ControllerBase
 {
-    [Route("api/v1/[controller]")]
-    [ApiController]
-    public class ItemSheetApprovedsController : ControllerBase
+    private readonly NexusLARPContextBase _context;
+
+    public ItemSheetApprovedsController(NexusLARPContextBase context)
     {
-        private readonly NexusLARPContextBase _context;
+        _context = context;
+    }
 
-        public ItemSheetApprovedsController(NexusLARPContextBase context)
+    // GET: api/v1/ItemSheetApproveds
+    [HttpGet]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<ItemSheetApproved>>> GetItemSheetApproved()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            _context = context;
-        }
+            var legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+                .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
-        // GET: api/v1/ItemSheetApproveds
-        [HttpGet]
-        [Authorize]
-        public async Task<ActionResult<IEnumerable<ItemSheetApproved>>> GetItemSheetApproved()
-        {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-            {
-
-                List<TagScanContainer> legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
-
-                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+            var allowedTags = _context.Larptags.Where(lt =>
+                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                {
-                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-                }
-
-                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
-
-
-                return await _context.ItemSheetApproved.Where(isa => isa.Isactive==true && allowedSheets.Contains(isa.Guid)).ToListAsync();
-            }
-            return Unauthorized();
-        }
-
-        // GET: api/v1/ItemSheetApproveds/5
-        [HttpGet("{guid}")]
-        [Authorize]
-        public async Task<ActionResult<ItemSheetApproved>> GetItemSheetApproved(Guid guid)
-        {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-            {
-                var itemSheet = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Guid == guid).FirstOrDefaultAsync();
-
-                if (itemSheet == null)
-                {
-                    return NotFound();
-                }
-
-                List<TagScanContainer> legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
-
-                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
-                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                {
-                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-                }
-
-                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
-
-                if (!allowedSheets.Contains(guid))
-                {
-                    return Unauthorized();
-                }
-
-                var outputItem = Extensions.Item.CreateItem(itemSheet);
-
-                JsonElement tagslist = new JsonElement();
-
-                itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined")
-                {
-                    var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
-                    {
-                        Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                        outputItem.Tags.Add(fullTag);
-                    }
-                }
-
-                if (outputItem.Img1 != null)
-                {
-                    if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
-                    {
-                        outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
-                    }
-                }
-
-                if (outputItem.Seriesguid != null)
-                {
-                    var connectedSeries = await _context.Series.Where(s => s.Guid == outputItem.Seriesguid).FirstOrDefaultAsync();
-                    if (connectedSeries != null)
-                    {
-                        outputItem.Series = connectedSeries.Title;
-                    }
-
-                }
-
-                return Ok(outputItem);
-
-
-            }
-            return Unauthorized();
-        }
-
-        // PUT: api/v1/ItemSheetApproveds/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{id}")]
-        [Authorize]
-        public async Task<IActionResult> PutItemSheetApproved(int id, ItemSheetApproved itemSheetApproved)
-        {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-            {
+                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                if (id != itemSheetApproved.Id)
-                {
-                    return BadRequest();
-                }
+            var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-                _context.Entry(itemSheetApproved).State = EntityState.Modified;
 
-                try
-                {
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ItemSheetApprovedExists(id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-
-                return NoContent();
-            }
-            return Unauthorized();
+            return await _context.ItemSheetApproved
+                .Where(isa => isa.Isactive == true && allowedSheets.Contains(isa.Guid)).ToListAsync();
         }
 
+        return Unauthorized();
+    }
 
+    // GET: api/v1/ItemSheetApproveds/5
+    [HttpGet("{guid}")]
+    [Authorize]
+    public async Task<ActionResult<ItemSheetApproved>> GetItemSheetApproved(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        [HttpGet("ShortListWithTags")]
-        [Authorize]
-        public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetApprovedItemListWithTags([FromQuery] PagingParameterModel pagingParameterModel)
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var itemSheet = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Guid == guid)
+                .FirstOrDefaultAsync();
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+            if (itemSheet == null) return NotFound();
 
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            var legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+                .Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+            var allowedTags = _context.Larptags.Where(lt =>
+                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+            var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+            if (!allowedSheets.Contains(guid)) return Unauthorized();
+
+            var outputItem = Item.CreateItem(itemSheet);
+
+            var tagslist = new JsonElement();
+
+            itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+            if (tagslist.ValueKind.ToString() != "Undefined")
             {
-                try
+                var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                foreach (var tag in TestJsonFeilds)
                 {
+                    var fullTag = await _context.Tags
+                        .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                    outputItem.Tags.Add(fullTag);
+                }
+            }
 
-                    List<TagScanContainer> legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-                    List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
+            if (outputItem.Img1 != null)
+                if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
+                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
 
-                    var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+            if (outputItem.Seriesguid != null)
+            {
+                var connectedSeries =
+                    await _context.Series.Where(s => s.Guid == outputItem.Seriesguid).FirstOrDefaultAsync();
+                if (connectedSeries != null) outputItem.Series = connectedSeries.Title;
+            }
+
+            return Ok(outputItem);
+        }
+
+        return Unauthorized();
+    }
+
+    // PUT: api/v1/ItemSheetApproveds/5
+    // To protect from overposting attacks, enable the specific properties you want to bind to, for
+    // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+    [HttpPut("{id}")]
+    [Authorize]
+    public async Task<IActionResult> PutItemSheetApproved(int id, ItemSheetApproved itemSheetApproved)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            if (id != itemSheetApproved.Id) return BadRequest();
+
+            _context.Entry(itemSheetApproved).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ItemSheetApprovedExists(id))
+                    return NotFound();
+                throw;
+            }
+
+            return NoContent();
+        }
+
+        return Unauthorized();
+    }
+
+
+    [HttpGet("ShortListWithTags")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetApprovedItemListWithTags(
+        [FromQuery] PagingParameterModel pagingParameterModel)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            try
+            {
+                var legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+                    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                var allowedLARPS = _context.UserLarproles
+                    .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .ToList();
+
+                var allowedTags = _context.Larptags.Where(lt =>
+                    (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                    if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                    {
-                        allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-                    }
-
-                    List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
-
-                    List<IteSheet> outPutList = new List<IteSheet>();
-
-                    var allSheets = await _context.ItemSheetApproved.Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).OrderBy(x => x.Name)
-                        .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
-                        .Take(pagingParameterModel.pageSize).ToListAsync();
-
-                    foreach (var sheet in allSheets)
-                    {
-                        IteSheet newOutputSheet = new IteSheet
-                        {
-                            Guid = sheet.Guid,
-                            Name = sheet.Name,
-                            Img1 = sheet.Img1,
-                            Seriesguid = sheet.Seriesguid,
-                            Createdate = sheet.Createdate,
-                            CreatedbyuserGuid = sheet.CreatedbyuserGuid,
-                            FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
-                            SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
-                            Version = sheet.Version,
-                            Tags = new List<Tags>(),
-                        };
-                        if (newOutputSheet.Img1 != null)
-                        {
-                            if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
-                            {
-                                newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
-                            }
-                        }
-
-                        if (newOutputSheet.CreatedbyuserGuid != null)
-                        {
-                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid).FirstOrDefaultAsync();
-                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
-                        }
-
-                        if (newOutputSheet.FirstapprovalbyuserGuid != null)
-                        {
-                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
-                            newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
-                        }
-
-                        if (newOutputSheet.SecondapprovalbyuserGuid != null)
-                        {
-                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
-                            newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
-                        }
-
-                        JsonElement tagslist = new JsonElement();
-
-                        sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                        if (tagslist.ValueKind.ToString() != "Undefined")
-                        {
-                            var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                            foreach (var tag in TestJsonFeilds)
-                            {
-                                Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                                newOutputSheet.Tags.Add(fullTag);
-                            }
-                        }
-
-                        outPutList.Add(newOutputSheet);
-
-                    }
-
-
-                    return Ok(outPutList.OrderBy(x => x.Name));
-                }
-                catch (Exception e)
-                {
-                    return BadRequest(e);
-                }
-            }
-            return Unauthorized();
-        }
-
-        /// <summary>
-        /// Search for series based on partial series name.
-        /// </summary>
-        /// <returns></returns>
-        // GET: api/v1/Items/Search
-        [HttpGet("Search/")]
-        [Authorize]
-        public async Task<ActionResult<Series>> GetItemsSearchPartial([FromQuery] ItemsPagingParameterModel pagingParameterModel)
-        {
-
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-            {
-
-                List<TagScanContainer> legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-                List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
-
-                var allowedTags = _context.Larptags.Where(lt => (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
-                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
                 if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                {
                     allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-                }
 
-                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+                var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-                var initItems = await _context.ItemSheetApproved.Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
+                var outPutList = new List<IteSheet>();
 
-                var taggedItems = new List<ItemSheetApproved>();
-
-                if (pagingParameterModel.fields != null && pagingParameterModel.fields != string.Empty)
-                {
-                    var objects = JObject.Parse(pagingParameterModel.fields);
-
-                    foreach (var ite in initItems)
-                    {
-                        bool isfound = true;
-                        foreach (var tag in objects)
-                        {
-                            JsonElement tagslist = new JsonElement();
-
-                            if (ite.Fields.RootElement.TryGetProperty(tag.Key, out tagslist))
-                            {
-                                if (isfound && tag.Key == "Tags")
-                                {
-                                    var TestJsonFeilds = ite.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-                                    var tags2 = TestJsonFeilds.Select(s => Guid.Parse(s.GetString())).ToList();
-                                    List<Guid> tags1 = tag.Value.ToObject<List<Guid>>();
-                                    var alltagsfound = tags1.Intersect(tags2).Count();
-                                    if (alltagsfound < tag.Value.ToArray().Length)
-                                    {
-                                        isfound = false;
-                                    }
-                                }
-
-                                // when you hit special skills in the input JSON
-                                else if (isfound && tag.Key == "Special_Skills")
-                                {
-                                    var TestJsonFeilds = JArray.Parse(tagslist.ToString());
-
-                                    List<bool> skillsfound = new List<bool>();
-
-                                    // Iterate through the special skills array of the input json
-                                    foreach (JObject tagSkills in tag.Value)
-                                    {
-                                        // iterate through all of the special skills on the item sheet
-                                        foreach (var itemSkills in TestJsonFeilds)
-                                        {
-                                            List<bool> foundskills = new List<bool>();
-
-                                            //iterate through all feilds of the input json
-                                            foreach (var skillTag in tagSkills)
-                                            {
-                                                if (skillTag.Key == "Tags")
-                                                {
-                                                    var TagArray = JArray.Parse(itemSkills[skillTag.Key].ToString());
-                                                    var tags2 = TagArray.Select(s => Guid.Parse(s.ToString())).ToList();
-                                                    List<Guid> tags1 = skillTag.Value.ToObject<List<Guid>>();
-                                                    var alltagsfound = tags1.Intersect(tags2).Count();
-                                                    if (alltagsfound == skillTag.Value.ToArray().Length)
-                                                    {
-                                                        foundskills.Add(true);
-                                                    }
-
-                                                }
-                                                else if (itemSkills[skillTag.Key].ToString().ToLower().Contains(skillTag.Value.ToString().ToLower()))
-                                                {
-                                                    foundskills.Add(true);
-                                                }
-                                            }
-                                            if (foundskills.Count == tagSkills.Count)
-                                            {
-                                                skillsfound.Add(true);
-                                            }
-
-                                        }
-
-                                    }
-                                    if (skillsfound.Count != tag.Value.ToList().Count)
-                                    {
-                                        isfound = false;
-                                    }
-
-
-                                }
-
-                                else if (isfound)
-                                {
-                                    if (!tagslist.ToString().ToLower().Contains(tag.Value.ToString().ToLower()))
-                                    {
-                                        isfound = false;
-                                    }
-
-                                }
-                            }
-                            else
-                            {
-                                isfound = false;
-                            }
-
-
-                        }
-                        if (isfound)
-                        {
-                            taggedItems.Add(ite);
-                        }
-                    }
-                }
-                else
-                {
-                    taggedItems = initItems;
-                }
-
-                var itemslist = taggedItems.Where(s =>
-                (pagingParameterModel.name == null || s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
-                && (pagingParameterModel.seriesguid == Guid.Empty || s.Seriesguid == pagingParameterModel.seriesguid))
-                    .OrderBy(x => x.Name)
+                var allSheets = await _context.ItemSheetApproved
+                    .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).OrderBy(x => x.Name)
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
-                    .Take(pagingParameterModel.pageSize).ToList();
+                    .Take(pagingParameterModel.pageSize).ToListAsync();
 
-                if (itemslist == null)
+                foreach (var sheet in allSheets)
                 {
-                    return NotFound();
-                }
-
-                List<IteSheet> outPutList = new List<IteSheet>();
-
-                foreach (var sheet in itemslist)
-                {
-                    IteSheet newOutputSheet = new IteSheet
+                    var newOutputSheet = new IteSheet
                     {
-                        Id = sheet.Id,
                         Guid = sheet.Guid,
                         Name = sheet.Name,
                         Img1 = sheet.Img1,
@@ -456,36 +215,35 @@ namespace NEXUSDataLayerScaffold.Controllers
                         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
                         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                         Version = sheet.Version,
-                        Tags = new List<Tags>(),
+                        Tags = new List<Tags>()
                     };
-
                     if (newOutputSheet.Img1 != null)
-                    {
                         if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
-                        {
-                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
-                        }
-                    }
+                            newOutputSheet.imagedata =
+                                System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
                     {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid).FirstOrDefaultAsync();
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
+                            .FirstOrDefaultAsync();
                         newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
                     }
 
                     if (newOutputSheet.FirstapprovalbyuserGuid != null)
                     {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
                         newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
                     }
 
                     if (newOutputSheet.SecondapprovalbyuserGuid != null)
                     {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
                         newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
                     }
 
-                    JsonElement tagslist = new JsonElement();
+                    var tagslist = new JsonElement();
 
                     sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
 
@@ -495,79 +253,277 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                         foreach (var tag in TestJsonFeilds)
                         {
-                            Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                            var fullTag = await _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .FirstOrDefaultAsync();
                             newOutputSheet.Tags.Add(fullTag);
                         }
                     }
 
                     outPutList.Add(newOutputSheet);
-
                 }
 
 
-                return Ok(outPutList);
+                return Ok(outPutList.OrderBy(x => x.Name));
             }
-            return Unauthorized();
-        }
-
-
-
-        // POST: api/v1/ItemSheetApproveds
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPost]
-        [Authorize]
-
-        public async Task<ActionResult<ItemSheetApproved>> PostItemSheetApproved(ItemSheetApproved itemSheetApproved)
-        {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            catch (Exception e)
             {
-                _context.ItemSheetApproved.Add(itemSheetApproved);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction("GetItemSheetApproved", new { id = itemSheetApproved.Id }, itemSheetApproved);
+                return BadRequest(e);
             }
-            return Unauthorized();
-        }
 
-        // DELETE: api/v1/ItemSheetApproveds/5
-        [HttpDelete("{id}")]
-        [Authorize]
-        public async Task<ActionResult<ItemSheetApproved>> DeleteItemSheetApproved(Guid id)
+        return Unauthorized();
+    }
+
+    /// <summary>
+    ///     Search for series based on partial series name.
+    /// </summary>
+    /// <returns></returns>
+    // GET: api/v1/Items/Search
+    [HttpGet("Search/")]
+    [Authorize]
+    public async Task<ActionResult<Series>> GetItemsSearchPartial(
+        [FromQuery] ItemsPagingParameterModel pagingParameterModel)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+                .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+            var allowedTags = _context.Larptags.Where(lt =>
+                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-            {
+                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                var itemSheetApproved = await _context.ItemSheetApproved.Where(i => i.Guid == id).FirstOrDefaultAsync();
-                if (itemSheetApproved == null)
+            var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+            var initItems = await _context.ItemSheetApproved
+                .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
+
+            var taggedItems = new List<ItemSheetApproved>();
+
+            if (pagingParameterModel.fields != null && pagingParameterModel.fields != string.Empty)
+            {
+                var objects = JObject.Parse(pagingParameterModel.fields);
+
+                foreach (var ite in initItems)
                 {
-                    return NotFound();
+                    var isfound = true;
+                    foreach (var tag in objects)
+                    {
+                        var tagslist = new JsonElement();
+
+                        if (ite.Fields.RootElement.TryGetProperty(tag.Key, out tagslist))
+                        {
+                            if (isfound && tag.Key == "Tags")
+                            {
+                                var TestJsonFeilds = ite.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+                                var tags2 = TestJsonFeilds.Select(s => Guid.Parse(s.GetString())).ToList();
+                                var tags1 = tag.Value.ToObject<List<Guid>>();
+                                var alltagsfound = tags1.Intersect(tags2).Count();
+                                if (alltagsfound < tag.Value.ToArray().Length) isfound = false;
+                            }
+
+                            // when you hit special skills in the input JSON
+                            else if (isfound && tag.Key == "Special_Skills")
+                            {
+                                var TestJsonFeilds = JArray.Parse(tagslist.ToString());
+
+                                var skillsfound = new List<bool>();
+
+                                // Iterate through the special skills array of the input json
+                                foreach (JObject tagSkills in tag.Value)
+                                    // iterate through all of the special skills on the item sheet
+                                foreach (var itemSkills in TestJsonFeilds)
+                                {
+                                    var foundskills = new List<bool>();
+
+                                    //iterate through all feilds of the input json
+                                    foreach (var skillTag in tagSkills)
+                                        if (skillTag.Key == "Tags")
+                                        {
+                                            var TagArray = JArray.Parse(itemSkills[skillTag.Key].ToString());
+                                            var tags2 = TagArray.Select(s => Guid.Parse(s.ToString())).ToList();
+                                            var tags1 = skillTag.Value.ToObject<List<Guid>>();
+                                            var alltagsfound = tags1.Intersect(tags2).Count();
+                                            if (alltagsfound == skillTag.Value.ToArray().Length) foundskills.Add(true);
+                                        }
+                                        else if (itemSkills[skillTag.Key].ToString().ToLower()
+                                                 .Contains(skillTag.Value.ToString().ToLower()))
+                                        {
+                                            foundskills.Add(true);
+                                        }
+
+                                    if (foundskills.Count == tagSkills.Count) skillsfound.Add(true);
+                                }
+
+                                if (skillsfound.Count != tag.Value.ToList().Count) isfound = false;
+                            }
+
+                            else if (isfound)
+                            {
+                                if (!tagslist.ToString().ToLower().Contains(tag.Value.ToString().ToLower()))
+                                    isfound = false;
+                            }
+                        }
+                        else
+                        {
+                            isfound = false;
+                        }
+                    }
+
+                    if (isfound) taggedItems.Add(ite);
                 }
-
-                _context.ItemSheetApproved.Remove(itemSheetApproved);
-                _context.SaveChanges();
-
-                return itemSheetApproved;
+            }
+            else
+            {
+                taggedItems = initItems;
             }
 
-            return Unauthorized();
+            var itemslist = taggedItems.Where(s =>
+                    (pagingParameterModel.name == null ||
+                     s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
+                    && (pagingParameterModel.seriesguid == Guid.Empty ||
+                        s.Seriesguid == pagingParameterModel.seriesguid))
+                .OrderBy(x => x.Name)
+                .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
+                .Take(pagingParameterModel.pageSize).ToList();
+
+            if (itemslist == null) return NotFound();
+
+            var outPutList = new List<IteSheet>();
+
+            foreach (var sheet in itemslist)
+            {
+                var newOutputSheet = new IteSheet
+                {
+                    Id = sheet.Id,
+                    Guid = sheet.Guid,
+                    Name = sheet.Name,
+                    Img1 = sheet.Img1,
+                    Seriesguid = sheet.Seriesguid,
+                    Createdate = sheet.Createdate,
+                    CreatedbyuserGuid = sheet.CreatedbyuserGuid,
+                    FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
+                    SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
+                    Version = sheet.Version,
+                    Tags = new List<Tags>()
+                };
+
+                if (newOutputSheet.Img1 != null)
+                    if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
+                        newOutputSheet.imagedata =
+                            System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
+
+                if (newOutputSheet.CreatedbyuserGuid != null)
+                {
+                    var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
+                        .FirstOrDefaultAsync();
+                    newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                }
+
+                if (newOutputSheet.FirstapprovalbyuserGuid != null)
+                {
+                    var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
+                        .FirstOrDefaultAsync();
+                    newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                }
+
+                if (newOutputSheet.SecondapprovalbyuserGuid != null)
+                {
+                    var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
+                        .FirstOrDefaultAsync();
+                    newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                }
+
+                var tagslist = new JsonElement();
+
+                sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                if (tagslist.ValueKind.ToString() != "Undefined")
+                {
+                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                    foreach (var tag in TestJsonFeilds)
+                    {
+                        var fullTag = await _context.Tags
+                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Tags.Add(fullTag);
+                    }
+                }
+
+                outPutList.Add(newOutputSheet);
+            }
+
+
+            return Ok(outPutList);
         }
 
-        private bool ItemSheetApprovedExists(int id)
+        return Unauthorized();
+    }
+
+
+    // POST: api/v1/ItemSheetApproveds
+    // To protect from overposting attacks, enable the specific properties you want to bind to, for
+    // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+    [HttpPost]
+    [Authorize]
+    public async Task<ActionResult<ItemSheetApproved>> PostItemSheetApproved(ItemSheetApproved itemSheetApproved)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            return _context.ItemSheetApproved.Any(e => e.Id == id);
+            _context.ItemSheetApproved.Add(itemSheetApproved);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetItemSheetApproved", new { id = itemSheetApproved.Id }, itemSheetApproved);
         }
+
+        return Unauthorized();
+    }
+
+    // DELETE: api/v1/ItemSheetApproveds/5
+    [HttpDelete("{id}")]
+    [Authorize]
+    public async Task<ActionResult<ItemSheetApproved>> DeleteItemSheetApproved(Guid id)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var itemSheetApproved = await _context.ItemSheetApproved.Where(i => i.Guid == id).FirstOrDefaultAsync();
+            if (itemSheetApproved == null) return NotFound();
+
+            _context.ItemSheetApproved.Remove(itemSheetApproved);
+            _context.SaveChanges();
+
+            return itemSheetApproved;
+        }
+
+        return Unauthorized();
+    }
+
+    private bool ItemSheetApprovedExists(int id)
+    {
+        return _context.ItemSheetApproved.Any(e => e.Id == id);
     }
 }

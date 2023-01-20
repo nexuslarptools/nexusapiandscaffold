@@ -1,37 +1,24 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
-namespace NEXUSDataLayerScaffold
+namespace NEXUSDataLayerScaffold;
+
+public class Program
 {
-    public class Program
+    //static HttpClient client = new HttpClient();
+
+
+    public static void Main(string[] args)
     {
+        CreateHostBuilder(args).Build().Run();
+    }
 
-        //static HttpClient client = new HttpClient();
-
-
-
-        public static void Main(string[] args)
+    public static IHostBuilder CreateHostBuilder(string[] args)
+    {
+        return Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
         {
-            CreateHostBuilder(args).Build().Run();
-
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
-           {
-               webBuilder.UseStartup<Startup>().UseUrls("https://10.0.0.77:6001", "http://10.0.0.77:6002");
-           });
-
-
+            webBuilder.UseStartup<Startup>().UseUrls("http://*:80;http://*:443");
+        });
     }
 }
