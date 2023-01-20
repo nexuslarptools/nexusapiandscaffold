@@ -766,7 +766,7 @@ public class CharacterSheetsController : ControllerBase
             // This obviously needs work when we get to characters.
             if (id != characterSheet.Guid) return BadRequest();
 
-            characterSheet.Createdate = DateTime.Now;
+            characterSheet.Createdate = DateTime.UtcNow;
             characterSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             characterSheet.FirstapprovalbyuserGuid = null;
@@ -835,7 +835,7 @@ public class CharacterSheetsController : ControllerBase
                 if (result != characterSheet.CreatedbyuserGuid && result != characterSheet.FirstapprovalbyuserGuid)
                 {
                     characterSheet.SecondapprovalbyuserGuid = result;
-                    characterSheet.Secondapprovaldate = DateTime.Now;
+                    characterSheet.Secondapprovaldate = DateTime.UtcNow;
                     characterSheet.Isactive = false;
                     fullapprove = true;
                 }
@@ -852,7 +852,7 @@ public class CharacterSheetsController : ControllerBase
                 {
                     //characterSheet.SecondapprovalbyuserGuid = null;
                     characterSheet.FirstapprovalbyuserGuid = result;
-                    characterSheet.Firstapprovaldate = DateTime.Now;
+                    characterSheet.Firstapprovaldate = DateTime.UtcNow;
                 }
                 else
                 {
@@ -895,7 +895,7 @@ public class CharacterSheetsController : ControllerBase
 
                 theNewSheet.Isactive = true;
                 theNewSheet.SecondapprovalbyuserGuid = result;
-                theNewSheet.Secondapprovaldate = DateTime.Now;
+                theNewSheet.Secondapprovaldate = DateTime.UtcNow;
 
                 _context.CharacterSheetApproved.Update(theNewSheet);
                 _context.SaveChanges();
@@ -965,7 +965,7 @@ public class CharacterSheetsController : ControllerBase
             if (charSheet.Seriesguid != null) characterSheet.Seriesguid = charSheet.Seriesguid;
 
 
-            characterSheet.Createdate = DateTime.Now;
+            characterSheet.Createdate = DateTime.UtcNow;
             characterSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             characterSheet.FirstapprovalbyuserGuid = null;

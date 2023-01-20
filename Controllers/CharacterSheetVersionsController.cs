@@ -164,7 +164,7 @@ public class CharacterSheetVersionsController : ControllerBase
             editSheet.Img2 = oldSheet.Img2;
             editSheet.Fields = JsonDocument.Parse(oldSheet.Fields.RootElement.ToString());
             editSheet.Isactive = true;
-            editSheet.Createdate = DateTime.Now;
+            editSheet.Createdate = DateTime.UtcNow;
             editSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             editSheet.FirstapprovalbyuserGuid = null;

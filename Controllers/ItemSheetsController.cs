@@ -581,7 +581,7 @@ public class ItemSheetsController : ControllerBase
                 if (result != itemSheet.CreatedbyuserGuid && result != itemSheet.FirstapprovalbyuserGuid)
                 {
                     itemSheet.SecondapprovalbyuserGuid = result;
-                    itemSheet.Secondapprovaldate = DateTime.Now;
+                    itemSheet.Secondapprovaldate = DateTime.UtcNow;
                     itemSheet.Isactive = false;
                     fullapprove = true;
                 }
@@ -598,7 +598,7 @@ public class ItemSheetsController : ControllerBase
                 {
                     //characterSheet.SecondapprovalbyuserGuid = null;
                     itemSheet.FirstapprovalbyuserGuid = result;
-                    itemSheet.Firstapprovaldate = DateTime.Now;
+                    itemSheet.Firstapprovaldate = DateTime.UtcNow;
                 }
                 else
                 {
@@ -641,7 +641,7 @@ public class ItemSheetsController : ControllerBase
 
                 theNewSheet.Isactive = true;
                 theNewSheet.SecondapprovalbyuserGuid = result;
-                theNewSheet.Secondapprovaldate = DateTime.Now;
+                theNewSheet.Secondapprovaldate = DateTime.UtcNow;
 
                 _context.ItemSheetApproved.Update(theNewSheet);
                 _context.SaveChanges();
@@ -737,7 +737,7 @@ public class ItemSheetsController : ControllerBase
 
                 if (item.Seriesguid != null) newitemSheet.Seriesguid = item.Seriesguid;
 
-                newitemSheet.Createdate = DateTime.Now;
+                newitemSheet.Createdate = DateTime.UtcNow;
                 newitemSheet.CreatedbyuserGuid =
                     _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
                 newitemSheet.FirstapprovalbyuserGuid = null;
@@ -817,7 +817,7 @@ public class ItemSheetsController : ControllerBase
             if (item.Seriesguid != null) itemSheet.Seriesguid = item.Seriesguid;
 
 
-            itemSheet.Createdate = DateTime.Now;
+            itemSheet.Createdate = DateTime.UtcNow;
             itemSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             itemSheet.FirstapprovalbyuserGuid = null;
@@ -922,7 +922,7 @@ public class ItemSheetsController : ControllerBase
 
             if (item.Seriesguid != null) itemSheet.Seriesguid = item.Seriesguid;
 
-            itemSheet.Createdate = DateTime.Now;
+            itemSheet.Createdate = DateTime.UtcNow;
             itemSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             itemSheet.FirstapprovalbyuserGuid = null;

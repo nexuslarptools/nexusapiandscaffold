@@ -204,7 +204,7 @@ public class ItemSheetVersionsController : ControllerBase
             editSheet.Img1 = oldSheet.Img1;
             editSheet.Fields = JsonDocument.Parse(oldSheet.Fields.RootElement.ToString());
             editSheet.Isactive = true;
-            editSheet.Createdate = DateTime.Now;
+            editSheet.Createdate = DateTime.UtcNow;
             editSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             editSheet.FirstapprovalbyuserGuid = null;
