@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace NEXUSDataLayerScaffold.Models;
 
@@ -6,6 +7,9 @@ public partial class NexusLARPContextBase : DbContext
 {
     public NexusLARPContextBase()
     {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", true);
+
     }
 
     public NexusLARPContextBase(DbContextOptions<NexusLARPContextBase> options)
