@@ -208,7 +208,7 @@ public class UsersController : ControllerBase
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
 
-            bool usergte = UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context);
+        var usergte = UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context);
 
 
         var Rolelist = _context.UserLarproles.Where(u => u.Usergu.Authid == authId && u.Isactive == true).ToList();

@@ -9,7 +9,6 @@ public partial class NexusLARPContextBase : DbContext
     {
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", true);
-
     }
 
     public NexusLARPContextBase(DbContextOptions<NexusLARPContextBase> options)

@@ -1,11 +1,10 @@
-﻿namespace NEXUSDataLayerScaffold.Enums
+﻿namespace NEXUSDataLayerScaffold.Enums;
+
+public enum AuthLevelEnum
 {
-    public enum AuthLevelEnum
-    {
-        Reader,
-        Writer,
-        Approver,
-        HeadGM,
-        Wizard
-    }
+    Reader,
+    Writer,
+    Approver,
+    HeadGM,
+    Wizard
 }
