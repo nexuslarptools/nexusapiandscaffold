@@ -204,8 +204,6 @@ namespace NEXUSDataLayerScaffold
 
             string connstring = "Host=" + host + ";Port=" + port
                 + ";Database=" + database + "; Username=" + username + ";Password=" + password;
-            
-            connstring = "Host=192.168.254.11;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!";
 
             if (host != _config.GetValue<string>("ConnectionSrings:Host"))
             {
