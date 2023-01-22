@@ -186,8 +186,8 @@ public class Startup
         var connstring = "Host=" + host + ";Port=" + port
                          + ";Database=" + database + "; Username=" + username + ";Password=" + password;
 
-        if (host != _config.GetValue<string>("ConnectionSrings:Host"))
-            connstring += "SslMode=Require;Trust Server Certificate=true;";
+        //if (host != _config.GetValue<string>("ConnectionSrings:Host"))
+        //    connstring += ";SslMode=allow;Trust Server Certificate=true;";
 
         // string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
         services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(connstring)
@@ -226,10 +226,9 @@ public class Startup
         {
             app.UseCors(builder => builder
                 //.SetIsOriginAllowed(origin => true) // allow any origin
-                //.WithOrigins("http://localhost:3000", "http://localhost:8080", "http://10.0.0.175:8080", "http://10.0.0.175:3000")
+                .WithOrigins("https://decade.kylebrighton.com:3000")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowAnyOrigin()
                 .AllowCredentials());
         }
 
