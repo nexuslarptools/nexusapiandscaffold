@@ -263,5 +263,6 @@ public class Startup
                 "default",
                 "{controller=Home}/{action=Index}/{id?}");
         });
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
     }
 }
