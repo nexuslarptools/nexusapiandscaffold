@@ -1,39 +1,55 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using NEXUSDataLayerScaffold.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace NEXUSDataLayerScaffold.Entities;
-
-public class UserLarpRoleOut
+namespace NEXUSDataLayerScaffold.Entities
 {
-    public UserLarpRoleOut()
+    public class UserLarpRoleOut
     {
-        Roles = new List<RoleOut>();
+        public UserLarpRoleOut()
+        {
+            Roles = new List<RoleOut>();
+        }
+
+
+        public Guid? LarpGuid { get; set; }
+        public string LarpName { get; set; }
+        public List<RoleOut> Roles { get; set; }
     }
 
-    public Guid? LarpGuid { get; set; }
-    public string LarpName { get; set; }
-    public List<RoleOut> Roles { get; set; }
-}
-
-public class RoleOut
-{
-    public RoleOut(int iD, string roleName)
+    public class RoleOut
     {
-        RoleID = iD;
-        RoleName = roleName;
+        public RoleOut()
+        {
+        }
+
+        public RoleOut(int id ,string roleName )
+        {
+            RoleID = id;
+            RoleName = roleName;
+        }
+
+        public int RoleID { get; set; }
+        public string RoleName { get; set; }
+
     }
 
-    public int RoleID { get; set; }
-    public string RoleName { get; set; }
-}
-
-public class RoleIDFirst : Comparer<RoleOut>
-{
-    public override int Compare([AllowNull] RoleOut x, [AllowNull] RoleOut y)
+    public class RoleIDFirst : Comparer<RoleOut>
     {
-        if (x.RoleID.CompareTo(y.RoleID) != 0)
-            return x.RoleID.CompareTo(y.RoleID);
-        return 0;
+        public override int Compare([AllowNull] RoleOut x, [AllowNull] RoleOut y)
+        {
+            if (x.RoleID.CompareTo(y.RoleID) != 0)
+            {
+                return x.RoleID.CompareTo(y.RoleID);
+            }
+            else
+            {
+                return 0;
+            }
+        }
     }
 }

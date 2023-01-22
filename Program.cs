@@ -1,24 +1,38 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
-namespace NEXUSDataLayerScaffold;
-
-public class Program
+namespace NEXUSDataLayerScaffold
 {
-    //static HttpClient client = new HttpClient();
-
-
-    public static void Main(string[] args)
+    public class Program
     {
-        CreateHostBuilder(args).Build().Run();
-    }
 
-    public static IHostBuilder CreateHostBuilder(string[] args)
-    {
-        return Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
+        //static HttpClient client = new HttpClient();
+
+
+
+        public static void Main(string[] args)
         {
-            webBuilder.UseStartup<Startup>().UseUrls("http://*:80;http://*:443");
-        });
+            CreateHostBuilder(args).Build().Run();
+
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
+           {
+               //webBuilder.UseStartup<Startup>().UseUrls("https://192.168.254.5:6001", "http://192.168.254.5:6002");
+               webBuilder.UseStartup<Startup>().UseUrls("https://192.168.254.11:6001", "http://192.168.254.11:6002");
+           });
+
+
     }
 }
