@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using NEXUSDataLayerScaffold.Models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -13,6 +15,7 @@ namespace NEXUSDataLayerScaffold.Entities
             Roles = new List<RoleOut>();
         }
 
+
         public Guid? LarpGuid { get; set; }
         public string LarpName { get; set; }
         public List<RoleOut> Roles { get; set; }
@@ -20,14 +23,19 @@ namespace NEXUSDataLayerScaffold.Entities
 
     public class RoleOut
     {
-        public RoleOut(int iD,string roleName )
+        public RoleOut()
         {
-            RoleID = iD;
+        }
+
+        public RoleOut(int id ,string roleName )
+        {
+            RoleID = id;
             RoleName = roleName;
         }
 
         public int RoleID { get; set; }
         public string RoleName { get; set; }
+
     }
 
     public class RoleIDFirst : Comparer<RoleOut>

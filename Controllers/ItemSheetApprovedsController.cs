@@ -298,6 +298,11 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<Series>> GetItemsSearchPartial([FromQuery] ItemsPagingParameterModel pagingParameterModel)
         {
+            if (pagingParameterModel.userApproved == true && pagingParameterModel.userCreated == true)
+
+            {
+                return BadRequest();
+            }
 
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -323,7 +328,30 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 var initItems = await _context.ItemSheetApproved.Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
 
+                if (pagingParameterModel.userCreated == true)
+                {
+                    initItems = initItems.Where(ii => ii.CreatedbyuserGuid == UsersLogic.GetUserGuid(authId, _context)).ToList();
+                }
+                if (pagingParameterModel.userCreated == false)
+                {
+                    initItems = initItems.Where(ii => ii.CreatedbyuserGuid != UsersLogic.GetUserGuid(authId, _context)).ToList();
+                }
+
+                if (pagingParameterModel.userApproved == true)
+                {
+                    var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
+                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == curUserGuid ||
+                                                      ii.SecondapprovalbyuserGuid == curUserGuid).ToList();
+                }
+                if (pagingParameterModel.userApproved == false)
+                {
+                    var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
+                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
+                                                      ii.SecondapprovalbyuserGuid != curUserGuid).ToList();
+                }
+
                 var taggedItems = new List<ItemSheetApproved>();
+                var filteredItems = new List<ItemSheetApproved>();
 
                 if (pagingParameterModel.fields != null && pagingParameterModel.fields != string.Empty)
                 {
@@ -428,7 +456,28 @@ namespace NEXUSDataLayerScaffold.Controllers
                     taggedItems = initItems;
                 }
 
-                var itemslist = taggedItems.Where(s =>
+                foreach (var item in taggedItems)
+                {
+                    var addItem = true;
+
+                    var TestJsonFeilds = item.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                    foreach (var tag in TestJsonFeilds)
+                    {
+                        if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
+                        {
+                            addItem = false;
+                        }
+                    }
+
+                    if (addItem)
+                    {
+                        filteredItems.Add(item);
+                    }
+                }
+
+
+                var itemslist = filteredItems.Where(s =>
                 (pagingParameterModel.name == null || s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
                 && (pagingParameterModel.seriesguid == Guid.Empty || s.Seriesguid == pagingParameterModel.seriesguid))
                     .OrderBy(x => x.Name)

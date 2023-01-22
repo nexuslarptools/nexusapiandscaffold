@@ -10,6 +10,20 @@ namespace NEXUSDataLayerScaffold.Entities
         public UserOut()
         {
             LarpRoles = new List<UserLarpRoleOut>();
+            EffectiveRole = new RoleOut();
+        }
+
+        public UserOut(Guid guid, string firstname, string lastname, string preferedName, string email, Guid? pronounsguid, string discordName
+        , RoleOut userRoles)
+        {
+            EffectiveRole = userRoles;
+            this.Guid = guid;
+            this.Firstname = firstname;
+            this.Lastname = lastname;
+            this.Preferredname = preferedName;
+            this.Email = email;
+            this.Pronounsguid = pronounsguid;
+            this.Discordname = discordName;
         }
 
         public Guid Guid { get; set; }
@@ -21,6 +35,7 @@ namespace NEXUSDataLayerScaffold.Entities
         public string Discordname { get; set; }
 
         public List<UserLarpRoleOut> LarpRoles { get; set; }
+        public RoleOut EffectiveRole { get; set; }
 
     }
 }

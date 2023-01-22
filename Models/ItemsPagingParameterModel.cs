@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 
 namespace NEXUSDataLayerScaffold.Models
 {
@@ -16,6 +17,8 @@ namespace NEXUSDataLayerScaffold.Models
         public Guid seriesguid { get; set; }
 
         public string fields { get; set; }
+        public bool? userCreated { get; set; }
+        public bool? userApproved { get; set; }
 
         public int pageNumber { get; set; } = 1;
 

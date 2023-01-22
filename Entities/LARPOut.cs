@@ -7,6 +7,10 @@ namespace NEXUSDataLayerScaffold.Entities
 {
     public class LARPOut
     {
+        public LARPOut()
+        {
+        }
+
         public LARPOut(Guid guid, string name, string shortName, string location, bool? isactive)
         {
             this.Guid = guid;
@@ -21,6 +25,7 @@ namespace NEXUSDataLayerScaffold.Entities
         public string Shortname { get; set; }
         public string Location { get; set; }
         public bool? Isactive { get; set; }
+        public List<UserOut> Users { get; set; }
 
     }
 }

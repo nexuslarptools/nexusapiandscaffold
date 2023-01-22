@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using NEXUSDataLayerScaffold.Enums;
 
 namespace NEXUSDataLayerScaffold.Logic
 {
@@ -48,7 +49,9 @@ namespace NEXUSDataLayerScaffold.Logic
                 return false;
             }
 
-            var foundrole = _context.UserLarproles.Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Rolename == authLevel && ulr.Isactive == true).FirstOrDefault();
+            var roleNum = _context.Roles.Where(r => r.Rolename == authLevel).Select(r => r.Id).FirstOrDefault();
+
+            var foundrole = _context.UserLarproles.Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Id >= roleNum && ulr.Isactive == true).FirstOrDefault();
 
             if (foundrole == null)
             {
@@ -138,6 +141,11 @@ namespace NEXUSDataLayerScaffold.Logic
             returnlist = _context.Larptags.Where(lt => lt.Isactive == true && userLarps.Contains(lt.Larpguid)).Select(lt => lt.Tagguid).ToList();
 
             return returnlist;
+        }
+
+        public static Guid GetUserGuid(string authIdValue, NexusLARPContextBase _context)
+        {
+            return _context.Users.Where(u => u.Authid == authIdValue).Select(u => u.Guid).FirstOrDefault();
         }
     }
 }

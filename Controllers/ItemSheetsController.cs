@@ -15,6 +15,7 @@ using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
 using System.IO;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Logging;
 using NEXUSDataLayerScaffold.Logic;
 
 namespace NEXUSDataLayerScaffold.Controllers
@@ -358,8 +359,15 @@ namespace NEXUSDataLayerScaffold.Controllers
         // GET: api/v1/Items/Search
         [HttpGet("Search/")]
         [Authorize]
-        public async Task<ActionResult<ItemSheet>> GetItemsSearchPartial([FromQuery] ItemsPagingParameterModel pagingParameterModel)
+        public async Task<ActionResult<ItemSheet>> GetItemsSearchPartial(
+            [FromQuery] ItemsPagingParameterModel pagingParameterModel)
         {
+
+            if (pagingParameterModel.userApproved == true && pagingParameterModel.userCreated == true)
+
+            {
+                return BadRequest();
+            }
 
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -383,9 +391,31 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 var initItems = await _context.ItemSheet.Where(c => c.Isactive == true).ToListAsync();
 
+                if (pagingParameterModel.userCreated == true)
+                {
+                    initItems = initItems.Where(ii => ii.CreatedbyuserGuid == UsersLogic.GetUserGuid(authId, _context)).ToList();
+                }
+                if (pagingParameterModel.userCreated == false)
+                {
+                    initItems = initItems.Where(ii => ii.CreatedbyuserGuid != UsersLogic.GetUserGuid(authId, _context)).ToList();
+                }
+
+                if (pagingParameterModel.userApproved == true)
+                {
+                    var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
+                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == curUserGuid || 
+                                                      ii.SecondapprovalbyuserGuid == curUserGuid).ToList();
+                }
+                if (pagingParameterModel.userApproved == false)
+                {
+                    var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
+                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
+                                                      ii.SecondapprovalbyuserGuid != curUserGuid).ToList();
+                }
+
                 var taggedItems = new List<ItemSheet>();
 
-                if (pagingParameterModel.fields != null && pagingParameterModel.fields != string.Empty)
+                if (!string.IsNullOrEmpty(pagingParameterModel.fields))
                 {
                     var objects = JObject.Parse(pagingParameterModel.fields);
 
@@ -404,8 +434,8 @@ namespace NEXUSDataLayerScaffold.Controllers
                                     var tags2 = TestJsonFeilds.Select(s => Guid.Parse(s.GetString())).ToList();
                                     List<Guid> tags1 = tag.Value.ToObject<List<Guid>>();
                                     var alltagsfound = tags1.Intersect(tags2).Count();
-                                    
-                                    foreach(var tagValue in tags2)
+
+                                    foreach (var tagValue in tags2)
                                     {
                                         if (!allowedTags.Contains(tagValue))
                                         {
@@ -413,7 +443,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                                         }
                                     }
 
-                                    if (alltagsfound < tag.Value.ToArray().Length  )
+                                    if (alltagsfound < tag.Value.ToArray().Length)
                                     {
                                         isfound = false;
                                     }
@@ -494,8 +524,28 @@ namespace NEXUSDataLayerScaffold.Controllers
                 }
                 else
                 {
-                    taggedItems = initItems;
+                    foreach (var item in initItems)
+                    {
+                        var addItem = true;
+
+                        var TestJsonFeilds = item.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
+                            {
+                                addItem = false;
+                            }
+                        }
+
+                        if (addItem)
+                        {
+                            taggedItems.Add(item);
+                        }
+                    }
+
                 }
+
 
                 var itemslist = taggedItems.Where(s => 
                 (pagingParameterModel.name == null || s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
@@ -513,6 +563,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 foreach (var sheet in itemslist)
                 {
+
                     IteSheet newOutputSheet = new IteSheet
                     {
                         Id = sheet.Id,
@@ -530,26 +581,30 @@ namespace NEXUSDataLayerScaffold.Controllers
                     if (newOutputSheet.Img1 != null)
                     {
                         if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                        { 
-                            newOutputSheet.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                        {
+                            newOutputSheet.imagedata =
+                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
                         }
                     }
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
                     {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid).FirstOrDefaultAsync();
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
+                            .FirstOrDefaultAsync();
                         newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
                     }
 
                     if (newOutputSheet.FirstapprovalbyuserGuid != null)
                     {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid).FirstOrDefaultAsync();
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
                         newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
                     }
 
                     if (newOutputSheet.SecondapprovalbyuserGuid != null)
                     {
-                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid).FirstOrDefaultAsync();
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
                         newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
                     }
 
@@ -563,12 +618,17 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                         foreach (var tag in TestJsonFeilds)
                         {
-                            Tags fullTag = await _context.Tags.Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                            Tags fullTag = await _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .FirstOrDefaultAsync();
                             newOutputSheet.Tags.Add(fullTag);
+
                         }
                     }
 
+
                     outPutList.Add(newOutputSheet);
+
 
                 }
 
@@ -592,7 +652,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
             {
-
+                string approvaltype = "first";
                 var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
                 ItemSheet itemSheet = await _context.ItemSheet.Where(cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
 
@@ -629,6 +689,8 @@ namespace NEXUSDataLayerScaffold.Controllers
                         itemSheet.Secondapprovaldate = DateTime.Now;
                         itemSheet.Isactive = false;
                         fullapprove = true;
+
+
                     }
                     else
                     {
@@ -642,7 +704,6 @@ namespace NEXUSDataLayerScaffold.Controllers
                 {
                     if (result != itemSheet.CreatedbyuserGuid)
                     {
-                        //characterSheet.SecondapprovalbyuserGuid = null;
                         itemSheet.FirstapprovalbyuserGuid = result;
                         itemSheet.Firstapprovaldate = DateTime.Now;
                     }
@@ -652,74 +713,72 @@ namespace NEXUSDataLayerScaffold.Controllers
                     }
                 }
 
+                _context.Update(itemSheet);
 
-                _context.Entry(itemSheet).State = EntityState.Modified;
 
-                try
-                {
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ItemSheetExists(guid))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                int? maxversion = 0;
 
                 if (fullapprove)
                 {
-                    var approvedSheets = await _context.ItemSheetApproved.Where(csa => csa.Guid == guid).ToListAsync();
-
-                    int? maxversion = 0;
+                    approvaltype = "second";
+                    var approvedSheets = await _context.ItemSheetApproved.Where(csa => csa.Guid == guid && csa.Isactive == true).ToListAsync();
 
                     foreach (var asheet in approvedSheets)
                     {
-                        if (maxversion < asheet.Version)
-                        {
-                            maxversion = asheet.Version;
-                        }
-
                         asheet.Isactive = false;
-
                         _context.ItemSheetApproved.Update(asheet);
-                        await _context.SaveChangesAsync();
-
                     }
 
-                    var theNewSheet = await _context.ItemSheetApproved.Where(csa => csa.Guid == guid && csa.Version == maxversion).FirstOrDefaultAsync();
+                    ItemSheetApproved newapproval = new ItemSheetApproved()
+                    {
+                        Guid = itemSheet.Guid,
+                        ItemsheetId = itemSheet.Id,
+                        Seriesguid = itemSheet.Seriesguid,
+                        Name = itemSheet.Name,
+                        Img1 = itemSheet.Img1,
+                        Fields = itemSheet.Fields,
+                        Isactive = true,
+                        Createdate = DateTime.Now,
+                        CreatedbyuserGuid = itemSheet.CreatedbyuserGuid,
+                        FirstapprovalbyuserGuid = itemSheet.FirstapprovalbyuserGuid,
+                        Firstapprovaldate = itemSheet.Firstapprovaldate,
+                        SecondapprovalbyuserGuid = itemSheet.SecondapprovalbyuserGuid,
+                        Secondapprovaldate = itemSheet.Secondapprovaldate,
+                        Gmnotes = itemSheet.Gmnotes
+                    };
 
+                    _context.ItemSheetApproved.Add(newapproval);
+
+                    var CurrfolderName = Path.Combine("images", "items", "UnApproved");
+                    var NewfolderName = Path.Combine("images", "items", "Approved");
+                    var pathfrom = Path.Combine(Directory.GetCurrentDirectory(), CurrfolderName,
+                        itemSheet.Img1);
+                    var pathto = Path.Combine(Directory.GetCurrentDirectory(), NewfolderName, itemSheet.Img1);
+
+                    if (System.IO.File.Exists(pathto))
+                    {
+                        System.IO.File.Delete(pathto);
+                    }
+
+                    System.IO.File.Move(pathfrom, pathto);
+
+                }
+
+                await _context.SaveChangesAsync();
+
+                var theNewSheet = await _context.ItemSheetApproved.Where(csa => csa.Guid == guid && csa.Version > maxversion).FirstOrDefaultAsync();
+
+                if (theNewSheet != null && fullapprove)
+                {
                     theNewSheet.Isactive = true;
                     theNewSheet.SecondapprovalbyuserGuid = result;
                     theNewSheet.Secondapprovaldate = DateTime.Now;
 
                     _context.ItemSheetApproved.Update(theNewSheet);
-                    _context.SaveChanges();
-
-
-                    if (theNewSheet.Img1 != null )
-                    {
-                        var CurrfolderName = Path.Combine("images", "items", "UnApproved");
-                        var NewfolderName = Path.Combine("images", "items", "Approved");
-                        var pathfrom = Path.Combine(Directory.GetCurrentDirectory(), CurrfolderName, theNewSheet.Img1);
-                        var pathto = Path.Combine(Directory.GetCurrentDirectory(), NewfolderName, theNewSheet.Img1);
-
-                        if (System.IO.File.Exists(pathto))
-                        {
-                            System.IO.File.Delete(pathto);
-                        }
-                        System.IO.File.Move(pathfrom, pathto);
-
-                        return Ok("{\"Approval\":\"Second\"}");
-
-                    }
-
+                    await _context.SaveChangesAsync();
                 }
-                return Ok("{\"Approval\":\"First\"}");
+
+                return Ok("{\"Approval\":\""+ approvaltype +"\"}");
             }
             return Unauthorized();
         }
@@ -743,8 +802,57 @@ namespace NEXUSDataLayerScaffold.Controllers
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
                 string pathToSave = string.Empty;
-                var itemSheet = await _context.ItemSheet.Where(s => s.Guid == guid && s.Isactive == true).FirstOrDefaultAsync();
+                var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid && s.Isactive == true).ToListAsync();
+                ItemSheet itemSheet = new ItemSheet();
 
+                if (itemSheetList.Count > 1)
+                {
+                    for(int i =0; i < itemSheetList.Count - 1; i++ )
+                    {
+                        itemSheetList[i].Isactive = false;
+                        _context.Update(itemSheetList[i]);
+                    }
+
+                    itemSheet = itemSheetList[itemSheetList.Count - 1];
+                }
+                else if (itemSheetList.Count == 1)
+                {
+                    itemSheet = itemSheetList[0];
+                }
+
+                if (itemSheet.Guid != null && itemSheet.Guid != Guid.Empty)
+                {
+                    ItemSheetVersion oldsheet = new ItemSheetVersion()
+                    {
+                        Version = 1,
+                        Guid = itemSheet.Guid,
+                        ItemsheetId = itemSheet.Id,
+                        Seriesguid = itemSheet.Seriesguid,
+                        Name = itemSheet.Name,
+                        Img1 = itemSheet.Img1,
+                        Fields = itemSheet.Fields,
+                        Isactive = true,
+                        Createdate = itemSheet.Createdate,
+                        CreatedbyuserGuid = itemSheet.CreatedbyuserGuid,
+                        FirstapprovalbyuserGuid = itemSheet.FirstapprovalbyuserGuid,
+                        Firstapprovaldate = itemSheet.Firstapprovaldate,
+                        Secondapprovaldate = itemSheet.Secondapprovaldate,
+                        SecondapprovalbyuserGuid = itemSheet.SecondapprovalbyuserGuid,
+                        Gmnotes = itemSheet.Gmnotes,
+                        Reason4edit = itemSheet.Reason4edit,
+                    };
+
+                    var itemSheetVersionList = await _context.ItemSheetVersion.Where(v => v.Guid == guid)
+                        .OrderBy(v => v.Version)
+                        .ToListAsync();
+
+                    if (itemSheetVersionList != null)
+                    {
+                        oldsheet.Version = itemSheetVersionList[itemSheetVersionList.Count - 1].Version + 1;
+                    }
+
+                    _context.ItemSheetVersion.Add(oldsheet);
+                }
 
                 List<TagScanContainer> legalsheets = _context.ItemSheet.Where(it => it.Isactive == true).Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
                 List<Guid> allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid).ToList();
@@ -932,8 +1040,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                 itemSheet.Secondapprovaldate = null;
                 itemSheet.Isactive = true;
 
-
-                _context.Entry(itemSheet).State = EntityState.Modified;
+                _context.Update(itemSheet);
 
                 try
                 {

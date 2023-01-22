@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Razor.Language.CodeGeneration;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Logic;
@@ -28,8 +30,10 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<List<LARPOut>>> GetLarps()
         {
-            return await _context.Larps.Where(l => l.Isactive == true)
+            var larpList = await _context.Larps.Where(l => l.Isactive == true)
                 .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
+
+            return larpList.OrderBy(ll => ll.Name).ToList();
         }
 
         [HttpGet("GMAccess")]
@@ -51,6 +55,58 @@ namespace NEXUSDataLayerScaffold.Controllers
                 .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
         }
 
+        [HttpGet("WithGMs")]
+        [Authorize]
+        public async Task<ActionResult<List<LARPOut>>> GetLarpsWithAssignedGMs()
+        {
+            var larpList = await _context.Larps.Where(l => l.Isactive == true).ToListAsync();
+
+            var larpoutput = new List<LARPOut>();
+
+            foreach (var larp in larpList)
+            {
+                var newLarp = new LARPOut()
+                {
+                    Guid = larp.Guid,
+                    Name = larp.Name,
+                    Location = larp.Location,
+                    Isactive = larp.Isactive,
+                    Shortname = larp.Shortname,
+                    Users = await _context.Users
+                        .Where(u => u.UserLarproles.Any(ulr => ulr.Larpguid == larp.Guid))
+                        .Select(u => new UserOut(u.Guid, u.Firstname, u.Lastname, u.Preferredname, u.Email, u.Pronounsguid,
+                            u.Discordname, new RoleOut()
+                        )).ToListAsync()
+                };
+
+                foreach (var user in newLarp.Users)
+                {
+                    var topRole = new RoleOut();
+
+                    var userRoles = await _context.UserLarproles
+                        .Where(ulr => ulr.Userguid == user.Guid && ulr.Larpguid == larp.Guid)
+                        .Select(ulr => new RoleOut(ulr.Role.Id, ulr.Role.Rolename)).ToListAsync();
+
+                    foreach (var role in userRoles)
+                    {
+                        if (topRole == null || topRole.RoleID < role.RoleID)
+                        {
+                            topRole = role;
+                        }
+                    }
+
+                    user.EffectiveRole = topRole;
+
+                }
+
+                larpoutput.Add(newLarp);
+
+            }
+
+
+            return larpoutput.OrderBy(lop => lop.Name).ToList();
+        }
+
 
         // GET: api/Larps/5
         [HttpGet("{id}")]
@@ -70,9 +126,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         // PUT: api/Larps/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{id}")]
+        [HttpPut("{guid}")]
         [Authorize]
-        public async Task<ActionResult<Larps>> PutLarps(Guid id, Larps larps)
+        public async Task<ActionResult<Larps>> PutLarps(Guid guid, Larps larps)
         {
 
             var authId = HttpContext.User.Claims.ToList()[1].Value;
@@ -81,29 +137,24 @@ namespace NEXUSDataLayerScaffold.Controllers
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (!UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
                 return Unauthorized();
             }
 
-            var currentLarp = _context.Larps.Where(l => l.Isactive==true && l.Guid==id).FirstOrDefault();
+            var currentLarp = _context.Larps.Where(l => l.Isactive==true && l.Guid==guid).FirstOrDefault();
 
             if (currentLarp == null)
             {
                 return BadRequest();
             }
 
+            currentLarp.Name = larps.Name;
+            currentLarp.Shortname = larps.Shortname;
+            currentLarp.Location = larps.Location;
+            currentLarp.Isactive = true;
 
-
-            Larps newLarp = new Larps
-            {
-                Name = larps.Name,
-                Shortname = larps.Shortname,
-                Location = larps.Location,
-            };
-
-            currentLarp.Isactive = false;
-            _context.Add(newLarp);
+            _context.Update(currentLarp);
 
             try
             {
@@ -135,7 +186,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             //    }
             //}
 
-            return Ok(newLarp);
+            return Ok(currentLarp);
         }
 
         // POST: api/Larps
@@ -152,7 +203,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (!UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
                 return Unauthorized();
             }
