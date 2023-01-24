@@ -66,11 +66,11 @@ namespace NEXUSDataLayerScaffold.Logic
                             }
                         }
                     }
+                }
 
-                    if (okay)
-                    {
-                        outputter.Add(sheet.Guid);
-                    }
+                if (okay)
+                {
+                    outputter.Add(sheet.Guid);
                 }
             }
             return outputter;
