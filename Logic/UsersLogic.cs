@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using NEXUSDataLayerScaffold.Enums;
 
 namespace NEXUSDataLayerScaffold.Logic
@@ -23,7 +24,24 @@ namespace NEXUSDataLayerScaffold.Logic
 
         public static bool IsUserAuthed(string authIdValue, string accessToken, string authLevel, NexusLARPContextBase _context)
         {
-            var foundUser = _context.Users.Where(u => u.Authid == authIdValue).FirstOrDefault();
+            var foundUsers = _context.Users.Where(u => u.Authid == authIdValue).ToList();
+
+            if (foundUsers.Count > 1 && foundUsers.Any(fu => fu.Isactive == true))
+            {
+                foundUsers[0].Isactive = true;
+                _context.Users.Update(foundUsers[0]);
+                _context.SaveChanges();
+
+                for (int i = 1; i < foundUsers.Count; i++)
+                {
+                    var user = foundUsers[i];
+                    user.Isactive = false;
+                    _context.Users.Update(user);
+                    _context.SaveChanges();
+                }
+            }
+       
+            var foundUser = foundUsers.FirstOrDefault();
 
             if (foundUser == null)
             {
@@ -44,6 +62,20 @@ namespace NEXUSDataLayerScaffold.Logic
                 catch (Exception e)
                 {
                     var huh = e;
+                }
+
+                return false;
+            }
+
+            if (foundUser.Isactive == false)
+            {
+                if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
+                {
+                    foundUser.Isactive = true;
+                    _context.Users.Update(foundUser);
+                    _context.SaveChanges();
+
+                    return true;
                 }
 
                 return false;

@@ -77,7 +77,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                 // Preferredname=u.Preferredname, Email=u.Email, Pronounsguid=u.Pronounsguid
                 // }).ToList();
                 var UserListOut = new List<UserOut>();
-                var UsersList = _context.Users.ToList();
+                var UsersList = _context.Users.Where(u => u.Isactive == true).ToList();
                 var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
                 var RolesList = _context.Roles.ToList();
                 var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();
@@ -137,6 +137,94 @@ namespace NEXUSDataLayerScaffold.Controllers
                 var sortedusers = from user in UserListOut
                     orderby user.Email ascending
                     select user;
+
+                UserListOut = sortedusers.ToList();
+
+                return Ok(UserListOut);
+            }
+
+            return Ok("Not Authorized");
+        }
+
+        [HttpGet("WithInactive")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<UserOut>>> GetAllUsersWithInactive()
+        {
+
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
+                UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+            {
+                // var UsersList = _context.Users.Select(u => new UserOut {Guid=u.Guid, Firstname=u.Firstname, Lastname=u.Lastname,
+                // Preferredname=u.Preferredname, Email=u.Email, Pronounsguid=u.Pronounsguid
+                // }).ToList();
+                var UserListOut = new List<UserOut>();
+                var UsersList = _context.Users.ToList();
+                var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
+                var RolesList = _context.Roles.ToList();
+                var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();
+
+                RoleIDFirst rolefirst = new RoleIDFirst();
+                Comparer<RoleOut> rc = (Comparer<RoleOut>)rolefirst;
+
+                foreach (var user in UsersList)
+                {
+                    var newout = new UserOut()
+                    {
+                        Guid = user.Guid,
+                        Firstname = user.Firstname,
+                        Lastname = user.Lastname,
+                        Preferredname = user.Preferredname,
+                        Email = user.Email,
+                        Pronounsguid = user.Pronounsguid
+                    };
+                    foreach (var larprole in UsersRolesList)
+                    {
+                        if (larprole.Userguid == newout.Guid)
+                        {
+                            if (!newout.LarpRoles.Any(lr => lr.LarpGuid == larprole.Larpguid))
+                            {
+                                UserLarpRoleOut newULR = new UserLarpRoleOut()
+                                {
+                                    LarpGuid = larprole.Larpguid,
+                                    LarpName = LarpsList.Where(ll => ll.Guid == larprole.Larpguid).Select(ll => ll.Name)
+                                        .FirstOrDefault()
+                                };
+
+                                newout.LarpRoles.Add(newULR);
+                            }
+
+                            var currLARP = newout.LarpRoles.Where(lr => lr.LarpGuid == larprole.Larpguid)
+                                .FirstOrDefault();
+
+                            var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
+
+                            var newRoleOut = new RoleOut(newRole.Id, newRole.Rolename);
+
+                            currLARP.Roles.Add(newRoleOut);
+
+                            var sortedroles = from role in currLARP.Roles
+                                              orderby role.RoleID ascending
+                                              select role;
+
+                            currLARP.Roles = sortedroles.ToList();
+
+                        }
+                    }
+
+                    UserListOut.Add(newout);
+
+                }
+
+                var sortedusers = from user in UserListOut
+                                  orderby user.Email ascending
+                                  select user;
 
                 UserListOut = sortedusers.ToList();
 
@@ -227,11 +315,11 @@ namespace NEXUSDataLayerScaffold.Controllers
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
             var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-
-            bool usergte = UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context);
+            if (!UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            {
+                return Ok("{\"AuthLevel\":\"NONE\"}");
+            }
 
 
             var Rolelist = _context.UserLarproles.Where(u => u.Usergu.Authid == authId && u.Isactive == true).ToList();
@@ -254,8 +342,6 @@ namespace NEXUSDataLayerScaffold.Controllers
                 .FirstOrDefault();
 
             return Ok("{\"AuthLevel\":\"" + maxrole + "\"}");
-
-
 
         }
 
@@ -381,9 +467,9 @@ namespace NEXUSDataLayerScaffold.Controllers
             return Unauthorized();
         }
 
-        [HttpPut("Deactivate/{guid}")]
+        [HttpPut("DeactivateUser/{guid}")]
         [Authorize]
-        public async Task<ActionResult<UserOut>> DeleteUser(Guid guid)
+        public async Task<ActionResult<UserOut>> Deactivate(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -393,9 +479,52 @@ namespace NEXUSDataLayerScaffold.Controllers
             {
                 var user = await _context.Users.Where(u => u.Guid == guid).FirstOrDefaultAsync();
 
-                _context.Users.Remove(user);
+                user.Isactive = false;
+
+                _context.Users.Update(user);
                 await _context.SaveChangesAsync();
-                var output = new UserOut();
+                var output = new UserOut()
+                {
+                    Guid = user.Guid,
+                    Firstname = user.Firstname,
+                    Lastname = user.Lastname,
+                    Preferredname = user.Preferredname,
+                    Email = user.Email,
+                    Pronounsguid = user.Pronounsguid,
+                    Discordname = user.Discordname
+            };
+                return Ok(output);
+            }
+
+            return Unauthorized();
+        }
+
+        [HttpPut("ActivateUser/{guid}")]
+        [Authorize]
+        public async Task<ActionResult<UserOut>> Reactivate(Guid guid)
+        {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            {
+                var user = await _context.Users.Where(u => u.Guid == guid).FirstOrDefaultAsync();
+
+                user.Isactive = true;
+
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
+                var output = new UserOut()
+                {
+                    Guid = user.Guid,
+                    Firstname = user.Firstname,
+                    Lastname = user.Lastname,
+                    Preferredname = user.Preferredname,
+                    Email = user.Email,
+                    Pronounsguid = user.Pronounsguid,
+                    Discordname = user.Discordname
+                };
                 return Ok(output);
             }
 
@@ -403,12 +532,10 @@ namespace NEXUSDataLayerScaffold.Controllers
         }
 
 
-
-
-// PUT: api/v1/users/5
-            // To protect from overposting attacks, enable the specific properties you want to bind to, for
-            // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-            [HttpPost("AddUserRole/{guid}")]
+        // PUT: api/v1/users/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to, for
+        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+        [HttpPost("AddUserRole/{guid}")]
         [Authorize]
         public async Task<IActionResult> PostUserRole(Guid guid, UserRoleInput user)
         {

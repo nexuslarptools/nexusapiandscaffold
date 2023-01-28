@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace NEXUSDataLayerScaffold.Models
 {
-    public partial class NexusLARPContextBase : DbContext
+    public partial class NexusLARPContext : DbContext
     {
-        public NexusLARPContextBase()
+        public NexusLARPContext()
         {
         }
 
-        public NexusLARPContextBase(DbContextOptions<NexusLARPContextBase> options)
+        public NexusLARPContext(DbContextOptions<NexusLARPContext> options)
             : base(options)
         {
         }
@@ -36,7 +36,7 @@ namespace NEXUSDataLayerScaffold.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!");
+                optionsBuilder.UseNpgsql("Host=192.168.254.11;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!");
             }
         }
 
@@ -300,10 +300,6 @@ namespace NEXUSDataLayerScaffold.Models
 
             modelBuilder.Entity<ItemSheet>(entity =>
             {
-                entity.HasIndex(e => new { e.Seriesguid, e.Name })
-                    .HasName("ItemSheet_seriesguid_name_key")
-                    .IsUnique();
-
                 entity.Property(e => e.Id).HasColumnName("id");
 
                 entity.Property(e => e.Createdate)
@@ -613,10 +609,6 @@ namespace NEXUSDataLayerScaffold.Models
                 entity.HasKey(e => e.Guid)
                     .HasName("series_guid");
 
-                entity.HasIndex(e => e.Title)
-                    .HasName("Series_title_key")
-                    .IsUnique();
-
                 entity.Property(e => e.Guid)
                     .HasColumnName("guid")
                     .HasDefaultValueSql("uuid_generate_v1()");
@@ -744,6 +736,11 @@ namespace NEXUSDataLayerScaffold.Models
                     .HasColumnName("firstname")
                     .HasMaxLength(1000);
 
+                entity.Property(e => e.Isactive)
+                    .IsRequired()
+                    .HasColumnName("isactive")
+                    .HasDefaultValueSql("true");
+
                 entity.Property(e => e.Lastname)
                     .HasColumnName("lastname")
                     .HasMaxLength(1000);
@@ -758,9 +755,6 @@ namespace NEXUSDataLayerScaffold.Models
                     .WithMany(p => p.Users)
                     .HasForeignKey(d => d.Pronounsguid)
                     .HasConstraintName("fk_pronouns_guid_user");
-
-                entity.Property(e => e.Isactive)
-                    .HasColumnName("isactive");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -36,6 +36,7 @@ namespace NEXUSDataLayerScaffold.Models
         public Guid? Pronounsguid { get; set; }
         public string Discordname { get; set; }
         public string Authid { get; set; }
+        public bool? Isactive { get; set; }
 
         public virtual Pronouns Pronounsgu { get; set; }
         public virtual ICollection<CharacterSheetApproved> CharacterSheetApprovedCreatedbyuserGu { get; set; }
