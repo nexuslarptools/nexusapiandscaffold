@@ -407,7 +407,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 _context.Tags.Add(newTag);
 
-                if (tags.LarptagGuid.Count == 0)
+                if (tags.LarptagGuid == null || tags.LarptagGuid.Count == 0)
                 {
                     var tagLarp = new Larptags()
                     {
@@ -416,32 +416,35 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                     _context.Larptags.Add(tagLarp);
                 }
-
-                foreach (var larpguid in tags.LarptagGuid)
+                else
                 {
 
-                    if (!UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                    foreach (var larpguid in tags.LarptagGuid)
                     {
-                        if (!_context.Larps.Any(tt => tt.Guid == larpguid) ||
-                            (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context)
-                            && !_context.UserLarproles.Any(ulr => ulr.Larpguid == larpguid
-                            && ulr.Isactive == true
-                            && ulr.Userguid == currUser.Guid
-                            && ulr.Roleid > 3)))
+
+                        if (!UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
                         {
-                            return BadRequest();
+                            if (!_context.Larps.Any(tt => tt.Guid == larpguid) ||
+                                (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context)
+                                 && !_context.UserLarproles.Any(ulr => ulr.Larpguid == larpguid
+                                                                       && ulr.Isactive == true
+                                                                       && ulr.Userguid == currUser.Guid
+                                                                       && ulr.Roleid > 3)))
+                            {
+                                return BadRequest();
+                            }
                         }
+
+                        var tagLarp = new Larptags()
+                        {
+                            Tagguid = newTag.Guid,
+                            Larpguid = larpguid
+                        };
+
+                        _context.Larptags.Add(tagLarp);
                     }
 
-                    var tagLarp = new Larptags()
-                    {
-                        Tagguid = newTag.Guid,
-                        Larpguid = larpguid
-                    };
-
-                    _context.Larptags.Add(tagLarp);
                 }
-
 
                 await _context.SaveChangesAsync();
 

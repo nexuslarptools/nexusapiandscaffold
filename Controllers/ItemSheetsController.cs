@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Models;
-//using Newtonsoft.Json;
 using System.Text.Json;
 using System.Web;
 using Microsoft.AspNetCore.Authorization;
@@ -368,8 +367,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                     }
 
+                    var output = new IteListOut();
+                    output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                    output.fulltotal = (allowedShets.Count + pagingParameterModel.pageSize - 1) / pagingParameterModel.pageSize;
 
-                    return Ok(outPutList.OrderBy(x => x.Name));
+                    return Ok(output);
                 }
                 catch (Exception e)
                 {
@@ -379,7 +381,61 @@ namespace NEXUSDataLayerScaffold.Controllers
             return Unauthorized();
         }
 
+        [HttpGet("FullListAllItems")]
+        [Authorize]
+        public async Task<ActionResult<FullItemsList>>FullListAllItems()
+        {
+            var authId = HttpContext.User.Claims.ToList()[1].Value;
 
+            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        var output = new FullItemsList();
+
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        {
+            try
+            {
+                List<IteSheet> outPutList = new List<IteSheet>();
+
+                List<TagScanContainer> legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+                    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                List<TagScanContainer> legalappprovedsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+                    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                    List<Guid> allowedLARPS = _context.UserLarproles
+                    .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .ToList();
+
+                var allowedTags = _context.Larptags.Where(lt =>
+                    (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                    && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                {
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                }
+
+                List<Guid> allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+                List<Guid> allowedApprovedSheets = TagScanner.ScanTags(legalappprovedsheets, allowedTags);
+
+                    output.ItemsList = await _context.ItemSheet.Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid))
+                    .OrderBy(x => x.Name)
+                    .Select(i => new ItemsEntry(i.Guid, i.Name)).ToListAsync();
+
+                output.ApprovedItemsList = await _context.ItemSheetApproved.Where(c => c.Isactive == true && allowedApprovedSheets.Contains(c.Guid))
+                    .OrderBy(x => x.Name)
+                    .Select(i => new ItemsEntry(i.Guid, i.Name)).ToListAsync();
+
+                }
+            catch (Exception e)
+            {
+                return BadRequest(e);
+            }
+
+        }
+
+        return Ok(output);
+        }
 
 
         [HttpGet("ByTag")]
@@ -660,6 +716,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 }
 
+                var filteredGuids = taggedItems.Where(s =>
+                        (pagingParameterModel.name == null || s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
+                        && (pagingParameterModel.seriesguid == Guid.Empty || s.Seriesguid == pagingParameterModel.seriesguid))
+                    .OrderBy(x => x.Name).Select(ti => ti.Guid).ToList();
+
 
                 var itemslist = taggedItems.Where(s => 
                 (pagingParameterModel.name == null || s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
@@ -746,8 +807,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 }
 
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = (filteredGuids.Count + pagingParameterModel.pageSize - 1) / pagingParameterModel.pageSize;
 
-                return Ok(outPutList);
+                return Ok(output);
             }
             return Unauthorized();
         }
@@ -916,7 +980,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
                 string pathToSave = string.Empty;
-                var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid && s.Isactive == true).ToListAsync();
+                var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid).ToListAsync();
                 ItemSheet itemSheet = new ItemSheet();
 
                 if (itemSheetList.Count > 1)
@@ -1184,7 +1248,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost, DisableRequestSizeLimit]
         [Authorize]
-        public async Task<ActionResult<ItemSheet>> PostItemSheet([FromBody] IteSheet item)
+        public async Task<ActionResult<IteSheet>> PostItemSheet([FromBody] IteSheet item)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -1295,7 +1359,9 @@ namespace NEXUSDataLayerScaffold.Controllers
                     return BadRequest(e.Message);
                 }
 
-                return CreatedAtAction("GetItem", new { id = itemSheet.Guid }, itemSheet);
+                var nwoutputItem = Extensions.Item.CreateItem(itemSheet);
+
+                return Ok(nwoutputItem);
             }
             return Unauthorized();
         }

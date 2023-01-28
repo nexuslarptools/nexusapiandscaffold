@@ -278,8 +278,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                     }
 
+                    var output = new IteListOut();
+                    output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                    output.fulltotal = (allowedSheets.Count + pagingParameterModel.pageSize - 1) / pagingParameterModel.pageSize;
 
-                    return Ok(outPutList.OrderBy(x => x.Name));
+                    return Ok(output);
                 }
                 catch (Exception e)
                 {
@@ -553,8 +556,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 }
 
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = (filteredItems.Count + pagingParameterModel.pageSize - 1) / pagingParameterModel.pageSize;
 
-                return Ok(outPutList);
+                return Ok(output);
             }
             return Unauthorized();
         }

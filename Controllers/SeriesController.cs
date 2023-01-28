@@ -148,7 +148,8 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 List<Guid> allowedSeries = GetAllowedSeries(authId, accessToken);
 
-                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty && allowedSeries.Contains(s.Guid)).Select(sc => new { 
+                var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty 
+                                                      && allowedSeries.Contains(s.Guid)).Select(sc => new { 
                     sc.Guid, 
                     sc.Title, 
                     sc.Titlejpn,
@@ -176,7 +177,8 @@ namespace NEXUSDataLayerScaffold.Controllers
                         {
                             foreach (var tagguid in tag.Value)
                             {
-                                var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString())).FirstOrDefaultAsync();
+                                var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                                    .FirstOrDefaultAsync();
                                 newOutput.Tags.Add(pulledtag);
                             }
                         }
@@ -186,20 +188,22 @@ namespace NEXUSDataLayerScaffold.Controllers
                     }
 
                     serOutPut.Add(newOutput);
-     
+
                 }
 
+                var output = new SeriListOut();
+                output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
+                output.fulltotal = (allowedSeries.Count + pagingParameterModel.pageSize - 2) / pagingParameterModel.pageSize;
 
-
-                return Ok(serOutPut.OrderBy(x => x.Title));
+                return Ok(output);
 
             }
 
             return Unauthorized();
 
-
-            //return await _context.Series.ToListAsync();
         }
+
+
 
 
         /// <summary>
