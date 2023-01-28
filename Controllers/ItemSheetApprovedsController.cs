@@ -479,11 +479,11 @@ namespace NEXUSDataLayerScaffold.Controllers
                     }
                 }
 
+                var itemlistguids = filteredItems.Where(s =>
+                    (pagingParameterModel.name == null ||
+                     s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))).ToList();
 
-                var itemslist = filteredItems.Where(s =>
-                (pagingParameterModel.name == null || s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
-                && (pagingParameterModel.seriesguid == Guid.Empty || s.Seriesguid == pagingParameterModel.seriesguid))
-                    .OrderBy(x => x.Name)
+                var itemslist = itemlistguids.OrderBy(x => x.Name)
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                     .Take(pagingParameterModel.pageSize).ToList();
 
@@ -558,7 +558,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 var output = new IteListOut();
                 output.IteList = outPutList.OrderBy(x => x.Name).ToList();
-                output.fulltotal = (filteredItems.Count + pagingParameterModel.pageSize - 1) / pagingParameterModel.pageSize;
+                output.fulltotal = (itemlistguids.Count + pagingParameterModel.pageSize - 1) / pagingParameterModel.pageSize;
 
                 return Ok(output);
             }
