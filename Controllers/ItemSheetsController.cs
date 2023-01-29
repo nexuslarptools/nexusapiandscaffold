@@ -889,7 +889,7 @@ public class ItemSheetsController : ControllerBase
                 {
 
                     string pathToSave = string.Empty;
-                    var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid).ToListAsync();
+                    var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid && s.Isactive == true).ToListAsync();
                     ItemSheet itemSheet = new ItemSheet();
 
                     if (itemSheetList.Count > 1)
@@ -933,7 +933,7 @@ public class ItemSheetsController : ControllerBase
                             .OrderBy(v => v.Version)
                             .ToListAsync();
 
-                        if (itemSheetVersionList != null)
+                        if (itemSheetVersionList != null && itemSheetVersionList.Count > 0)
                         {
                             oldsheet.Version = itemSheetVersionList[itemSheetVersionList.Count - 1].Version + 1;
                         }
