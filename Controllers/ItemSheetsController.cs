@@ -988,7 +988,7 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                     if (itemSheetList.Count > 1)
                     {
-                        for (int i = 1; i < itemSheetList.Count - 1; i++)
+                        for (int i = 0; i < itemSheetList.Count - 1; i++)
                         {
                             itemSheetList[i].Isactive = false;
                             _context.Update(itemSheetList[i]);
