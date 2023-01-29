@@ -54,9 +54,9 @@ public class TagScanner
                         if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
                             okay = false;
                 }
-
-                if (okay) outputter.Add(sheet.Guid);
             }
+
+            if (okay) outputter.Add(sheet.Guid);
         }
 
         return outputter;

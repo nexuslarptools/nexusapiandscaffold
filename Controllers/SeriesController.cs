@@ -147,8 +147,8 @@ public class SeriesController : ControllerBase
         {
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
-            var ser = await _context.Series
-                .Where(s => s.Isactive == true && s.Title != string.Empty && allowedSeries.Contains(s.Guid)).Select(
+            var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty
+                                                                          && allowedSeries.Contains(s.Guid)).Select(
                     sc => new
                     {
                         sc.Guid,
@@ -190,14 +190,15 @@ public class SeriesController : ControllerBase
                 serOutPut.Add(newOutput);
             }
 
+            var output = new SeriListOut();
+            output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
+            output.fulltotal = (allowedSeries.Count + pagingParameterModel.pageSize - 2) /
+                               pagingParameterModel.pageSize;
 
-            return Ok(serOutPut.OrderBy(x => x.Title));
+            return Ok(output);
         }
 
         return Unauthorized();
-
-
-        //return await _context.Series.ToListAsync();
     }
 
 

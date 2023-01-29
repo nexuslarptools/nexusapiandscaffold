@@ -71,7 +71,7 @@ public class LarpsController : ControllerBase
                 Isactive = larp.Isactive,
                 Shortname = larp.Shortname,
                 Users = await _context.Users
-                    .Where(u => u.UserLarproles.Any(ulr => ulr.Larpguid == larp.Guid))
+                    .Where(u => u.UserLarproles.Any(ulr => ulr.Larpguid == larp.Guid && ulr.Isactive == true))
                     .Select(u => new UserOut(u.Guid, u.Firstname, u.Lastname, u.Preferredname, u.Email, u.Pronounsguid,
                         u.Discordname, new RoleOut()
                     )).ToListAsync()

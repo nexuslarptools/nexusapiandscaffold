@@ -263,13 +263,18 @@ public class ItemSheetApprovedsController : ControllerBase
                     outPutList.Add(newOutputSheet);
                 }
 
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = (allowedSheets.Count + pagingParameterModel.pageSize - 1) /
+                                   pagingParameterModel.pageSize;
 
-                return Ok(outPutList.OrderBy(x => x.Name));
+                return Ok(output);
             }
             catch (Exception e)
             {
                 return BadRequest(e);
             }
+
 
         return Unauthorized();
     }
@@ -426,13 +431,11 @@ public class ItemSheetApprovedsController : ControllerBase
                 if (addItem) filteredItems.Add(item);
             }
 
+            var itemlistguids = filteredItems.Where(s =>
+                pagingParameterModel.name == null ||
+                s.Name.ToLower().Contains(pagingParameterModel.name.ToLower())).ToList();
 
-            var itemslist = filteredItems.Where(s =>
-                    (pagingParameterModel.name == null ||
-                     s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
-                    && (pagingParameterModel.seriesguid == Guid.Empty ||
-                        s.Seriesguid == pagingParameterModel.seriesguid))
-                .OrderBy(x => x.Name)
+            var itemslist = itemlistguids.OrderBy(x => x.Name)
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                 .Take(pagingParameterModel.pageSize).ToList();
 
@@ -503,8 +506,12 @@ public class ItemSheetApprovedsController : ControllerBase
                 outPutList.Add(newOutputSheet);
             }
 
+            var output = new IteListOut();
+            output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+            output.fulltotal = (itemlistguids.Count + pagingParameterModel.pageSize - 1) /
+                               pagingParameterModel.pageSize;
 
-            return Ok(outPutList);
+            return Ok(output);
         }
 
         return Unauthorized();
