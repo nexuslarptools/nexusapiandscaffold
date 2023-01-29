@@ -983,12 +983,12 @@ namespace NEXUSDataLayerScaffold.Controllers
                 {
 
                     string pathToSave = string.Empty;
-                    var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid).ToListAsync();
+                    var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid && s.Isactive == true).ToListAsync();
                     ItemSheet itemSheet = new ItemSheet();
 
                     if (itemSheetList.Count > 1)
                     {
-                        for (int i = 0; i < itemSheetList.Count - 1; i++)
+                        for (int i = 1; i < itemSheetList.Count - 1; i++)
                         {
                             itemSheetList[i].Isactive = false;
                             _context.Update(itemSheetList[i]);
@@ -1027,7 +1027,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                             .OrderBy(v => v.Version)
                             .ToListAsync();
 
-                        if (itemSheetVersionList != null)
+                        if (itemSheetVersionList != null && itemSheetVersionList.Count > 0)
                         {
                             oldsheet.Version = itemSheetVersionList[itemSheetVersionList.Count - 1].Version + 1;
                         }
