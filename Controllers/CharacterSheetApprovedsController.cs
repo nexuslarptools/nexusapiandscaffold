@@ -405,22 +405,24 @@ namespace NEXUSDataLayerScaffold.Controllers
 
                 foreach (var sheet in allSheets)
                 {
-                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
-
-
-                    foreach (var Testing in TestJsonFeilds)
+                    if (sheet.Fields.RootElement.TryGetProperty("Special_Skills", out var sSkilsJsonFields))
                     {
-                        var tagresult = Testing.GetProperty("Tags").EnumerateArray();
+                        var TestJsonFeilds = sSkilsJsonFields.EnumerateArray();
 
-                        foreach (var tag in tagresult)
+                        foreach (var Testing in TestJsonFeilds)
                         {
-                            if (tag.ToString() == guid.ToString())
+                            var tagresult = Testing.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var tag in tagresult)
                             {
+                                if (tag.ToString() == guid.ToString())
+                                {
 
-                                allFound.Add(sheet.Guid);
+                                    allFound.Add(sheet.Guid);
+                                }
                             }
-                        }
 
+                        }
                     }
                 }
 

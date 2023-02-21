@@ -463,13 +463,15 @@ namespace NEXUSDataLayerScaffold.Controllers
                 {
                     var addItem = true;
 
-                    var TestJsonFeilds = item.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
+                    if (item.Fields.RootElement.TryGetProperty("Tags", out var TestJsonFeilds))
                     {
-                        if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
+                        var tagsList = TestJsonFeilds.EnumerateArray();
+                        foreach (var tag in tagsList)
                         {
-                            addItem = false;
+                            if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
+                            {
+                                addItem = false;
+                            }
                         }
                     }
 
