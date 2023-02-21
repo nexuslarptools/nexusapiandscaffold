@@ -504,234 +504,309 @@ public class ItemSheetsController : ControllerBase
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-        {
-            var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
-                .Select(ulr => (Guid)ulr.Larpguid).ToList();
-
-            var allowedTags = _context.Larptags.Where(lt =>
-                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
-                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            var initItems = await _context.ItemSheet.Where(c => c.Isactive == true).ToListAsync();
-
-            if (pagingParameterModel.userCreated == true)
-                initItems = initItems.Where(ii => ii.CreatedbyuserGuid == UsersLogic.GetUserGuid(authId, _context))
-                    .ToList();
-            if (pagingParameterModel.userCreated == false)
-                initItems = initItems.Where(ii => ii.CreatedbyuserGuid != UsersLogic.GetUserGuid(authId, _context))
-                    .ToList();
-
-            if (pagingParameterModel.userApproved == true)
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
-                var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == curUserGuid ||
-                                                  ii.SecondapprovalbyuserGuid == curUserGuid).ToList();
-            }
-
-            if (pagingParameterModel.userApproved == false)
-            {
-                var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
-                                                  ii.SecondapprovalbyuserGuid != curUserGuid).ToList();
-            }
-
-            var taggedItems = new List<ItemSheet>();
-
-            if (!string.IsNullOrEmpty(pagingParameterModel.fields))
-            {
-                var objects = JObject.Parse(pagingParameterModel.fields);
-
-                foreach (var ite in initItems)
+                try
                 {
-                    var isfound = true;
-                    foreach (var tag in objects)
+
+                    List<TagScanContainer> legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+                        .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                    List<Guid> allowedLARPS = _context.UserLarproles
+                        .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+                        .Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                    var allowedTags = _context.Larptags.Where(lt =>
+                        (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                        && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                    if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
                     {
-                        var tagslist = new JsonElement();
+                        allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid)
+                            .ToList();
+                    }
 
-                        if (ite.Fields.RootElement.TryGetProperty(tag.Key, out tagslist))
+                    var initItems = await _context.ItemSheet.Where(c => c.Isactive == true).ToListAsync();
+
+                    if (pagingParameterModel.userCreated == true)
+                    {
+                        initItems = initItems
+                            .Where(ii => ii.CreatedbyuserGuid == UsersLogic.GetUserGuid(authId, _context)).ToList();
+                    }
+
+                    if (pagingParameterModel.userCreated == false)
+                    {
+                        initItems = initItems
+                            .Where(ii => ii.CreatedbyuserGuid != UsersLogic.GetUserGuid(authId, _context)).ToList();
+                    }
+
+                    if (pagingParameterModel.userApproved == true)
+                    {
+                        var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
+                        initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == curUserGuid ||
+                                                          ii.SecondapprovalbyuserGuid == curUserGuid).ToList();
+                    }
+
+                    if (pagingParameterModel.userApproved == false)
+                    {
+                        var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
+                        initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
+                                                          ii.SecondapprovalbyuserGuid != curUserGuid).OrderBy(x => x.Name).ToList();
+                    }
+
+                    var taggedItems = new List<ItemSheet>();
+
+                    if (!string.IsNullOrEmpty(pagingParameterModel.fields))
+                    {
+                        var objects = JObject.Parse(pagingParameterModel.fields);
+
+                        foreach (var ite in initItems)
                         {
-                            if (isfound && tag.Key == "Tags")
+                            bool isfound = true;
+                            foreach (var tag in objects)
                             {
-                                var TestJsonFeilds = ite.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-                                var tags2 = TestJsonFeilds.Select(s => Guid.Parse(s.GetString())).ToList();
-                                var tags1 = tag.Value.ToObject<List<Guid>>();
-                                var alltagsfound = tags1.Intersect(tags2).Count();
+                                JsonElement tagslist = new JsonElement();
 
-                                foreach (var tagValue in tags2)
-                                    if (!allowedTags.Contains(tagValue))
-                                        isfound = false;
-
-                                if (alltagsfound < tag.Value.ToArray().Length) isfound = false;
-                            }
-
-                            // when you hit special skills in the input JSON
-                            else if (isfound && tag.Key == "Special_Skills")
-                            {
-                                var TestJsonFeilds = JArray.Parse(tagslist.ToString());
-
-                                var skillsfound = new List<bool>();
-
-                                // Iterate through the special skills array of the input json
-                                foreach (JObject tagSkills in tag.Value)
-                                    // iterate through all of the special skills on the item sheet
-                                foreach (var itemSkills in TestJsonFeilds)
+                                if (ite.Fields.RootElement.TryGetProperty(tag.Key, out tagslist))
                                 {
-                                    var foundskills = new List<bool>();
+                                    if (isfound && tag.Key == "Tags")
+                                    {
+                                        var TestJsonFeilds =
+                                            ite.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+                                        var tags2 = TestJsonFeilds.Select(s => Guid.Parse(s.GetString())).ToList();
+                                        List<Guid> tags1 = tag.Value.ToObject<List<Guid>>();
+                                        var alltagsfound = tags1.Intersect(tags2).Count();
 
-                                    //iterate through all feilds of the input json
-                                    foreach (var skillTag in tagSkills)
-                                        if (skillTag.Key == "Tags")
+                                        foreach (var tagValue in tags2)
                                         {
-                                            var TagArray = JArray.Parse(itemSkills[skillTag.Key].ToString());
-                                            var tags2 = TagArray.Select(s => Guid.Parse(s.ToString())).ToList();
-                                            var tags1 = skillTag.Value.ToObject<List<Guid>>();
-                                            var alltagsfound = tags1.Intersect(tags2).Count();
-                                            if (alltagsfound == skillTag.Value.ToArray().Length) foundskills.Add(true);
-                                        }
-                                        else if (itemSkills[skillTag.Key].ToString().ToLower()
-                                                 .Contains(skillTag.Value.ToString().ToLower()))
-                                        {
-                                            foundskills.Add(true);
+                                            if (!allowedTags.Contains(tagValue))
+                                            {
+                                                isfound = false;
+                                            }
                                         }
 
-                                    if (foundskills.Count == tagSkills.Count) skillsfound.Add(true);
+                                        if (alltagsfound < tag.Value.ToArray().Length)
+                                        {
+                                            isfound = false;
+                                        }
+                                    }
+
+                                    // when you hit special skills in the input JSON
+                                    else if (isfound && tag.Key == "Special_Skills")
+                                    {
+                                        var TestJsonFeilds = JArray.Parse(tagslist.ToString());
+
+                                        List<bool> skillsfound = new List<bool>();
+
+                                        // Iterate through the special skills array of the input json
+                                        foreach (JObject tagSkills in tag.Value)
+                                        {
+                                            // iterate through all of the special skills on the item sheet
+                                            foreach (var itemSkills in TestJsonFeilds)
+                                            {
+                                                List<bool> foundskills = new List<bool>();
+
+                                                //iterate through all feilds of the input json
+                                                foreach (var skillTag in tagSkills)
+                                                {
+                                                    if (skillTag.Key == "Tags")
+                                                    {
+                                                        var TagArray =
+                                                            JArray.Parse(itemSkills[skillTag.Key].ToString());
+                                                        var tags2 = TagArray.Select(s => Guid.Parse(s.ToString()))
+                                                            .ToList();
+                                                        List<Guid> tags1 = skillTag.Value.ToObject<List<Guid>>();
+                                                        var alltagsfound = tags1.Intersect(tags2).Count();
+                                                        if (alltagsfound == skillTag.Value.ToArray().Length)
+                                                        {
+                                                            foundskills.Add(true);
+                                                        }
+
+                                                    }
+                                                    else if (itemSkills[skillTag.Key].ToString().ToLower()
+                                                             .Contains(skillTag.Value.ToString().ToLower()))
+                                                    {
+                                                        foundskills.Add(true);
+                                                    }
+                                                }
+
+                                                if (foundskills.Count == tagSkills.Count)
+                                                {
+                                                    skillsfound.Add(true);
+                                                }
+
+                                            }
+
+                                        }
+
+                                        if (skillsfound.Count != tag.Value.ToList().Count)
+                                        {
+                                            isfound = false;
+                                        }
+
+
+                                    }
+
+                                    else if (isfound)
+                                    {
+                                        if (!tagslist.ToString().ToLower().Contains(tag.Value.ToString().ToLower()))
+                                        {
+                                            isfound = false;
+                                        }
+
+                                    }
+                                }
+                                else
+                                {
+                                    isfound = false;
                                 }
 
-                                if (skillsfound.Count != tag.Value.ToList().Count) isfound = false;
+
                             }
 
-                            else if (isfound)
+                            if (isfound)
                             {
-                                if (!tagslist.ToString().ToLower().Contains(tag.Value.ToString().ToLower()))
-                                    isfound = false;
+                                taggedItems.Add(ite);
                             }
                         }
-                        else
-                        {
-                            isfound = false;
-                        }
                     }
-
-                    if (isfound) taggedItems.Add(ite);
-                }
-            }
-            else
-            {
-                foreach (var item in initItems)
-                {
-                    var addItem = true;
-
-                    var TestJsonFeilds = item.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
-                        if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
-                            addItem = false;
-
-                    if (addItem) taggedItems.Add(item);
-                }
-            }
-
-            var filteredGuids = taggedItems.Where(s =>
-                    (pagingParameterModel.name == null ||
-                     s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
-                    && (pagingParameterModel.seriesguid == Guid.Empty ||
-                        s.Seriesguid == pagingParameterModel.seriesguid))
-                .OrderBy(x => x.Name).Select(ti => ti.Guid).ToList();
-
-
-            var itemslist = taggedItems.Where(s =>
-                    (pagingParameterModel.name == null ||
-                     s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
-                    && (pagingParameterModel.seriesguid == Guid.Empty ||
-                        s.Seriesguid == pagingParameterModel.seriesguid))
-                .OrderBy(x => x.Name)
-                .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
-                .Take(pagingParameterModel.pageSize).ToList();
-
-            if (itemslist == null) return NotFound();
-
-            var outPutList = new List<IteSheet>();
-
-            foreach (var sheet in itemslist)
-            {
-                var newOutputSheet = new IteSheet
-                {
-                    Id = sheet.Id,
-                    Guid = sheet.Guid,
-                    Name = sheet.Name,
-                    Img1 = sheet.Img1,
-                    Seriesguid = sheet.Seriesguid,
-                    Createdate = sheet.Createdate,
-                    CreatedbyuserGuid = sheet.CreatedbyuserGuid,
-                    FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
-                    SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
-                    Version = sheet.Version,
-                    Tags = new List<Tags>()
-                };
-                if (newOutputSheet.Img1 != null)
-                    if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                        newOutputSheet.imagedata =
-                            System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
-
-                if (newOutputSheet.CreatedbyuserGuid != null)
-                {
-                    var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
-                        .FirstOrDefaultAsync();
-                    newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
-                }
-
-                if (newOutputSheet.FirstapprovalbyuserGuid != null)
-                {
-                    var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
-                        .FirstOrDefaultAsync();
-                    newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
-                }
-
-                if (newOutputSheet.SecondapprovalbyuserGuid != null)
-                {
-                    var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
-                        .FirstOrDefaultAsync();
-                    newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
-                }
-
-                var tagslist = new JsonElement();
-
-                sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined")
-                {
-                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
+                    else
                     {
-                        var fullTag = await _context.Tags
-                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                            .FirstOrDefaultAsync();
-                        newOutputSheet.Tags.Add(fullTag);
+                        foreach (var item in initItems)
+                        {
+                            var addItem = true;
+
+                            if (item.Fields.RootElement.TryGetProperty("Tags", out var TestJsonFeilds))
+                            {
+                                var tagsList = TestJsonFeilds.EnumerateArray();
+                                foreach (var tag in tagsList)
+                                {
+                                    if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
+                                    {
+                                        addItem = false;
+                                    }
+                                }
+                            }
+
+                            if (addItem)
+                            {
+                                taggedItems.Add(item);
+                            }
+                        }
+
                     }
+
+                    var filteredGuids = taggedItems.Where(s =>
+                            (pagingParameterModel.name == null ||
+                             s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
+                            && (pagingParameterModel.seriesguid == Guid.Empty ||
+                                s.Seriesguid == pagingParameterModel.seriesguid))
+                        .OrderBy(x => x.Name).Select(ti => ti.Guid).ToList();
+
+
+                    var itemslist = taggedItems.Where(s =>
+                            (pagingParameterModel.name == null ||
+                             s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
+                            && (pagingParameterModel.seriesguid == Guid.Empty ||
+                                s.Seriesguid == pagingParameterModel.seriesguid))
+                        .OrderBy(x => x.Name)
+                        .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
+                        .Take(pagingParameterModel.pageSize).ToList();
+
+                    if (itemslist == null)
+                    {
+                        return NotFound();
+                    }
+
+                    List<IteSheet> outPutList = new List<IteSheet>();
+
+                    foreach (var sheet in itemslist)
+                    {
+
+                        IteSheet newOutputSheet = new IteSheet
+                        {
+                            Id = sheet.Id,
+                            Guid = sheet.Guid,
+                            Name = sheet.Name,
+                            Img1 = sheet.Img1,
+                            Seriesguid = sheet.Seriesguid,
+                            Createdate = sheet.Createdate,
+                            CreatedbyuserGuid = sheet.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
+                            SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
+                            Version = sheet.Version,
+                            Tags = new List<Tags>(),
+                        };
+                        if (newOutputSheet.Img1 != null)
+                        {
+                            if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+                            {
+                                newOutputSheet.imagedata =
+                                    System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                            }
+                        }
+
+                        if (newOutputSheet.CreatedbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
+                                .FirstOrDefaultAsync();
+                            newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        if (newOutputSheet.FirstapprovalbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users
+                                .Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
+                                .FirstOrDefaultAsync();
+                            newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        if (newOutputSheet.SecondapprovalbyuserGuid != null)
+                        {
+                            var creUser = await _context.Users
+                                .Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
+                                .FirstOrDefaultAsync();
+                            newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                        }
+
+                        JsonElement tagslist = new JsonElement();
+
+                        sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                        if (tagslist.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var tag in TestJsonFeilds)
+                            {
+                                Tags fullTag = await _context.Tags
+                                    .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                    .FirstOrDefaultAsync();
+                                newOutputSheet.Tags.Add(fullTag);
+
+                            }
+                        }
+
+
+                        outPutList.Add(newOutputSheet);
+
+
+                    }
+
+                    var output = new IteListOut();
+                    output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                    output.fulltotal = (filteredGuids.Count + pagingParameterModel.pageSize - 1) /
+                                       pagingParameterModel.pageSize;
+
+                    return Ok(output);
                 }
-
-
-                outPutList.Add(newOutputSheet);
+                catch (Exception ex)
+                {
+                    return Problem(ex.Message);
+                }
             }
-
-            var output = new IteListOut();
-            output.IteList = outPutList.OrderBy(x => x.Name).ToList();
-            output.fulltotal = (filteredGuids.Count + pagingParameterModel.pageSize - 1) /
-                               pagingParameterModel.pageSize;
-
-            return Ok(output);
+            return Unauthorized();
         }
-
-        return Unauthorized();
-    }
 
 
     [HttpPut("{guid}/Approve")]

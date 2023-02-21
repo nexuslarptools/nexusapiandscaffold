@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
-using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
@@ -422,11 +421,17 @@ public class ItemSheetApprovedsController : ControllerBase
             {
                 var addItem = true;
 
-                var TestJsonFeilds = item.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                foreach (var tag in TestJsonFeilds)
-                    if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
-                        addItem = false;
+                    if (item.Fields.RootElement.TryGetProperty("Tags", out var TestJsonFeilds))
+                    {
+                        var tagsList = TestJsonFeilds.EnumerateArray();
+                        foreach (var tag in tagsList)
+                        {
+                            if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
+                            {
+                                addItem = false;
+                            }
+                        }
+                    }
 
                 if (addItem) filteredItems.Add(item);
             }

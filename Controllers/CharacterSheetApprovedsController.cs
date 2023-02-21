@@ -397,20 +397,29 @@ public class CharacterSheetApprovedsController : ControllerBase
             var allSheets = await _context.CharacterSheetApproved
                 .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
 
-            foreach (var sheet in allSheets)
-            {
-                var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
-
-
-                foreach (var Testing in TestJsonFeilds)
+                foreach (var sheet in allSheets)
                 {
-                    var tagresult = Testing.GetProperty("Tags").EnumerateArray();
+                    if (sheet.Fields.RootElement.TryGetProperty("Special_Skills", out var sSkilsJsonFields))
+                    {
+                        var TestJsonFeilds = sSkilsJsonFields.EnumerateArray();
 
-                    foreach (var tag in tagresult)
-                        if (tag.ToString() == guid.ToString())
-                            allFound.Add(sheet.Guid);
+                        foreach (var Testing in TestJsonFeilds)
+                        {
+                            var tagresult = Testing.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var tag in tagresult)
+                            {
+                                if (tag.ToString() == guid.ToString())
+                                {
+
+                                    allFound.Add(sheet.Guid);
+                                }
+                            }
+
+                        }
+                    }
                 }
-            }
+
 
 
             var output = await _context.CharacterSheetApproved.Where(c => c.Isactive == true &&
