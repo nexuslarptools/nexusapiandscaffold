@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NEXUSDataLayerScaffold.Models
+namespace NEXUSDataLayerScaffold.Models;
+
+public class Tags
 {
-    public partial class Tags
+    public Tags()
     {
-        public Tags()
-        {
-            Larptags = new HashSet<Larptags>();
-        }
-
-        public Guid Guid { get; set; }
-        public string Name { get; set; }
-        public Guid Tagtypeguid { get; set; }
-        public bool? Isactive { get; set; }
-
-        public virtual TagTypes Tagtypegu { get; set; }
-        public virtual ICollection<Larptags> Larptags { get; set; }
+        Larptags = new HashSet<Larptags>();
     }
+
+    public Guid Guid { get; set; }
+    public string Name { get; set; }
+    public Guid Tagtypeguid { get; set; }
+    public bool? Isactive { get; set; }
+
+    public virtual TagTypes Tagtypegu { get; set; }
+    public virtual ICollection<Larptags> Larptags { get; set; }
 }

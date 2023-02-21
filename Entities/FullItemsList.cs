@@ -1,29 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NEXUSDataLayerScaffold.Entities
+namespace NEXUSDataLayerScaffold.Entities;
+
+public class FullItemsList
 {
-    public class FullItemsList
+    public FullItemsList()
     {
-        public FullItemsList()
-        {
-            ApprovedItemsList = new List<ItemsEntry>();
-            ItemsList = new List<ItemsEntry>();
-        }
-
-        public List<ItemsEntry> ApprovedItemsList { get; set; }
-        public List<ItemsEntry> ItemsList { get; set; }
+        ApprovedItemsList = new List<ItemsEntry>();
+        ItemsList = new List<ItemsEntry>();
     }
 
-    public class ItemsEntry
-    {
-        public ItemsEntry(Guid guid, string name)
-        {
-            this.guid = guid;
-            this.name = name;
-        }
+    public List<ItemsEntry> ApprovedItemsList { get; set; }
+    public List<ItemsEntry> ItemsList { get; set; }
+}
 
-        public Guid guid { get; set; }
-        public string name { get; set; }
+public class ItemsEntry
+{
+    public ItemsEntry(Guid guid, string name)
+    {
+        this.guid = guid;
+        this.name = name;
     }
+
+    public Guid guid { get; set; }
+    public string name { get; set; }
 }
