@@ -232,6 +232,8 @@ public class UsersController : ControllerBase
             UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
         {
             var user = _context.Users.Where(u => u.Guid == id).FirstOrDefault();
+            if (user == null) { return NoContent(); }
+
             var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
             var RolesList = _context.Roles.ToList();
             var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();

@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
@@ -56,9 +60,13 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-            var ret = await _context.CharacterSheetApproved
-                .Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
-                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title }).ToListAsync();
+            var tagDictionary = TagScanner.getAllTagsLists(legalsheets);
+
+            var fullTagList = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
+
+            var ret = await _context.CharacterSheetApproved.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
+                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title, Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fullTagList) })
+                .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
 
             return Ok(ret);
         }
@@ -84,8 +92,15 @@ public class CharacterSheetApprovedsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
+            var legalsheets = _context.CharacterSheetApproved
+                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+
+            var tagDictionary = TagScanner.getAllTagsLists(legalsheets);
+
+            var fullTagList = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
+
             var ret = await _context.CharacterSheetApproved
-                .Select(c => new { c.Id, c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title, c.Isactive }).ToListAsync();
+                .Select(c => new { c.Id, c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title, c.Isactive, Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fullTagList) }).ToListAsync();
 
             return Ok(ret);
         }
@@ -136,6 +151,73 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             var outputSheet = Character.CreateCharSheet(characterSheet);
 
+            var tagslist = new JsonElement();
+
+            characterSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+            if (tagslist.ValueKind.ToString() != "Undefined") {
+                var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                foreach (var tag in TestJsonFeilds) {
+                    var fullTag = await _context.Tags
+                        .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                    outputSheet.Tags.Add(fullTag);
+                }
+            }
+
+            if (outputSheet.Img1 != null)
+                if (System.IO.File.Exists(@"./images/characters/Approved/" + outputSheet.Img1))
+                    outputSheet.imagedata1 = System.IO.File.ReadAllBytes(@"./images/characters/Approved/" + outputSheet.Img1);
+
+            outputSheet.SeriesTitle = await _context.Series.Where(s => s.Guid == outputSheet.Seriesguid && s.Isactive == true)
+    .Select(s => s.Title).FirstOrDefaultAsync();
+
+            var sheet_item_guid = _context.CharacterSheetApproved.Where(c => c.Isactive == true && c.Guid == guid)
+               .FirstOrDefault().Fields.RootElement.GetProperty("Sheet_Item").GetString();
+
+
+            if (sheet_item_guid != null) {
+                if (_context.ItemSheetApproved
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+                        .FirstOrDefault() != null)
+                    outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproved
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+
+                else if (_context.ItemSheet.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+                             .FirstOrDefault() !=
+                         null)
+                    outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheet
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+            }
+
+            var Start_Items = new List<IteSheet>();
+
+            var StartIguids = outputSheet.Fields["Starting_Items"].ToList();
+
+            foreach (var iGuid in StartIguids)
+                if (_context.ItemSheetApproved
+                        .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                        .FirstOrDefault() != null) {
+                    var starting_I = await _context.ItemSheetApproved.Where(issh => issh.Isactive == true &&
+                        issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync();
+
+
+                    Start_Items.Add(Item.CreateItem(starting_I));
+                }
+                else if (_context.ItemSheet
+                             .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                             .FirstOrDefault() != null) {
+                    //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
+                    //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
+                    var starting_I = await _context.ItemSheet.Where(issh => issh.Isactive == true &&
+                                                                            issh.Guid.ToString() == iGuid.ToString())
+                        .FirstOrDefaultAsync();
+
+                    Start_Items.Add(Item.CreateItem(starting_I));
+                }
+
+            if (Start_Items != null) outputSheet.Starting_Items = Start_Items;
+
 
             return Ok(outputSheet);
         }
@@ -164,8 +246,8 @@ public class CharacterSheetApprovedsController : ControllerBase
         {
             var legalseries = _context.Series.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.Tags)).ToList();
-            var legalsheets = _context.Series.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Tags)).ToList();
+            var legalsheets = _context.CharacterSheetApproved.Where(it => it.Isactive == true)
+                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -187,6 +269,10 @@ public class CharacterSheetApprovedsController : ControllerBase
                 WriteIndented = true
             };
 
+            var tagDictionary = TagScanner.getAllTagsLists(legalsheets);
+
+            var fullTagList = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
+
             var characterSheet = await _context.CharacterSheetApproved.Where(cs =>
                     cs.Isactive == true && cs.Seriesguid == guid && allowedSheets.Contains(cs.Guid))
                 .Select(c => new
@@ -194,8 +280,9 @@ public class CharacterSheetApprovedsController : ControllerBase
                     c.Guid,
                     c.Name,
                     c.Seriesguid,
-                    c.Seriesgu.Title
-                }).ToListAsync();
+                    c.Seriesgu.Title,
+                    Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fullTagList)
+                }).OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
 
             if (characterSheet == null) return NotFound();
 
@@ -280,7 +367,7 @@ public class CharacterSheetApprovedsController : ControllerBase
             if (!allowedTags.Contains(guid)) return Unauthorized();
 
             var chars = await _context.CharacterSheetApproved.Where(c =>
-                c.Isactive == true && c.Fields.RootElement.GetProperty("Character_Tags").GetString()
+                c.Isactive == true && c.Fields.RootElement.GetProperty("Tags").GetString()
                     .Contains(guid.ToString())).ToListAsync();
 
 
@@ -670,7 +757,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutCharacterSheetApproved(int id, CharacterSheetApproved characterSheetApproved)
+    public async Task<IActionResult> PutCharacterSheetApproved(int id, CharSheet characterSheetApproved)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -680,7 +767,32 @@ public class CharacterSheetApprovedsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            if (id != characterSheetApproved.Id) return BadRequest();
+            if (characterSheetApproved.Img1 != null && characterSheetApproved.imagedata1 != null && characterSheetApproved.imagedata1.Length != 0) {
+                characterSheetApproved.Img1 = characterSheetApproved.Img1;
+
+                var folderName = Path.Combine("images", "characters", "UnApproved");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                if (characterSheetApproved.imagedata1.Length > 0) {
+                    if (!Directory.Exists(pathToSave + "/")) {
+                        var di = Directory.CreateDirectory(pathToSave + "/");
+                    }
+                    System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img1, characterSheetApproved.imagedata1);
+                }
+            }
+            if (characterSheetApproved.Img2 != null && characterSheetApproved.imagedata2 != null && characterSheetApproved.imagedata2.Length != 0) {
+                characterSheetApproved.Img2 = characterSheetApproved.Img2;
+
+                var folderName = Path.Combine("images", "characters", "UnApproved");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                if (characterSheetApproved.imagedata2.Length > 0) {
+                    if (!Directory.Exists(pathToSave + "/")) {
+                        var di = Directory.CreateDirectory(pathToSave + "/");
+                    }
+                    System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img2, characterSheetApproved.imagedata2);
+                }
+            }
 
             _context.Entry(characterSheetApproved).State = EntityState.Modified;
 
@@ -711,7 +823,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
     public async Task<ActionResult<CharacterSheetApproved>> PostCharacterSheetApproved(
-        CharacterSheetApproved characterSheetApproved)
+        CharSheet characterSheetApproved)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -721,13 +833,41 @@ public class CharacterSheetApprovedsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            characterSheetApproved.CreatedbyuserGuid =
-                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+            var characterSheet = new CharacterSheetApproved();
 
-            _context.CharacterSheetApproved.Add(characterSheetApproved);
+            characterSheet.CreatedbyuserGuid =
+                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+            if (characterSheetApproved.Img1 != null && characterSheetApproved.imagedata1 != null && characterSheetApproved.imagedata1.Length != 0) {
+                characterSheetApproved.Img1 = characterSheetApproved.Img1;
+
+                var folderName = Path.Combine("images", "characters", "UnApproved");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                if (characterSheetApproved.imagedata1.Length > 0) {
+                    if (!Directory.Exists(pathToSave + "/")) {
+                        var di = Directory.CreateDirectory(pathToSave + "/");
+                    }
+                    System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img1, characterSheetApproved.imagedata1);
+                }
+            }
+            if (characterSheetApproved.Img2 != null && characterSheetApproved.imagedata2 != null && characterSheetApproved.imagedata2.Length != 0) {
+                characterSheetApproved.Img2 = characterSheetApproved.Img2;
+
+                var folderName = Path.Combine("images", "characters", "UnApproved");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                if (characterSheetApproved.imagedata2.Length > 0) {
+                    if (!Directory.Exists(pathToSave + "/")) {
+                        var di = Directory.CreateDirectory(pathToSave + "/");
+                    }
+                    System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img2, characterSheetApproved.imagedata2);
+                }
+            }
+
+            _context.CharacterSheetApproved.Add(characterSheet);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCharacterSheetApproved", new { id = characterSheetApproved.Id },
+            return CreatedAtAction("PostCharacterSheetApproved", new { id = characterSheet.Id },
                 characterSheetApproved);
         }
 

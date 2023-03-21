@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
@@ -23,11 +24,22 @@ public class Item
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
         newiemSheet.Tags = new List<Tags>();
 
+        var folderName = Path.Combine("images", "items", "UnApproved");
+        var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+
+
+        if (iSheet.Img1 != null) {
+            if (System.IO.File.Exists(pathToSave + iSheet.Img1)) {
+                newiemSheet.imagedata =
+                    System.IO.File.ReadAllBytes(pathToSave + iSheet.Img1);
+            }
+        }
+
         return newiemSheet;
     }
 
-    public static IteSheet CreateItem(ItemSheetApproved iSheet)
-    {
+    public static IteSheet CreateItem(ItemSheetApproved iSheet) {
         var newiemSheet = new IteSheet();
 
         newiemSheet.Name = iSheet.Name;
@@ -42,6 +54,16 @@ public class Item
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
         newiemSheet.Tags = new List<Tags>();
 
+        var folderName = Path.Combine("images", "items", "Approved");
+        var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+
+        if (iSheet.Img1 != null) {
+            if (System.IO.File.Exists(pathToSave + "\\" + iSheet.Img1)) {
+                newiemSheet.imagedata =
+                    System.IO.File.ReadAllBytes(pathToSave + "\\" + iSheet.Img1);
+            }
+        }
 
         return newiemSheet;
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Models;
 
@@ -30,4 +31,31 @@ public class CharSheet
     public string Reason4edit { get; set; }
     public int Version { get; set; }
     public List<Tags> Tags { get; set; }
+    public byte[] imagedata1 { get; set; }
+    public byte[] imagedata2 { get; set; }
+
+    public CharacterSheet OutputToCharacterSheet() 
+    {
+        CharacterSheet Charsheet = new CharacterSheet() {
+            Guid = Guid,
+            Seriesguid = this.Seriesguid,
+            Name = this.Name,
+            Img1 = this.Img1,
+            Img2 = this.Img2,
+            Fields = JsonDocument.Parse(this.Fields.ToString()),
+            Isactive = this.Isactive,
+            Createdate = this.Createdate,
+            CreatedbyuserGuid = this.CreatedbyUserGuid,
+            FirstapprovalbyuserGuid = this.FirstapprovalbyUserGuid,
+            Firstapprovaldate = this.Firstapprovaldate,
+            SecondapprovalbyuserGuid = this.SecondapprovalbyUserGuid,
+            Secondapprovaldate = this.Secondapprovaldate,
+            Gmnotes = this.Gmnotes,
+            Reason4edit = this.Reason4edit
+        };
+
+        return Charsheet;
+    }
+
+    
 }

@@ -279,6 +279,107 @@ public class ItemSheetApprovedsController : ControllerBase
         return Unauthorized();
     }
 
+    [HttpGet("FullListWithTagsNoImages")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetApprovedItemFullListWithTagsNoImages() {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            try {
+                var legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+                    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                var allowedLARPS = _context.UserLarproles
+                    .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .ToList();
+
+                var allowedTags = _context.Larptags.Where(lt =>
+                    (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                    && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                var outPutList = new List<IteSheet>();
+
+                var allSheets = await _context.ItemSheetApproved
+                    .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).OrderBy(x => x.Name).ToListAsync();
+
+                foreach (var sheet in allSheets) {
+                    var newOutputSheet = new IteSheet {
+                        Guid = sheet.Guid,
+                        Name = sheet.Name,
+                        Img1 = sheet.Img1,
+                        Seriesguid = sheet.Seriesguid,
+                        Createdate = sheet.Createdate,
+                        CreatedbyuserGuid = sheet.CreatedbyuserGuid,
+                        FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
+                        SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
+                        Version = sheet.Version,
+                        Tags = new List<Tags>()
+                    };
+
+                    if (newOutputSheet.CreatedbyuserGuid != null) {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.FirstapprovalbyuserGuid != null) {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.SecondapprovalbyuserGuid != null) {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.Seriesguid != null) {
+                        var ser = await _context.Series.Where(u => u.Guid == newOutputSheet.Seriesguid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Series = ser.Title;
+                    }
+
+                    var tagslist = new JsonElement();
+
+                    sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                    if (tagslist.ValueKind.ToString() != "Undefined") {
+                        var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds) {
+                            var fullTag = await _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .FirstOrDefaultAsync();
+                            newOutputSheet.Tags.Add(fullTag);
+                        }
+                    }
+
+                    outPutList.Add(newOutputSheet);
+                }
+
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = allowedSheets.Count;
+
+                return Ok(output);
+            }
+            catch (Exception e) {
+                return BadRequest(e);
+            }
+
+
+        return Unauthorized();
+    }
+
     /// <summary>
     ///     Search for series based on partial series name.
     /// </summary>

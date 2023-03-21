@@ -46,12 +46,14 @@ public class SeriesController : ControllerBase
         {
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
-            var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid))
+            var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
                 .ToListAsync();
 
             var outputSeries = new List<Seri>();
 
             if (ser == null) return NotFound();
+
+            var allTagsList = _context.Tags.ToList();
 
             foreach (var s in ser)
             {
@@ -60,17 +62,15 @@ public class SeriesController : ControllerBase
                 newser.Guid = s.Guid;
                 newser.Title = s.Title;
                 newser.Titlejpn = s.Titlejpn;
+                newser.Tags = new List<Tags>();
 
                 if (s.Tags != null)
                 {
                     var taglist = JObject.Parse(s.Tags.RootElement.ToString());
-                    foreach (var tag in taglist)
+                    foreach (var tag in taglist["SeriesTags"])
                     {
-                        var value = tag.Value;
+                        newser.Tags.Add(allTagsList.Where(atl => atl.Guid == (Guid)tag).FirstOrDefault());
                     }
-
-
-                    //newser.Tags
                 }
 
                 newser.Createdate = s.Createdate;
@@ -80,7 +80,7 @@ public class SeriesController : ControllerBase
             }
 
 
-            return Ok(outputSeries);
+            return Ok(outputSeries.OrderBy(o =>o.Title));
         }
 
         return Unauthorized();
