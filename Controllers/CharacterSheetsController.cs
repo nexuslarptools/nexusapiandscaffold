@@ -64,7 +64,7 @@ public class CharacterSheetsController : ControllerBase
             var fulltaglist = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
 
             var ret = await _context.CharacterSheet.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
-                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title, CreatedBy = c.CreatedbyuserGu.Preferredname, Firstapprovalby = c.FirstapprovalbyuserGu.Preferredname, Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist) })
+                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Seriesgu.Title, c.CreatedbyuserGuid, c.FirstapprovalbyuserGuid, c.SecondapprovalbyuserGuid, CreatedBy = c.CreatedbyuserGu.Preferredname, Firstapprovalby = c.FirstapprovalbyuserGu.Preferredname, Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist) })
                 .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
 
             if (ret == null) return NotFound();
@@ -192,14 +192,28 @@ public class CharacterSheetsController : ControllerBase
                 if (_context.ItemSheetApproved
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                         .FirstOrDefault() != null)
+                {
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproved
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                    if (outputSheet.Sheet_Item.Img1 != null)
+                        if (System.IO.File.Exists(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1))
+                            outputSheet.Sheet_Item.imagedata =
+                                System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1);
+
+                }
 
                 else if (_context.ItemSheet.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                              .FirstOrDefault() !=
                          null)
+                {
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheet
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                    if (outputSheet.Sheet_Item.Img1 != null)
+                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1))
+                            outputSheet.Sheet_Item.imagedata =
+                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1);
+
+                }
             }
 
             var Start_Items = new List<IteSheet>();
@@ -210,22 +224,32 @@ public class CharacterSheetsController : ControllerBase
                 if (_context.ItemSheetApproved
                         .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                         .FirstOrDefault() != null) {
-                    var starting_I = await _context.ItemSheetApproved.Where(issh => issh.Isactive == true &&
-                        issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync();
+                    var starting_I = Item.CreateItem(await _context.ItemSheetApproved.Where(issh => issh.Isactive == true &&
+                        issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync());
+
+                    if (starting_I.Img1 != null)
+                        if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
+                            starting_I.imagedata =
+                                System.IO.File.ReadAllBytes(@"./images/items/Approved/" + starting_I.Img1);
 
 
-                    Start_Items.Add(Item.CreateItem(starting_I));
+                    Start_Items.Add(starting_I);
                 }
                 else if (_context.ItemSheet
                              .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                              .FirstOrDefault() != null) {
                     //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
                     //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
-                    var starting_I = await _context.ItemSheet.Where(issh => issh.Isactive == true &&
+                    var starting_I = Item.CreateItem(await _context.ItemSheet.Where(issh => issh.Isactive == true &&
                                                                             issh.Guid.ToString() == iGuid.ToString())
-                        .FirstOrDefaultAsync();
+                        .FirstOrDefaultAsync());
 
-                    Start_Items.Add(Item.CreateItem(starting_I));
+                    if (starting_I.Img1 != null)
+                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
+                            starting_I.imagedata =
+                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + starting_I.Img1);
+
+                    Start_Items.Add(starting_I);
                 }
 
             if (Start_Items != null) outputSheet.Starting_Items = Start_Items;
@@ -878,10 +902,17 @@ public class CharacterSheetsController : ControllerBase
             characterSheet.SecondapprovalbyuserGuid = null;
             characterSheet.Secondapprovaldate = null;
             characterSheet.Isactive = true;
+            characterSheet.Version = 1;
 
             var charsheets = await _context.CharacterSheet.Where(cs => cs.Guid == characterSheet.Guid).ToListAsync();
+            if (charsheets != null && charsheets.Count > 0)
+            {
+                var maxsheet = charsheets.MaxBy(csa => csa.Version);
+                characterSheet.Version = maxsheet.Version;
+                characterSheet.Version++;
+            }
 
-            foreach(var sheet in charsheets) {
+            foreach (var sheet in charsheets) {
                 sheet.Isactive = false;
                 _context.Update(sheet);
 
@@ -1010,14 +1041,68 @@ public class CharacterSheetsController : ControllerBase
                     await _context.SaveChangesAsync();
                 }
 
-                var theNewSheet = await _context.CharacterSheetApproved
-                    .Where(csa => csa.Guid == guid && csa.Version == maxversion).FirstOrDefaultAsync();
+                maxversion++;
 
-                theNewSheet.Isactive = true;
-                theNewSheet.SecondapprovalbyuserGuid = result;
-                theNewSheet.Secondapprovaldate = DateTime.UtcNow;
+                CharacterSheetApproved theNewSheet = new CharacterSheetApproved()
+                {
+                     CharactersheetId = characterSheet.Id,
+                      Guid = characterSheet.Guid,
+                    Seriesguid =  characterSheet.Seriesguid,
+                    Name = characterSheet.Name,
+                    Img1 = characterSheet.Img1,
+                    Img2 = characterSheet.Img2,
+                    Fields = characterSheet.Fields,
+                    Isactive = true,
+                    Createdate = characterSheet.Createdate,
+                    CreatedbyuserGuid = characterSheet.CreatedbyuserGuid,
+                    FirstapprovalbyuserGuid = characterSheet.FirstapprovalbyuserGuid,
+                    Firstapprovaldate = characterSheet.Firstapprovaldate,
+                    SecondapprovalbyuserGuid = characterSheet.SecondapprovalbyuserGuid,
+                    Secondapprovaldate = characterSheet.Secondapprovaldate,
+                    Gmnotes = characterSheet.Gmnotes,
+                    Reason4edit = characterSheet.Reason4edit,
+                    Version = characterSheet.Version
+                };
 
-                _context.CharacterSheetApproved.Update(theNewSheet);
+                if (theNewSheet.Img1 != null)
+                {
+
+                    var folderName = Path.Combine("images", "characters", "UnApproved");
+                    var pathCopyFrom = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                    var toFolderName = Path.Combine("images", "characters", "Approved");
+                    var pathCopyTo = Path.Combine(Directory.GetCurrentDirectory(), toFolderName);
+
+                    if (!Directory.Exists(pathCopyTo + "/"))
+                    {
+                        var di = Directory.CreateDirectory(pathCopyTo + "/");
+                    }
+
+                    System.IO.File.Copy(pathCopyFrom + "/" + theNewSheet.Img1, pathCopyTo + "/" + theNewSheet.Img1, true);
+                }
+                if (theNewSheet.Img2 != null)
+                {
+
+                    var folderName = Path.Combine("images", "characters", "UnApproved");
+                    var pathCopyFrom = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                    var toFolderName = Path.Combine("images", "characters", "Approved");
+                    var pathCopyTo = Path.Combine(Directory.GetCurrentDirectory(), toFolderName);
+
+                    if (!Directory.Exists(pathCopyTo + "/"))
+                    {
+                        var di = Directory.CreateDirectory(pathCopyTo + "/");
+                    }
+
+                    System.IO.File.Copy(pathCopyFrom + "/" + theNewSheet.Img2, pathCopyTo + "/" + theNewSheet.Img2, true);
+                }
+
+
+                // theNewSheet.Isactive = true;
+                // theNewSheet.SecondapprovalbyuserGuid = result;
+                // theNewSheet.Secondapprovaldate = DateTime.UtcNow;
+
+                _context.CharacterSheetApproved.Add(theNewSheet);
                 _context.SaveChanges();
             }
 
@@ -1056,6 +1141,8 @@ public class CharacterSheetsController : ControllerBase
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var characterSheet = new CharacterSheet();
+
+            if (charSheet.Guid != null) characterSheet.Guid = charSheet.Guid;
 
             if (charSheet.Name != null) characterSheet.Name = charSheet.Name;
 
@@ -1126,6 +1213,13 @@ public class CharacterSheetsController : ControllerBase
 
             charSheet.CreatedbyUserGuid = characterSheet.CreatedbyuserGuid;
 
+            var approvedSheets = await _context.CharacterSheet.Where(csa => csa.Guid == characterSheet.Guid).ToListAsync();
+
+            if (approvedSheets != null && approvedSheets.Count > 0)
+            {
+                var maxsheet = approvedSheets.MaxBy(csa => csa.Version);
+                charSheet.Version = maxsheet.Version++;
+            }
 
             _context.CharacterSheet.Add(characterSheet);
             await _context.SaveChangesAsync();
@@ -1137,8 +1231,8 @@ public class CharacterSheetsController : ControllerBase
     }
 
     // DELETE: api/CharacterSheets/5
-    [HttpDelete("{id}")]
-    public async Task<ActionResult<CharacterSheet>> DeleteCharacterSheet(Guid id)
+    [HttpDelete("{guid}")]
+    public async Task<ActionResult<CharacterSheet>> DeleteCharacterSheet(Guid guid)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -1148,13 +1242,20 @@ public class CharacterSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            var characterSheet = await _context.CharacterSheet.FindAsync(id);
-            if (characterSheet == null) return NotFound();
+            var characterSheets = await _context.CharacterSheet.Where(csa => csa.Guid == guid).ToListAsync();
+            if (characterSheets == null) return NotFound();
 
-            _context.CharacterSheet.Remove(characterSheet);
-            await _context.SaveChangesAsync();
+            foreach (var character in characterSheets)
+            {
+                if (character.Isactive == true)
+                {
+                    character.Isactive = false;
+                    _context.CharacterSheet.Update(character);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
-            return characterSheet;
+            return characterSheets.FirstOrDefault();
         }
 
         return Unauthorized();

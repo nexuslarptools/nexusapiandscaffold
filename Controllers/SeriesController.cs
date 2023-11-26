@@ -554,6 +554,63 @@ public class SeriesController : ControllerBase
         return Unauthorized();
     }
 
+    // GET: api/LinkedCharactersAndItems/5
+    [HttpGet("LinkedCharactersAndItems/{guid}")]
+    [Authorize]
+    public async Task<ActionResult<ListItemsAndCharacters>> GetAllCharactersAndItemsLinkedSeries(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            try
+            {
+                ListItemsAndCharacters output = new ListItemsAndCharacters();
+
+                var seriesList = await _context.Series.Where(s => s.Isactive == true && s.Guid == guid).ToListAsync();
+
+                if (seriesList.Count == 0)
+                {
+                    return BadRequest("Item Not Found");
+                }
+
+                var itemsListApproved = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                foreach (var item in itemsListApproved)
+                {
+                    output.ItemLists.AddApproved(item);
+                }
+
+                var itemsList = await _context.ItemSheet.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                foreach (var item in itemsList)
+                {
+                    output.ItemLists.AddUnapproved(item);
+                }
+
+                var characterListApproved = await _context.CharacterSheetApproved.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                foreach (var character in characterListApproved)
+                {
+                    output.CharacterLists.AddApproved(character);
+                }
+
+                var characterList = await _context.CharacterSheet.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                foreach (var character in characterList)
+                {
+                    output.CharacterLists.AddUnapproved(character);
+                }
+
+                return output;
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e);
+            }
+
+        return Unauthorized();
+    }
+
     // PUT: api/Series/5
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
@@ -675,7 +732,9 @@ public class SeriesController : ControllerBase
             var series = await _context.Series.FindAsync(guid);
             if (series == null) return NotFound();
 
-            _context.Series.Remove(series);
+            series.Isactive = false;
+
+            _context.Series.Update(series);
             await _context.SaveChangesAsync();
 
             return series;

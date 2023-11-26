@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using Newtonsoft.Json.Linq;
+using NEXUSDataLayerScaffold.Extensions;
+using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Entities;
 
@@ -28,4 +31,33 @@ public class IteSheetInput
     public int? Version { get; set; }
     public List<Guid> Tags { get; set; }
     public byte[] imagedata { get; set; }
+
+    public ItemSheet OutputToItemSheet()
+    {
+        ItemSheet output = new ItemSheet()
+        {
+            Version = 1,
+            Guid = this.Guid,
+            Id = this.Id,
+            Seriesguid = this.Seriesguid,
+            Name = this.Name,
+            Img1 = this.Img1,
+            Fields = null,
+            Isactive = true,
+            CreatedbyuserGuid = this.CreatedbyuserGuid,
+            FirstapprovalbyuserGuid = this.FirstapprovalbyuserGuid,
+            Firstapprovaldate = this.Firstapprovaldate,
+            Secondapprovaldate = this.Secondapprovaldate,
+            SecondapprovalbyuserGuid = this.SecondapprovalbyuserGuid,
+            Gmnotes = this.Gmnotes,
+            Reason4edit = this.Reason4edit,
+        };
+
+        if (this.Fields != null)
+        {
+            output.Fields = JsonDocument.Parse(this.Fields.ToString());
+        }
+
+        return output;
+    }
 }

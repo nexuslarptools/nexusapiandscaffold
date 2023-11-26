@@ -165,6 +165,105 @@ public class ItemSheetApprovedsController : ControllerBase
         return Unauthorized();
     }
 
+    // GET: api/ItemSheetApproveds/5
+    [HttpGet("LinkedCharacters/{guid}")]
+    [Authorize]
+    public async Task<ActionResult<ListCharacterSheets>> GetAllCharactersLinkedItemSheet(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            try
+            {
+                var itemsList = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Guid == guid).ToListAsync();
+
+                if (itemsList.Count == 0)
+                {
+                    return BadRequest("Item Not Found");
+                }
+
+                ListCharacterSheets output = new ListCharacterSheets();
+
+                var charList = _context.CharacterSheet.Where(cs => cs.Isactive == true).ToList();
+
+                foreach (var characterSheet in charList)
+                {
+                    var startitemsList = new JsonElement();
+                    characterSheet.Fields.RootElement.TryGetProperty("Starting_Items", out startitemsList);
+
+                    if (startitemsList.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Starting_Items").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            if (tag.ToString() == guid.ToString())
+                            {
+                                output.AddUnapproved(characterSheet);
+                            }
+                        }
+                    }
+
+                    characterSheet.Fields.RootElement.TryGetProperty("Sheet_Item", out startitemsList);
+
+                    if (startitemsList.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeild = characterSheet.Fields.RootElement.GetProperty("Sheet_Item");
+
+                        if (TestJsonFeild.ToString() == guid.ToString())
+                        {
+                            output.AddUnapproved(characterSheet);
+                        }
+                    }
+                }
+
+                var approvcharList = _context.CharacterSheetApproved.Where(cs => cs.Isactive == true).ToList();
+
+                foreach (var characterSheet in approvcharList)
+                {
+                    var startitemsList = new JsonElement();
+                    characterSheet.Fields.RootElement.TryGetProperty("Starting_Items", out startitemsList);
+
+                    if (startitemsList.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Starting_Items").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            if (tag.ToString() == guid.ToString())
+                            {
+                                output.AddApproved(characterSheet);
+                            }
+                        }
+                    }
+
+                    characterSheet.Fields.RootElement.TryGetProperty("Sheet_Item", out startitemsList);
+
+                    if (startitemsList.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeild = characterSheet.Fields.RootElement.GetProperty("Sheet_Item");
+
+                        if (TestJsonFeild.ToString() == guid.ToString())
+                        {
+                            output.AddApproved(characterSheet);
+                        }
+                    }
+                }
+
+                return output;
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e);
+            }
+
+        return Unauthorized();
+    }
+
 
     [HttpGet("ShortListWithTags")]
     [Authorize]
@@ -658,13 +757,17 @@ public class ItemSheetApprovedsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            var itemSheetApproved = await _context.ItemSheetApproved.Where(i => i.Guid == id).FirstOrDefaultAsync();
+            var itemSheetApproved = await _context.ItemSheetApproved.Where(i => i.Guid == id).ToListAsync();
             if (itemSheetApproved == null) return NotFound();
 
-            _context.ItemSheetApproved.Remove(itemSheetApproved);
+            foreach(var item in itemSheetApproved)
+            {
+                item.Isactive = false;
+                _context.ItemSheetApproved.Update(item);
+            }
             _context.SaveChanges();
 
-            return itemSheetApproved;
+            return itemSheetApproved.FirstOrDefault();
         }
 
         return Unauthorized();

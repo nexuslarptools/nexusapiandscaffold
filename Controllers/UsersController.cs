@@ -279,7 +279,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    ///     Gets a single user's information
+    /// Gets a single user's information
     /// </summary>
     /// <returns></returns>
     // GET api/v1/Users/{id}
@@ -307,6 +307,21 @@ public class UsersController : ControllerBase
             .FirstOrDefault();
 
         return Ok("{\"AuthLevel\":\"" + maxrole + "\"}");
+    }
+
+    /// <summary>
+    /// Gets a single user's information
+    /// </summary>
+    /// <returns></returns>
+    // GET api/v1/Users/{id}
+    [HttpGet("CurrentGuid")]
+    [Authorize]
+    public ActionResult<Guid> GetCurrentUserGuid()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        return _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
+
     }
 
 

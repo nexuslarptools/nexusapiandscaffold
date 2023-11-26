@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
@@ -339,6 +341,297 @@ public class TagsController : ControllerBase
             outp.TagsList = tagList.OrderBy(x => x.Name).ToList();
             return Ok(outp);
         }
+
+        return Unauthorized();
+    }
+
+    // GET: api/LinkedCharactersAndItems/5
+    [HttpGet("LinkedCharactersAndItems/{guid}")]
+    [Authorize]
+    public async Task<ActionResult<ListAllTagOptions>> GetAllCharactersAndItemsLinkedSeries(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            try
+            {
+                ListAllTagOptions output = new ListAllTagOptions();
+
+                var tag = await _context.Tags.Where(s => s.Isactive == true && s.Guid == guid).FirstOrDefaultAsync();
+
+                if (tag == null)
+                {
+                    return BadRequest("Tag Not Found");
+                }
+
+                var typeGu = await _context.TagTypes.Where(s => s.Guid == tag.Tagtypeguid).FirstOrDefaultAsync();
+
+                if (typeGu.Name == "Item" || typeGu.Name == "LARPRun")
+                {
+
+                    var itemList = _context.ItemSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var itemSheet in itemList)
+                    {
+                        var tagList = new JsonElement();
+                        itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagList);
+
+                        if (tagList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var listtag in TestJsonFeilds)
+                            {
+                                if (listtag.ToString() == guid.ToString())
+                                {
+                                    output.ItemLists.AddUnapproved(itemSheet);
+                                }
+                            }
+                        }
+                    }
+
+                    var approvitemList = _context.ItemSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var itemSheet in approvitemList)
+                    {
+                        var startitemsList = new JsonElement();
+                        itemSheet.Fields.RootElement.TryGetProperty("Tags", out startitemsList);
+
+                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var listtag in TestJsonFeilds)
+                            {
+                                if (listtag.ToString() == guid.ToString())
+                                {
+                                    output.ItemLists.AddApproved(itemSheet);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (typeGu.Name == "Character" || typeGu.Name == "LARPRun")
+                {
+
+                    var charList = _context.CharacterSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var characterSheet in charList)
+                    {
+                        var startitemsList = new JsonElement();
+                        characterSheet.Fields.RootElement.TryGetProperty("Tags", out startitemsList);
+
+                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var listtag in TestJsonFeilds)
+                            {
+                                if (listtag.ToString() == guid.ToString())
+                                {
+                                    output.CharacterLists.AddUnapproved(characterSheet);
+                                }
+                            }
+                        }
+                    }
+
+                    var approvcharList = _context.CharacterSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var characterSheet in approvcharList)
+                    {
+                        var startitemsList = new JsonElement();
+                        characterSheet.Fields.RootElement.TryGetProperty("Tags", out startitemsList);
+
+                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                            foreach (var listtag in TestJsonFeilds)
+                            {
+                                if (listtag.ToString() == guid.ToString())
+                                {
+                                    output.CharacterLists.AddApproved(characterSheet);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (typeGu.Name == "Ability" || typeGu.Name == "LARPRun")
+                {
+
+                    var charList = _context.CharacterSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var characterSheet in charList)
+                    {
+                        var startitemsList = new JsonElement();
+                        characterSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+
+                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = startitemsList.EnumerateArray();
+
+                            foreach (var skill in TestJsonFeilds)
+                            {
+                                var skilltaglist = new JsonElement();
+                                skill.TryGetProperty("Tags", out skilltaglist);
+
+                                if (skilltaglist.ValueKind.ToString() != "Undefined")
+                                {
+                                    var listSkillTags = skilltaglist.EnumerateArray();
+
+                                    foreach (var skilltag in listSkillTags)
+                                    {
+                                        if (skilltag.ToString() == guid.ToString() && !output.CharacterLists.UnapprovedContainsGuid(guid))
+                                        {
+                                            output.CharacterLists.AddUnapproved(characterSheet);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    var approvcharList = _context.CharacterSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var characterSheet in approvcharList)
+                    {
+                        var startitemsList = new JsonElement();
+                        characterSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+
+                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
+
+                            foreach (var skill in TestJsonFeilds)
+                            {
+
+                                var skilltaglist = new JsonElement();
+                                skill.TryGetProperty("Tags", out skilltaglist);
+
+                                if (skilltaglist.ValueKind.ToString() != "Undefined")
+                                {
+                                    var listSkillTags = skilltaglist.EnumerateArray();
+
+                                    foreach (var skilltag in listSkillTags)
+                                    {
+                                        if (skilltag.ToString() == guid.ToString() && !output.CharacterLists.ApprovedContainsGuid(guid))
+                                        {
+                                            output.CharacterLists.AddApproved(characterSheet);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    var itemList = _context.ItemSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var itemSheet in itemList)
+                    {
+                        var startitemsList = new JsonElement();
+                        itemSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+
+                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
+
+                            foreach (var skill in TestJsonFeilds)
+                            {
+
+                                var skilltaglist = new JsonElement();
+                                skill.TryGetProperty("Tags", out skilltaglist);
+
+                                if (skilltaglist.ValueKind.ToString() != "Undefined")
+                                {
+                                    var listSkillTags = skilltaglist.EnumerateArray();
+
+                                    foreach (var skilltag in listSkillTags)
+                                    {
+                                        if (skilltag.ToString() == guid.ToString() && !output.ItemLists.UnapprovedContainsGuid(guid))
+                                        {
+                                            output.ItemLists.AddUnapproved(itemSheet);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    var approvitemList = _context.ItemSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+
+                    foreach (var itemSheet in approvitemList)
+                    {
+                        var startitemsList = new JsonElement();
+                        itemSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+
+                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
+
+                            foreach (var skill in TestJsonFeilds)
+                            {
+
+                                var skilltaglist = new JsonElement();
+                                skill.TryGetProperty("Tags", out skilltaglist);
+
+                                if (skilltaglist.ValueKind.ToString() != "Undefined")
+                                {
+                                    var listSkillTags = skilltaglist.EnumerateArray();
+
+                                    foreach (var skilltag in listSkillTags)
+                                    {
+                                        if (skilltag.ToString() == guid.ToString() && !output.ItemLists.ApprovedContainsGuid(guid))
+                                        {
+                                            output.ItemLists.AddApproved(itemSheet);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                if (typeGu.Name == "Series" || typeGu.Name == "LARPRun")
+                {
+                    var seriesList = _context.Series.Where(cs => cs.Isactive == true).ToList().OrderBy(cs => cs.Title);
+
+                    foreach (var series in seriesList)
+                    {
+                        var startitemsList = new JsonElement();
+
+                        if (series.Tags != null)
+                        {
+                            series.Tags.RootElement.TryGetProperty("SeriesTags", out startitemsList);
+
+                            if (startitemsList.ValueKind.ToString() != "Undefined")
+                            {
+                                var TestJsonFeilds = series.Tags.RootElement.GetProperty("SeriesTags").EnumerateArray();
+
+                                foreach (var listtag in TestJsonFeilds)
+                                {
+                                    if (listtag.ToString() == guid.ToString())
+                                    {
+                                        output.SeriesList.Add(series);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return output;
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e);
+            }
 
         return Unauthorized();
     }
