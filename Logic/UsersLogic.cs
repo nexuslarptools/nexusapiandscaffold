@@ -45,23 +45,26 @@ public class UsersLogic
         {
             var autheduser = GetUserInfo(accessToken, _context);
 
-            var newUsers = new Users
+            if (autheduser.Result.authid != null && autheduser.Result.authid != string.Empty)
             {
-                Email = autheduser.Result.email,
-                Preferredname = autheduser.Result.name,
-                Authid = autheduser.Result.authid
-            };
+                var newUsers = new Users
+                {
+                    Email = autheduser.Result.email,
+                    Preferredname = autheduser.Result.name,
+                    Authid = autheduser.Result.authid,
+                    Isactive = true
+                };
 
-            try
-            {
-                _context.Users.Add(newUsers);
-                _context.SaveChanges();
+                try
+                {
+                    _context.Users.Add(newUsers);
+                    _context.SaveChanges();
+                }
+                catch (Exception e)
+                {
+                    var huh = e;
+                }
             }
-            catch (Exception e)
-            {
-                var huh = e;
-            }
-
             return false;
         }
 
@@ -136,9 +139,15 @@ public class UsersLogic
             var responseData = responseMessage.Content.ReadAsStringAsync().Result;
             var JsonHoldingCell = JsonDocument.Parse(responseData);
 
+            if (JsonHoldingCell.RootElement.GetProperty("email_verified").ToString().ToLower() != "true")
+            {
+                return returnuser;
+            }
+
             returnuser.name = JsonHoldingCell.RootElement.GetProperty("name").ToString();
             returnuser.authid = JsonHoldingCell.RootElement.GetProperty("sub").ToString();
             returnuser.email = JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/email").ToString();
+
 
             var permissionsholder = new List<string>();
             for (var i = 0;

@@ -1099,7 +1099,14 @@ public class ItemSheetsController : ControllerBase
             {
                 approvaltype = "second";
                 var approvedSheets = await _context.ItemSheetApproved
-                    .Where(csa => csa.Guid == guid && csa.Isactive == true).ToListAsync();
+                    .Where(csa => csa.Guid == guid).ToListAsync();
+
+                if (approvedSheets.Count > 0)
+                {
+                    maxversion = approvedSheets.MaxBy(ash => ash.Version).Version;
+                }
+
+                maxversion++;
 
                 foreach (var asheet in approvedSheets)
                 {
@@ -1122,7 +1129,8 @@ public class ItemSheetsController : ControllerBase
                     Firstapprovaldate = itemSheet.Firstapprovaldate,
                     SecondapprovalbyuserGuid = itemSheet.SecondapprovalbyuserGuid,
                     Secondapprovaldate = itemSheet.Secondapprovaldate,
-                    Gmnotes = itemSheet.Gmnotes
+                    Gmnotes = itemSheet.Gmnotes,
+                    Version = maxversion
                 };
 
                 _context.ItemSheetApproved.Add(newapproval);
@@ -1140,18 +1148,18 @@ public class ItemSheetsController : ControllerBase
 
             await _context.SaveChangesAsync();
 
-            var theNewSheet = await _context.ItemSheetApproved
-                .Where(csa => csa.Guid == guid && csa.Version > maxversion).FirstOrDefaultAsync();
+            //var theNewSheet = await _context.ItemSheetApproved
+            //    .Where(csa => csa.Guid == guid && csa.Version > maxversion).FirstOrDefaultAsync();
 
-            if (theNewSheet != null && fullapprove)
-            {
-                theNewSheet.Isactive = true;
-                theNewSheet.SecondapprovalbyuserGuid = result;
-                theNewSheet.Secondapprovaldate = DateTime.Now;
+            //if (theNewSheet != null && fullapprove)
+           // {
+           //     theNewSheet.Isactive = true;
+           //     theNewSheet.SecondapprovalbyuserGuid = result;
+           //     theNewSheet.Secondapprovaldate = DateTime.Now;
 
-                _context.ItemSheetApproved.Update(theNewSheet);
-                await _context.SaveChangesAsync();
-            }
+           //     _context.ItemSheetApproved.Update(theNewSheet);
+           //     await _context.SaveChangesAsync();
+           // }
 
             return Ok("{\"Approval\":\"" + approvaltype + "\"}");
         }

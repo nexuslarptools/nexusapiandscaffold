@@ -228,6 +228,7 @@ public class UsersController : ControllerBase
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
 
+
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
             UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
         {

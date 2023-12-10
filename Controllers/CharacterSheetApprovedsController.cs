@@ -249,6 +249,63 @@ public class CharacterSheetApprovedsController : ControllerBase
         return Unauthorized();
     }
 
+    // GET: api/CharacterSheetApproveds/5
+    [HttpGet("MultiCharacter/{guids}")]
+    [Authorize]
+    public async Task<ActionResult<CharListWithItemList>> GetMultiCharacterSheetItemGrouped(string guids)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        {
+            CharListWithItemList output = new CharListWithItemList();
+            string[] guidlist = guids.Split(',');
+
+            foreach (var input in guidlist)
+            {
+                if (Guid.TryParse(input, out Guid inputGuid))
+                {
+                    var charSheetA = _context.CharacterSheetApproved.Where(csa => csa.Isactive == true && csa.Guid == inputGuid).FirstOrDefault();
+                    var charSheet = _context.CharacterSheet.Where(cs => cs.Isactive == true && cs.Guid == inputGuid).FirstOrDefault();
+
+                    if (charSheetA == null && charSheet != null)
+                    {
+                        if (!UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+                        {
+                            return Unauthorized();
+                        }
+                        var cha = new CharSheet(charSheet, _context);
+                        output.Characters.Add(cha);
+                        output.Items.Add(cha.Sheet_Item);
+                        foreach(var sItem in cha.Starting_Items)
+                        {
+                            output.Items.Add(sItem);
+                        }
+
+                    }
+                    else if (charSheetA != null)
+                    {
+                        var cha = new CharSheet(charSheetA, _context);
+                        output.Characters.Add(cha);
+                        output.Items.Add(cha.Sheet_Item);
+                        foreach (var sItem in cha.Starting_Items)
+                        {
+                            output.Items.Add(sItem);
+                        }
+                    }
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+
+            return Ok(output);
+        }
+
+        return Unauthorized();
+    }
+
 
     /// <summary>
     ///     Returns all characters from a series.
