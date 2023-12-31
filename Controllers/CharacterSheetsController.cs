@@ -64,7 +64,15 @@ public class CharacterSheetsController : ControllerBase
             var fulltaglist = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
 
             var ret = await _context.CharacterSheets.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
-                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title, c.CreatedbyuserGuid, c.FirstapprovalbyuserGuid, c.SecondapprovalbyuserGuid, CreatedBy = c.Createdbyuser.Preferredname, Firstapprovalby = c.Firstapprovalbyuser.Preferredname, Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist) })
+                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title, c.EditbyUserGuid,
+                    Createdbyuser = c.Createdbyuser.Preferredname,
+                    c.FirstapprovalbyuserGuid,
+                    Firstapprovalbyuser =(c.Firstapprovalbyuser.Preferredname == null || c.Firstapprovalbyuser.Preferredname == string.Empty) ? c.Firstapprovalbyuser.Firstname : c.Firstapprovalbyuser.Preferredname,
+                    c.SecondapprovalbyuserGuid,
+                    SecondApprovaluser = (c.Secondapprovalbyuser.Preferredname == null || c.Secondapprovalbyuser.Preferredname == string.Empty) ? c.Secondapprovalbyuser.Firstname : c.Secondapprovalbyuser.Preferredname,
+                    EditbyUser = (c.EditbyUser.Preferredname == null || c.EditbyUser.Preferredname == string.Empty) ? c.EditbyUser.Firstname : c.EditbyUser.Preferredname,
+                    CreatedBy = c.Createdbyuser.Preferredname,
+                    Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist) })
                 .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
 
             if (ret == null) return NotFound();
@@ -101,7 +109,16 @@ public class CharacterSheetsController : ControllerBase
             var fulltaglist = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
 
             var ret = await _context.CharacterSheets
-                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title, CreatedBy = c.Createdbyuser.Preferredname, Firstapprovalby = c.Firstapprovalbyuser.Preferredname, Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist) })
+                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title,
+                    c.EditbyUserGuid,
+                    Createdbyuser = c.Createdbyuser.Preferredname,
+                    c.FirstapprovalbyuserGuid,
+                    Firstapprovalbyuser = (c.Firstapprovalbyuser.Preferredname == null || c.Firstapprovalbyuser.Preferredname == string.Empty) ? c.Firstapprovalbyuser.Firstname : c.Firstapprovalbyuser.Preferredname,
+                    c.SecondapprovalbyuserGuid,
+                    SecondApprovaluser = (c.Secondapprovalbyuser.Preferredname == null || c.Secondapprovalbyuser.Preferredname == string.Empty) ? c.Secondapprovalbyuser.Firstname : c.Secondapprovalbyuser.Preferredname,
+                    EditbyUser = (c.EditbyUser.Preferredname == null || c.EditbyUser.Preferredname == string.Empty) ? c.EditbyUser.Firstname : c.EditbyUser.Preferredname,
+                    CreatedBy = c.Createdbyuser.Preferredname,
+                    Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist) })
                 .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
 
             return Ok(ret);
@@ -155,7 +172,7 @@ public class CharacterSheetsController : ControllerBase
             if (characterSheet == null) return NotFound();
 
 
-            var outputSheet = Character.CreateCharSheet(characterSheet);
+            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
 
             var tagslist = new JsonElement();
 
@@ -663,7 +680,7 @@ public class CharacterSheetsController : ControllerBase
                 (cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
 
 
-            var outputSheet = Character.CreateCharSheet(characterSheet);
+            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
 
             var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == outputSheet.Seriesguid)
                 .FirstOrDefault();
@@ -760,7 +777,7 @@ public class CharacterSheetsController : ControllerBase
                 (cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
 
 
-            var outputSheet = Character.CreateCharSheet(characterSheet);
+            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
 
             var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == outputSheet.Seriesguid)
                 .FirstOrDefault();
@@ -895,6 +912,8 @@ public class CharacterSheetsController : ControllerBase
             CharacterSheet characterSheet = charSheet.OutputToCharacterSheet();
 
             characterSheet.Createdate = DateTime.UtcNow;
+            characterSheet.EditbyUserGuid =
+                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             characterSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             characterSheet.FirstapprovalbyuserGuid = null;
@@ -909,6 +928,7 @@ public class CharacterSheetsController : ControllerBase
             {
                 var maxsheet = charsheets.MaxBy(csa => csa.Version);
                 characterSheet.Version = maxsheet.Version;
+                characterSheet.CreatedbyuserGuid = maxsheet.CreatedbyuserGuid;
                 characterSheet.Version++;
             }
 
@@ -983,7 +1003,7 @@ public class CharacterSheetsController : ControllerBase
 
             if (characterSheet.FirstapprovalbyuserGuid != null && characterSheet.SecondapprovalbyuserGuid == null)
             {
-                if (result != characterSheet.CreatedbyuserGuid && result != characterSheet.FirstapprovalbyuserGuid)
+                if (result != characterSheet.EditbyUserGuid && result != characterSheet.FirstapprovalbyuserGuid)
                 {
                     characterSheet.SecondapprovalbyuserGuid = result;
                     characterSheet.Secondapprovaldate = DateTime.UtcNow;
@@ -999,7 +1019,7 @@ public class CharacterSheetsController : ControllerBase
 
             if (characterSheet.FirstapprovalbyuserGuid == null)
             {
-                if (result != characterSheet.CreatedbyuserGuid)
+                if (result != characterSheet.EditbyUserGuid)
                 {
                     //characterSheet.SecondapprovalbyuserGuid = null;
                     characterSheet.FirstapprovalbyuserGuid = result;
@@ -1054,7 +1074,7 @@ public class CharacterSheetsController : ControllerBase
                     Fields = characterSheet.Fields,
                     Isactive = true,
                     Createdate = characterSheet.Createdate,
-                    CreatedbyuserGuid = characterSheet.CreatedbyuserGuid,
+                    CreatedbyuserGuid = characterSheet.EditbyUserGuid,
                     FirstapprovalbyuserGuid = characterSheet.FirstapprovalbyuserGuid,
                     Firstapprovaldate = characterSheet.Firstapprovaldate,
                     SecondapprovalbyuserGuid = characterSheet.SecondapprovalbyuserGuid,
@@ -1205,13 +1225,13 @@ public class CharacterSheetsController : ControllerBase
             characterSheet.Createdate = DateTime.UtcNow;
             characterSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+            characterSheet.EditbyUserGuid =
+                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             characterSheet.FirstapprovalbyuserGuid = null;
             characterSheet.Firstapprovaldate = null;
             characterSheet.SecondapprovalbyuserGuid = null;
             characterSheet.Secondapprovaldate = null;
             characterSheet.Isactive = true;
-
-            charSheet.CreatedbyUserGuid = characterSheet.CreatedbyuserGuid;
 
             var approvedSheets = await _context.CharacterSheets.Where(csa => csa.Guid == characterSheet.Guid).ToListAsync();
 

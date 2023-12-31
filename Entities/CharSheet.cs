@@ -37,6 +37,8 @@ public class CharSheet
     public List<Tag> Tags { get; set; }
     public byte[] imagedata1 { get; set; }
     public byte[] imagedata2 { get; set; }
+    public Guid? EditbyUserGuid { get; set; }
+    public string Editby { get; set; }
 
     public CharSheet()
     {
@@ -53,6 +55,7 @@ public class CharSheet
         Isactive = input.Isactive;
         Createdate = input.Createdate;
         CreatedbyUserGuid = input.CreatedbyuserGuid;
+        EditbyUserGuid = input.EditbyUserGuid;
         FirstapprovalbyUserGuid = input.FirstapprovalbyuserGuid;
         Firstapprovaldate = input.Firstapprovaldate;
         SecondapprovalbyUserGuid = input.SecondapprovalbyuserGuid;
@@ -119,23 +122,44 @@ public class CharSheet
             var lookupuser = _context.Users.Where(u => u.Guid == this.CreatedbyUserGuid)
                 .FirstOrDefault();
 
-            this.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            this.createdby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
         }
 
         if (this.FirstapprovalbyUserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == this.FirstapprovalbyUserGuid)
                 .FirstOrDefault();
-
-            this.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            this.Firstapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
         }
 
         if (this.SecondapprovalbyUserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == this.SecondapprovalbyUserGuid)
                 .FirstOrDefault();
+            this.Secondapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
 
-            this.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        if (this.EditbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == this.EditbyUserGuid)
+                .FirstOrDefault();
+            this.Editby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
         }
     }
 
@@ -150,16 +174,17 @@ public class CharSheet
         Isactive = input.Isactive;
         Createdate = input.Createdate;
         CreatedbyUserGuid = input.CreatedbyuserGuid;
+        EditbyUserGuid = input.EditbyUserGuid;
         FirstapprovalbyUserGuid = input.FirstapprovalbyuserGuid;
         Firstapprovaldate = input.Firstapprovaldate;
         SecondapprovalbyUserGuid = input.SecondapprovalbyuserGuid;
         Secondapprovaldate = input.Secondapprovaldate;
         Gmnotes = input.Gmnotes;
         Reason4edit = input.Reason4edit;
-        Version = input.Version;
+        Version = input.Version;    
 
         var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
-    .FirstOrDefault();
+          .FirstOrDefault();
 
         this.SeriesTitle = assocSeries.Title;
 
@@ -212,23 +237,44 @@ public class CharSheet
             var lookupuser = _context.Users.Where(u => u.Guid == this.CreatedbyUserGuid)
                 .FirstOrDefault();
 
-            this.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            this.createdby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
         }
 
         if (this.FirstapprovalbyUserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == this.FirstapprovalbyUserGuid)
                 .FirstOrDefault();
-
-            this.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            this.Firstapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
         }
 
         if (this.SecondapprovalbyUserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == this.SecondapprovalbyUserGuid)
                 .FirstOrDefault();
+            this.Secondapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
 
-            this.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        if (this.EditbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == this.EditbyUserGuid)
+                .FirstOrDefault();
+            this.Editby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                this.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
         }
 
     }
@@ -244,6 +290,7 @@ public class CharSheet
             Fields = JsonDocument.Parse(this.Fields.ToString()),
             Isactive = this.Isactive,
             Createdate = this.Createdate,
+            EditbyUserGuid = this.EditbyUserGuid,
             CreatedbyuserGuid = this.CreatedbyUserGuid,
             FirstapprovalbyuserGuid = this.FirstapprovalbyUserGuid,
             Firstapprovaldate = this.Firstapprovaldate,

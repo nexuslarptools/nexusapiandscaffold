@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
@@ -7,7 +9,7 @@ namespace NEXUSDataLayerScaffold.Extensions;
 
 public class Character
 {
-    public static CharSheet CreateCharSheet(CharacterSheet cSheet)
+    public static CharSheet CreateCharSheet(CharacterSheet cSheet, NexusLarpLocalContext _context)
     {
         var newCharSheet = new CharSheet();
 
@@ -21,7 +23,7 @@ public class Character
 
         newCharSheet.Isactive = cSheet.Isactive;
         newCharSheet.Createdate = cSheet.Createdate;
-        newCharSheet.CreatedbyUserGuid = cSheet.CreatedbyuserGuid;
+        newCharSheet.CreatedbyUserGuid = cSheet.EditbyUserGuid;
         newCharSheet.FirstapprovalbyUserGuid = cSheet.FirstapprovalbyuserGuid;
         newCharSheet.Firstapprovaldate = cSheet.Firstapprovaldate;
         newCharSheet.SecondapprovalbyUserGuid = cSheet.SecondapprovalbyuserGuid;
@@ -31,12 +33,56 @@ public class Character
         newCharSheet.Version = cSheet.Version;
         newCharSheet.Tags = new List<Tag>();
 
+        if (cSheet.CreatedbyuserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == cSheet.CreatedbyuserGuid)
+                .FirstOrDefault();
+
+            newCharSheet.createdby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
+
+        if (newCharSheet.FirstapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
+                .FirstOrDefault();
+            newCharSheet.Firstapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
+
+        if (newCharSheet.SecondapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
+                .FirstOrDefault();
+            newCharSheet.Secondapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
+
+        if (newCharSheet.EditbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
+                .FirstOrDefault();
+            newCharSheet.Editby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
 
         return newCharSheet;
     }
 
 
-    public static CharSheet CreateCharSheet(CharacterSheetApproved cSheet)
+    public static CharSheet CreateCharSheet(CharacterSheetApproved cSheet, NexusLarpLocalContext _context)
     {
         var newCharSheet = new CharSheet();
 
@@ -59,6 +105,53 @@ public class Character
         newCharSheet.Reason4edit = cSheet.Reason4edit;
         newCharSheet.Version = cSheet.Version;
         newCharSheet.Tags = new List<Tag>();
+
+
+        if (cSheet.CreatedbyuserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == cSheet.CreatedbyuserGuid)
+                .FirstOrDefault();
+
+            newCharSheet.createdby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
+
+        if (newCharSheet.FirstapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
+                .FirstOrDefault();
+            newCharSheet.Firstapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
+
+        if (newCharSheet.SecondapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
+                .FirstOrDefault();
+            newCharSheet.Secondapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
+
+        if (newCharSheet.EditbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
+                .FirstOrDefault();
+            newCharSheet.Editby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+            {
+                newCharSheet.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
+            }
+        }
+
 
 
         return newCharSheet;

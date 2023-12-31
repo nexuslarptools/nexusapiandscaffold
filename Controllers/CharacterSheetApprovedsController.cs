@@ -65,7 +65,11 @@ public class CharacterSheetApprovedsController : ControllerBase
             var fullTagList = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
 
             var ret = await _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
-                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title, c.CreatedbyuserGuid, c.FirstapprovalbyuserGuid, c.SecondapprovalbyuserGuid, Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fullTagList) })
+                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title, c.CreatedbyuserGuid, CreatedByUser = c.Createdbyuser.Preferredname,
+                    c.FirstapprovalbyuserGuid, FirstApprovalUser = c.Firstapprovalbyuser.Preferredname, c.SecondapprovalbyuserGuid,
+                    SecondApprovalUser = c.Secondapprovalbyuser.Preferredname,
+                    EditbyUser = c.EditbyUser.Preferredname,
+                    Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fullTagList) })
                 .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
 
             return Ok(ret);
@@ -149,7 +153,7 @@ public class CharacterSheetApprovedsController : ControllerBase
             if (characterSheet == null) return NotFound();
 
 
-            var outputSheet = Character.CreateCharSheet(characterSheet);
+            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
 
             var tagslist = new JsonElement();
 
@@ -641,7 +645,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
 
 
-            var outputSheet = Character.CreateCharSheet(characterSheet);
+            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
 
             var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == outputSheet.Seriesguid)
                 .FirstOrDefault();
@@ -739,7 +743,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
 
 
-            var outputSheet = Character.CreateCharSheet(characterSheet);
+            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
 
             var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == outputSheet.Seriesguid)
                 .FirstOrDefault();

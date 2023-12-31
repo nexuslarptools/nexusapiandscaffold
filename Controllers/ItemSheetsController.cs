@@ -1196,6 +1196,8 @@ public class ItemSheetsController : ControllerBase
                 ItemSheet itemSheet = item.OutputToItemSheet();
                 itemSheet.CreatedbyuserGuid =
     _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+                itemSheet.EditbyUserGuid =
+    _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
 
                 if (itemSheetList.Count > 0)
                 {
@@ -1207,6 +1209,7 @@ public class ItemSheetsController : ControllerBase
                     }
 
                     itemSheet.Version = itemSheetList.MaxBy(csa => csa.Version).Version + 1;
+                    itemSheet.CreatedbyuserGuid = itemSheetList.MaxBy(csa => csa.Version).CreatedbyuserGuid;
                 }
 
                 List<TagScanContainer> legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
@@ -1376,6 +1379,8 @@ public class ItemSheetsController : ControllerBase
             itemSheet.Createdate = DateTime.Now;
             itemSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+            itemSheet.EditbyUserGuid =
+                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             itemSheet.FirstapprovalbyuserGuid = null;
             itemSheet.Firstapprovaldate = null;
             itemSheet.SecondapprovalbyuserGuid = null;
@@ -1387,6 +1392,7 @@ public class ItemSheetsController : ControllerBase
             if (isheets != null && isheets.Count > 0)
             {
                 var maxsheet = isheets.MaxBy(csa => csa.Version);
+                itemSheet.CreatedbyuserGuid = maxsheet.CreatedbyuserGuid;
                 itemSheet.Version = maxsheet.Version;
                 itemSheet.Version++;
             }
