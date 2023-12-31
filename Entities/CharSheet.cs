@@ -34,7 +34,7 @@ public class CharSheet
     public string Gmnotes { get; set; }
     public string Reason4edit { get; set; }
     public int Version { get; set; }
-    public List<Tags> Tags { get; set; }
+    public List<Tag> Tags { get; set; }
     public byte[] imagedata1 { get; set; }
     public byte[] imagedata2 { get; set; }
 
@@ -42,7 +42,7 @@ public class CharSheet
     {
     }
 
-    public CharSheet(CharacterSheetApproved input, NexusLARPContextBase _context)
+    public CharSheet(CharacterSheetApproved input, NexusLarpLocalContext _context)
     {
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
@@ -71,16 +71,16 @@ public class CharSheet
 
         if (sheet_item_guid != null)
         {
-            if (_context.ItemSheetApproved
+            if (_context.ItemSheetApproveds
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                     .FirstOrDefault() != null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproved
+                this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
 
-            else if (_context.ItemSheet.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                          .FirstOrDefault() !=
                      null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheet
+                this.Sheet_Item = Item.CreateItem(_context.ItemSheets
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
         }
 
@@ -89,23 +89,23 @@ public class CharSheet
         var StartIguids = this.Fields["Starting_Items"].ToList();
 
         foreach (var iGuid in StartIguids)
-            if (_context.ItemSheetApproved
+            if (_context.ItemSheetApproveds
                     .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault() != null)
             {
-                var starting_I = _context.ItemSheetApproved.Where(issh => issh.Isactive == true &&
+                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
                     issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
 
 
                 Start_Items.Add(Item.CreateItem(starting_I));
             }
-            else if (_context.ItemSheet
+            else if (_context.ItemSheets
                          .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                          .FirstOrDefault() != null)
             {
                 //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
                 //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
-                var starting_I = _context.ItemSheet.Where(issh => issh.Isactive == true &&
+                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
                                                                         issh.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault();
 
@@ -139,7 +139,7 @@ public class CharSheet
         }
     }
 
-    public CharSheet(CharacterSheet input, NexusLARPContextBase _context)
+    public CharSheet(CharacterSheet input, NexusLarpLocalContext _context)
     {
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
@@ -167,16 +167,16 @@ public class CharSheet
 
         if (sheet_item_guid != null)
         {
-            if (_context.ItemSheetApproved
+            if (_context.ItemSheetApproveds
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                     .FirstOrDefault() != null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproved
+                this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
 
-            else if (_context.ItemSheet.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                          .FirstOrDefault() !=
                      null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheet
+                this.Sheet_Item = Item.CreateItem(_context.ItemSheets
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
         }
 
@@ -185,21 +185,21 @@ public class CharSheet
         var StartIguids = this.Fields["Starting_Items"].ToList();
 
         foreach (var iGuid in StartIguids)
-            if (_context.ItemSheetApproved
+            if (_context.ItemSheetApproveds
                     .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault() != null)
             {
-                var starting_I = _context.ItemSheetApproved.Where(issh => issh.Isactive == true &&
+                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
                     issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
 
 
                 Start_Items.Add(Item.CreateItem(starting_I));
             }
-            else if (_context.ItemSheet
+            else if (_context.ItemSheets
                          .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                          .FirstOrDefault() != null)
             {
-                var starting_I = _context.ItemSheet.Where(issh => issh.Isactive == true &&
+                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
                                      issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
 
                 Start_Items.Add(Item.CreateItem(starting_I));
@@ -237,7 +237,7 @@ public class CharSheet
     {
         CharacterSheet Charsheet = new CharacterSheet() {
             Guid = Guid,
-            Seriesguid = this.Seriesguid,
+            Seriesguid = (Guid)this.Seriesguid,
             Name = this.Name,
             Img1 = this.Img1,
             Img2 = this.Img2,

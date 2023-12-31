@@ -16,9 +16,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class ItemSheetVersionsController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public ItemSheetVersionsController(NexusLARPContextBase context)
+    public ItemSheetVersionsController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -36,13 +36,13 @@ public class ItemSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
-            var itemlist = await _context.ItemSheetVersion.Select(isv => new
+            var itemlist = await _context.ItemSheetVersions.Select(isv => new
             {
                 isv.Id,
                 isv.Guid,
                 isv.Name,
                 isv.Seriesguid,
-                isv.Seriesgu.Title,
+                isv.Series.Title,
                 isv.Version
             }).ToListAsync();
 
@@ -70,13 +70,13 @@ public class ItemSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
-            var itemlist = await _context.ItemSheetVersion.Where(iv => iv.Guid == guid).Select(isv => new
+            var itemlist = await _context.ItemSheetVersions.Where(iv => iv.Guid == guid).Select(isv => new
             {
                 isv.Id,
                 isv.Guid,
                 isv.Name,
                 isv.Seriesguid,
-                isv.Seriesgu.Title,
+                isv.Series.Title,
                 isv.Version
             }).ToListAsync();
 
@@ -99,7 +99,7 @@ public class ItemSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
-            var itemSheetVersion = await _context.ItemSheetVersion.FindAsync(id);
+            var itemSheetVersion = await _context.ItemSheetVersions.FindAsync(id);
 
             var outputSheet = Item.CreateItem(itemSheetVersion);
 
@@ -192,12 +192,12 @@ public class ItemSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            var oldSheet = await _context.ItemSheetVersion.Where(csv => csv.Id == id).FirstOrDefaultAsync();
+            var oldSheet = await _context.ItemSheetVersions.Where(csv => csv.Id == id).FirstOrDefaultAsync();
 
             if (oldSheet == null) return BadRequest();
 
 
-            var editSheet = await _context.ItemSheet.Where(cs => cs.Guid == oldSheet.Guid).FirstOrDefaultAsync();
+            var editSheet = await _context.ItemSheets.Where(cs => cs.Guid == oldSheet.Guid).FirstOrDefaultAsync();
 
             editSheet.Seriesguid = oldSheet.Seriesguid;
             editSheet.Name = oldSheet.Name;
@@ -214,7 +214,7 @@ public class ItemSheetVersionsController : ControllerBase
             editSheet.Gmnotes = null;
             editSheet.Reason4edit = null;
 
-            _context.ItemSheet.Update(editSheet);
+            _context.ItemSheets.Update(editSheet);
             await _context.SaveChangesAsync();
 
             return Ok(editSheet);
@@ -238,7 +238,7 @@ public class ItemSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            _context.ItemSheetVersion.Add(itemSheetVersion);
+            _context.ItemSheetVersions.Add(itemSheetVersion);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetItemSheetVersion", new { id = itemSheetVersion.Id }, itemSheetVersion);
@@ -256,10 +256,10 @@ public class ItemSheetVersionsController : ControllerBase
         var result = UsersLogic.GetUserInfo(accessToken, _context);
         if (UsersController.UserPermissionAuth(result.Result, "Wizard"))
         {
-            var itemSheetVersion = await _context.ItemSheetVersion.FindAsync(id);
+            var itemSheetVersion = await _context.ItemSheetVersions.FindAsync(id);
             if (itemSheetVersion == null) return NotFound();
 
-            _context.ItemSheetVersion.Remove(itemSheetVersion);
+            _context.ItemSheetVersions.Remove(itemSheetVersion);
             await _context.SaveChangesAsync();
 
             return itemSheetVersion;
@@ -270,6 +270,6 @@ public class ItemSheetVersionsController : ControllerBase
 
     private bool ItemSheetVersionExists(int id)
     {
-        return _context.ItemSheetVersion.Any(e => e.Id == id);
+        return _context.ItemSheetVersions.Any(e => e.Id == id);
     }
 }

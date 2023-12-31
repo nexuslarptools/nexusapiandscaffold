@@ -15,9 +15,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class PronounsController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public PronounsController(NexusLARPContextBase context)
+    public PronounsController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -34,14 +34,14 @@ public class PronounsController : ControllerBase
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-            return await _context.Pronouns.Select(p => new PronounsOut(p.Guid, p.Pronouns1)).ToListAsync();
+            return await _context.Pronouns.Select(p => new PronounsOut(p.Guid, p.Pronouns)).ToListAsync();
         return Unauthorized();
     }
 
     // GET: api/v1/Pronouns/5
     [HttpGet("{guid}")]
     [Authorize]
-    public async Task<ActionResult<Pronouns>> GetPronouns(Guid guid)
+    public async Task<ActionResult<Pronoun>> GetPronouns(Guid guid)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -102,7 +102,7 @@ public class PronounsController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<Pronouns>> PostPronouns(Pronouns pronouns)
+    public async Task<ActionResult<Pronoun>> PostPronouns(Pronoun pronouns)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -124,7 +124,7 @@ public class PronounsController : ControllerBase
     // DELETE: api/Pronouns/5
     [HttpDelete("{guid}")]
     [Authorize]
-    public async Task<ActionResult<Pronouns>> DeletePronouns(Guid guid)
+    public async Task<ActionResult<Pronoun>> DeletePronouns(Guid guid)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 

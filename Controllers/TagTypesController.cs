@@ -14,9 +14,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class TagTypesController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public TagTypesController(NexusLARPContextBase context)
+    public TagTypesController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -28,7 +28,7 @@ public class TagTypesController : ControllerBase
     // GET: api/v1/TagTypes
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<TagTypes>>> GetTagTypes()
+    public async Task<ActionResult<IEnumerable<TagType>>> GetTagTypes()
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -132,7 +132,7 @@ public class TagTypesController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<TagTypes>> PostTagTypes(TagTypes tagTypes)
+    public async Task<ActionResult<TagType>> PostTagTypes(TagType tagTypes)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -160,7 +160,7 @@ public class TagTypesController : ControllerBase
     // DELETE: api/TagTypes/5
     [HttpDelete("{guid}")]
     [Authorize]
-    public async Task<ActionResult<TagTypes>> DeleteTagTypes(Guid guid)
+    public async Task<ActionResult<TagType>> DeleteTagTypes(Guid guid)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 

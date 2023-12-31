@@ -30,14 +30,14 @@ public class IteSheet
     public string Gmnotes { get; set; }
     public string Reason4edit { get; set; }
     public int? Version { get; set; }
-    public List<Tags> Tags { get; set; }
+    public List<Tag> Tags { get; set; }
     public byte[] imagedata { get; set; }
 
     public IteSheet()
     {
     }
 
-    public IteSheet(ItemSheet sheet, NexusLARPContextBase _context)
+    public IteSheet(ItemSheet sheet, NexusLarpLocalContext _context)
     {
         Id = sheet.Id;
         Guid = sheet.Guid;
@@ -49,7 +49,7 @@ public class IteSheet
         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid;
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
         Version = sheet.Version;
-        Tags = new List<Tags>();
+        Tags = new List<Tag>();
 
         if (this.Img1 != null)
         {
@@ -93,7 +93,7 @@ public class IteSheet
 
             foreach (var tag in TestJsonFeilds)
             {
-                Tags fullTag = _context.Tags
+                var fullTag = _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                     .FirstOrDefault();
                 this.Tags.Add(fullTag);
@@ -103,7 +103,7 @@ public class IteSheet
 
     }
 
-    public IteSheet(ItemSheetApproved sheet, NexusLARPContextBase _context)
+    public IteSheet(ItemSheetApproved sheet, NexusLarpLocalContext _context)
     {
         Id = sheet.Id;
         Guid = sheet.Guid;
@@ -115,7 +115,7 @@ public class IteSheet
         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid;
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
         Version = sheet.Version;
-        Tags = new List<Tags>();
+        Tags = new List<Tag>();
 
         if (this.Img1 != null)
         {
@@ -159,7 +159,7 @@ public class IteSheet
 
             foreach (var tag in TestJsonFeilds)
             {
-                Tags fullTag = _context.Tags
+                var fullTag = _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                     .FirstOrDefault();
                 this.Tags.Add(fullTag);

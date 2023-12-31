@@ -191,7 +191,7 @@ public class Startup
         //    connstring += ";SslMode=allow;Trust Server Certificate=true;";
 
         // string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
-        services.AddDbContext<NexusLARPContextBase>(options => options.UseNpgsql(connstring)
+        services.AddDbContext<NexusLarpLocalContext>(options => options.UseNpgsql(connstring)
         );
         services.AddMvc(x => x.EnableEndpointRouting = false);
     }

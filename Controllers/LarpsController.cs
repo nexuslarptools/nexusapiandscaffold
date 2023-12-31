@@ -15,9 +15,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class LarpsController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public LarpsController(NexusLARPContextBase context)
+    public LarpsController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -48,7 +48,7 @@ public class LarpsController : ControllerBase
         return await _context.Larps.Where(l => l.Isactive == true &&
                                                l.Guid != Guid.Parse("0b247b46-86fd-11ed-956d-7faf2be673cc")
                                                && l.UserLarproles.Any(ulr =>
-                                                   ulr.Roleid > 3 && ulr.Usergu.Authid == authId &&
+                                                   ulr.Roleid > 3 && ulr.User.Authid == authId &&
                                                    ulr.Isactive == true))
             .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
     }
@@ -72,7 +72,7 @@ public class LarpsController : ControllerBase
                 Shortname = larp.Shortname,
                 Users = await _context.Users
                     .Where(u => u.UserLarproles.Any(ulr => ulr.Larpguid == larp.Guid && ulr.Isactive == true))
-                    .Select(u => new UserOut(u.Guid, u.Firstname, u.Lastname, u.Preferredname, u.Email, u.Pronounsguid,
+                    .Select(u => new UserOut(u.Guid, u.Firstname, u.Lastname, u.Preferredname, u.Email, u.Pronounsguid, u.Pronouns.Pronouns,
                         u.Discordname, new RoleOut()
                     )).ToListAsync()
             };
@@ -83,7 +83,7 @@ public class LarpsController : ControllerBase
 
                 var userRoles = await _context.UserLarproles
                     .Where(ulr => ulr.Userguid == user.Guid && ulr.Larpguid == larp.Guid)
-                    .Select(ulr => new RoleOut(ulr.Role.Id, ulr.Role.Rolename)).ToListAsync();
+                    .Select(ulr => new RoleOut((int)ulr.Role.Ord, ulr.Role.Rolename)).ToListAsync();
 
                 foreach (var role in userRoles)
                     if (topRole == null || topRole.RoleID < role.RoleID)
@@ -103,7 +103,7 @@ public class LarpsController : ControllerBase
     // GET: api/Larps/5
     [HttpGet("{id}")]
     [Authorize]
-    public async Task<ActionResult<Larps>> GetLarps(Guid id)
+    public async Task<ActionResult<Larp>> GetLarps(Guid id)
     {
         var larps = await _context.Larps.FindAsync(id);
 
@@ -167,7 +167,7 @@ public class LarpsController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<Larps>> PostLarps(Larps larps)
+    public async Task<ActionResult<Larp>> PostLarps(Larp larps)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -186,7 +186,7 @@ public class LarpsController : ControllerBase
     // DELETE: api/Larps/5
     [HttpDelete("{id}")]
     [Authorize]
-    public async Task<ActionResult<Larps>> DeleteLarps(Guid id)
+    public async Task<ActionResult<Larp>> DeleteLarps(Guid id)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 

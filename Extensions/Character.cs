@@ -29,7 +29,7 @@ public class Character
         newCharSheet.Gmnotes = cSheet.Gmnotes;
         newCharSheet.Reason4edit = cSheet.Reason4edit;
         newCharSheet.Version = cSheet.Version;
-        newCharSheet.Tags = new List<Tags>();
+        newCharSheet.Tags = new List<Tag>();
 
 
         return newCharSheet;
@@ -58,7 +58,7 @@ public class Character
         newCharSheet.Gmnotes = cSheet.Gmnotes;
         newCharSheet.Reason4edit = cSheet.Reason4edit;
         newCharSheet.Version = cSheet.Version;
-        newCharSheet.Tags = new List<Tags>();
+        newCharSheet.Tags = new List<Tag>();
 
 
         return newCharSheet;
@@ -85,7 +85,7 @@ public class Character
         newCharSheet.Gmnotes = cSheet.Gmnotes;
         newCharSheet.Reason4edit = cSheet.Reason4edit;
         newCharSheet.Version = cSheet.Version;
-        newCharSheet.Tags = new List<Tags>();
+        newCharSheet.Tags = new List<Tag>();
 
 
         return newCharSheet;

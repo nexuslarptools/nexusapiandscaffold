@@ -17,9 +17,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class TagsController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public TagsController(NexusLARPContextBase context)
+    public TagsController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -27,7 +27,7 @@ public class TagsController : ControllerBase
     // GET: api/v1/Tags
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<Tags>>> GetTags()
+    public async Task<ActionResult<IEnumerable<Tag>>> GetTags()
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -167,8 +167,8 @@ public class TagsController : ControllerBase
 
             tags.LarpsTagLockedTo = _context.Larptags
                 .Where(lt => lt.Tagguid == tags.Guid && lt.Larpguid != null && lt.Isactive == true)
-                .Select(lt => new LARPOut(lt.Larpgu.Guid, lt.Larpgu.Name, lt.Larpgu.Shortname, lt.Larpgu.Location,
-                    lt.Larpgu.Isactive)).ToList();
+                .Select(lt => new LARPOut(lt.Larp.Guid, lt.Larp.Name, lt.Larp.Shortname, lt.Larp.Location,
+                    lt.Larp.Isactive)).ToList();
 
             if (tags.LarpsTagLockedTo.Count > 0) tags.IsLocked = true;
 
@@ -235,7 +235,7 @@ public class TagsController : ControllerBase
 
                     if (!curTagLARPSActive.Contains(inputLarpGuid))
                     {
-                        var newLarpTag = new Larptags
+                        var newLarpTag = new Larptag
                         {
                             Larpguid = inputLarpGuid,
                             Tagguid = updateTag.Guid,
@@ -321,7 +321,7 @@ public class TagsController : ControllerBase
             var userTags = UsersLogic.GetUserTagsList(authId, _context, "Reader",
                 UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
             var tagType = await _context.TagTypes.Where(tt => tt.Name == TypeName).FirstOrDefaultAsync();
-            var Foundtags = await _context.Tags.Where(t => t.Tagtypegu.Guid == tagType.Guid && t.Isactive == true
+            var Foundtags = await _context.Tags.Where(t => t.Tagtype.Guid == tagType.Guid && t.Isactive == true
                 && (t.Larptags.Any(lt => lt.Larpguid == null)
                     || userTags.Contains(t.Guid))).ToListAsync();
 
@@ -373,7 +373,7 @@ public class TagsController : ControllerBase
                 if (typeGu.Name == "Item" || typeGu.Name == "LARPRun")
                 {
 
-                    var itemList = _context.ItemSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var itemList = _context.ItemSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var itemSheet in itemList)
                     {
@@ -394,7 +394,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvitemList = _context.ItemSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvitemList = _context.ItemSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var itemSheet in approvitemList)
                     {
@@ -419,7 +419,7 @@ public class TagsController : ControllerBase
                 if (typeGu.Name == "Character" || typeGu.Name == "LARPRun")
                 {
 
-                    var charList = _context.CharacterSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var characterSheet in charList)
                     {
@@ -440,7 +440,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvcharList = _context.CharacterSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvcharList = _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var characterSheet in approvcharList)
                     {
@@ -465,7 +465,7 @@ public class TagsController : ControllerBase
                 if (typeGu.Name == "Ability" || typeGu.Name == "LARPRun")
                 {
 
-                    var charList = _context.CharacterSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var characterSheet in charList)
                     {
@@ -497,7 +497,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvcharList = _context.CharacterSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvcharList = _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var characterSheet in approvcharList)
                     {
@@ -530,7 +530,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var itemList = _context.ItemSheet.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var itemList = _context.ItemSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var itemSheet in itemList)
                     {
@@ -563,7 +563,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvitemList = _context.ItemSheetApproved.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvitemList = _context.ItemSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
 
                     foreach (var itemSheet in approvitemList)
                     {
@@ -656,7 +656,7 @@ public class TagsController : ControllerBase
 
             if (!_context.TagTypes.Any(tt => tt.Guid == tags.Tagtypeguid)) return BadRequest();
 
-            var newTag = new Tags
+            var newTag = new Tag
             {
                 Guid = Guid.NewGuid(),
                 Name = tags.Name,
@@ -668,7 +668,7 @@ public class TagsController : ControllerBase
 
             if (tags.LarptagGuid == null || tags.LarptagGuid.Count == 0)
             {
-                var tagLarp = new Larptags
+                var tagLarp = new Larptag
                 {
                     Tagguid = newTag.Guid
                 };
@@ -688,7 +688,7 @@ public class TagsController : ControllerBase
                                                                    && ulr.Roleid > 3)))
                             return BadRequest();
 
-                    var tagLarp = new Larptags
+                    var tagLarp = new Larptag
                     {
                         Tagguid = newTag.Guid,
                         Larpguid = larpguid
@@ -709,7 +709,7 @@ public class TagsController : ControllerBase
     // DELETE: api/v1/Tags/5
     [HttpDelete("{guid}")]
     [Authorize]
-    public async Task<ActionResult<Tags>> DeleteTags(Guid guid)
+    public async Task<ActionResult<Tag>> DeleteTags(Guid guid)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 

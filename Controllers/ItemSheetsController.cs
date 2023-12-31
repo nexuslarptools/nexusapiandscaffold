@@ -21,9 +21,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class ItemSheetsController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public ItemSheetsController(NexusLARPContextBase context)
+    public ItemSheetsController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -42,9 +42,9 @@ public class ItemSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+            var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -57,13 +57,13 @@ public class ItemSheetsController : ControllerBase
             var allowedSehets = TagScanner.ScanTags(legalsheets, allowedTags);
 
 
-            var sheets = await _context.ItemSheet.Where(s => s.Isactive == true && allowedSehets.Contains(s.Guid))
+            var sheets = await _context.ItemSheets.Where(s => s.Isactive == true && allowedSehets.Contains(s.Guid))
                 .Select(sh => new
                 {
                     sh.Guid,
                     sh.Name,
                     sh.Seriesguid,
-                    sh.Seriesgu.Title
+                    sh.Series.Title
                 })
                 .OrderBy(x => x.Name)
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
@@ -88,14 +88,14 @@ public class ItemSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            var itemSheet = await _context.ItemSheet.Where(ish => ish.Isactive == true && ish.Guid == guid)
+            var itemSheet = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid)
                 .FirstOrDefaultAsync();
 
             if (itemSheet == null) return NotFound();
 
-            var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+            var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -163,21 +163,21 @@ public class ItemSheetsController : ControllerBase
 
                 ListCharacterSheets output = new ListCharacterSheets();
 
-                var itemsList = await _context.ItemSheet.Where(ish => ish.Isactive == true && ish.Guid == guid).ToListAsync();
+                var itemsList = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid).ToListAsync();
 
                 if (itemsList.Count == 0)
                 {
                     return BadRequest("Item Not Found");
                 }
 
-                var itemsListApproved = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Guid == guid).ToListAsync();
+                var itemsListApproved = await _context.ItemSheetApproveds.Where(ish => ish.Isactive == true && ish.Guid == guid).ToListAsync();
 
                 if (itemsListApproved.Count > 0)
                 {
                     return output;
                 }
 
-                var charList = _context.CharacterSheet.Where(cs => cs.Isactive == true).ToList();
+                var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).ToList();
 
                 foreach (var characterSheet in charList)
                 {
@@ -210,7 +210,7 @@ public class ItemSheetsController : ControllerBase
                     }
                 }
 
-                var approvcharList = _context.CharacterSheetApproved.Where(cs => cs.Isactive == true).ToList();
+                var approvcharList = _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true).ToList();
 
                 foreach (var characterSheet in approvcharList)
                 {
@@ -272,10 +272,10 @@ public class ItemSheetsController : ControllerBase
             var outputItem = new IteSheet();
 
 
-            var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+            var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
             var allowedLARPS = _context.UserLarproles
-                .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+                .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -298,7 +298,7 @@ public class ItemSheetsController : ControllerBase
 
             foreach (var guid in input.U)
             {
-                var itemSheet = await _context.ItemSheet.Where(ish => ish.Isactive == true && ish.Guid == guid)
+                var itemSheet = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid)
                     .FirstOrDefaultAsync();
 
                 if (itemSheet == null) return NotFound();
@@ -363,10 +363,10 @@ public class ItemSheetsController : ControllerBase
             {
                 var outPutList = new List<IteSheet>();
 
-                var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+                var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                     .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
                 var allowedLARPS = _context.UserLarproles
-                    .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
                     .ToList();
 
                 var allowedTags = _context.Larptags.Where(lt =>
@@ -378,7 +378,7 @@ public class ItemSheetsController : ControllerBase
 
                 var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-                var allSheets = await _context.ItemSheet.Where(c => c.Isactive == true && allowedShets.Contains(c.Guid))
+                var allSheets = await _context.ItemSheets.Where(c => c.Isactive == true && allowedShets.Contains(c.Guid))
                     .OrderBy(x => x.Name)
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                     .Take(pagingParameterModel.pageSize).ToListAsync();
@@ -397,7 +397,7 @@ public class ItemSheetsController : ControllerBase
                         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
                         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                         Version = sheet.Version,
-                        Tags = new List<Tags>()
+                        Tags = new List<Tag>()
                     };
                     if (newOutputSheet.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
@@ -475,10 +475,10 @@ public class ItemSheetsController : ControllerBase
             try {
                 var outPutList = new List<IteSheet>();
 
-                var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+                var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                     .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
                 var allowedLARPS = _context.UserLarproles
-                    .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
                     .ToList();
 
                 var allowedTags = _context.Larptags.Where(lt =>
@@ -490,7 +490,7 @@ public class ItemSheetsController : ControllerBase
 
                 var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-                var allSheets = await _context.ItemSheet.Where(c => c.Isactive == true && allowedShets.Contains(c.Guid))
+                var allSheets = await _context.ItemSheets.Where(c => c.Isactive == true && allowedShets.Contains(c.Guid))
                     .OrderBy(x => x.Name).ToListAsync();
 
                 foreach (var sheet in allSheets) {
@@ -505,7 +505,7 @@ public class ItemSheetsController : ControllerBase
                         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
                         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                         Version = sheet.Version,
-                        Tags = new List<Tags>()
+                        Tags = new List<Tag>()
                     };
 
                     if (newOutputSheet.CreatedbyuserGuid != null) {
@@ -582,12 +582,12 @@ public class ItemSheetsController : ControllerBase
             {
                 var outPutList = new List<IteSheet>();
 
-                var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+                var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                     .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-                var legalappprovedsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+                var legalappprovedsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
                     .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
                 var allowedLARPS = _context.UserLarproles
-                    .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
                     .ToList();
 
                 var allowedTags = _context.Larptags.Where(lt =>
@@ -600,12 +600,12 @@ public class ItemSheetsController : ControllerBase
                 var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
                 var allowedApprovedSheets = TagScanner.ScanTags(legalappprovedsheets, allowedTags);
 
-                output.ItemsList = await _context.ItemSheet
+                output.ItemsList = await _context.ItemSheets
                     .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid))
                     .OrderBy(x => x.Name)
                     .Select(i => new ItemsEntry(i.Guid, i.Name)).ToListAsync();
 
-                output.ApprovedItemsList = await _context.ItemSheetApproved.Where(c =>
+                output.ApprovedItemsList = await _context.ItemSheetApproveds.Where(c =>
                         c.Isactive == true && allowedApprovedSheets.Contains(c.Guid))
                     .OrderBy(x => x.Name)
                     .Select(i => new ItemsEntry(i.Guid, i.Name)).ToListAsync();
@@ -632,9 +632,9 @@ public class ItemSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+            var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -682,7 +682,7 @@ public class ItemSheetsController : ControllerBase
             //}
 
 
-            var output = await _context.ItemSheet.Where(c => c.Isactive == true &&
+            var output = await _context.ItemSheets.Where(c => c.Isactive == true &&
                                                              allowedSheets.Contains(c.Guid)).Select(ch => new
                 {
                     ch.Name,
@@ -725,10 +725,10 @@ public class ItemSheetsController : ControllerBase
                 try
                 {
 
-                    List<TagScanContainer> legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+                    List<TagScanContainer> legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                         .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
                     List<Guid> allowedLARPS = _context.UserLarproles
-                        .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+                        .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                         .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
                     var allowedTags = _context.Larptags.Where(lt =>
@@ -741,7 +741,7 @@ public class ItemSheetsController : ControllerBase
                             .ToList();
                     }
 
-                    var initItems = await _context.ItemSheet.Where(c => c.Isactive == true).ToListAsync();
+                    var initItems = await _context.ItemSheets.Where(c => c.Isactive == true).ToListAsync();
 
                     if (pagingParameterModel.userCreated == true)
                     {
@@ -950,7 +950,7 @@ public class ItemSheetsController : ControllerBase
                             FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
                             SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                             Version = sheet.Version,
-                            Tags = new List<Tags>(),
+                            Tags = new List<Tag>(),
                         };
                         if (newOutputSheet.Img1 != null)
                         {
@@ -994,7 +994,7 @@ public class ItemSheetsController : ControllerBase
 
                             foreach (var tag in TestJsonFeilds)
                             {
-                                Tags fullTag = await _context.Tags
+                                var fullTag = await _context.Tags
                                     .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                                     .FirstOrDefaultAsync();
                                 newOutputSheet.Tags.Add(fullTag);
@@ -1038,16 +1038,16 @@ public class ItemSheetsController : ControllerBase
         {
             var approvaltype = "first";
             var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
-            var itemSheet = await _context.ItemSheet.Where(cs => cs.Isactive == true && cs.Guid == guid)
+            var itemSheet = await _context.ItemSheets.Where(cs => cs.Isactive == true && cs.Guid == guid)
                 .FirstOrDefaultAsync();
 
             var fullapprove = false;
 
             if (itemSheet == null) return BadRequest();
 
-            var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+            var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -1098,7 +1098,7 @@ public class ItemSheetsController : ControllerBase
             if (fullapprove)
             {
                 approvaltype = "second";
-                var approvedSheets = await _context.ItemSheetApproved
+                var approvedSheets = await _context.ItemSheetApproveds
                     .Where(csa => csa.Guid == guid).ToListAsync();
 
                 if (approvedSheets.Count > 0)
@@ -1111,7 +1111,7 @@ public class ItemSheetsController : ControllerBase
                 foreach (var asheet in approvedSheets)
                 {
                     asheet.Isactive = false;
-                    _context.ItemSheetApproved.Update(asheet);
+                    _context.ItemSheetApproveds.Update(asheet);
                 }
 
                 var newapproval = new ItemSheetApproved
@@ -1133,7 +1133,7 @@ public class ItemSheetsController : ControllerBase
                     Version = maxversion
                 };
 
-                _context.ItemSheetApproved.Add(newapproval);
+                _context.ItemSheetApproveds.Add(newapproval);
 
                 var CurrfolderName = Path.Combine("images", "items", "UnApproved");
                 var NewfolderName = Path.Combine("images", "items", "Approved");
@@ -1190,7 +1190,7 @@ public class ItemSheetsController : ControllerBase
 
 
                 string pathToSave = string.Empty;
-                var itemSheetList = await _context.ItemSheet.Where(s => s.Guid == guid)
+                var itemSheetList = await _context.ItemSheets.Where(s => s.Guid == guid)
                 .OrderBy(s => s.Version).ToListAsync();
 
                 ItemSheet itemSheet = item.OutputToItemSheet();
@@ -1209,10 +1209,10 @@ public class ItemSheetsController : ControllerBase
                     itemSheet.Version = itemSheetList.MaxBy(csa => csa.Version).Version + 1;
                 }
 
-                List<TagScanContainer> legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+                List<TagScanContainer> legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                     .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
                 List<Guid> allowedLARPS = _context.UserLarproles
-                    .Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+                    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                     .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
                 var allowedTags = _context.Larptags.Where(lt =>
@@ -1315,9 +1315,9 @@ public class ItemSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
         {
-            var legalsheets = _context.ItemSheet.Where(it => it.Isactive == true)
+            var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -1383,7 +1383,7 @@ public class ItemSheetsController : ControllerBase
             itemSheet.Isactive = true;
 
 
-            var isheets = await _context.ItemSheet.Where(cs => cs.Guid == itemSheet.Guid).ToListAsync();
+            var isheets = await _context.ItemSheets.Where(cs => cs.Guid == itemSheet.Guid).ToListAsync();
             if (isheets != null && isheets.Count > 0)
             {
                 var maxsheet = isheets.MaxBy(csa => csa.Version);
@@ -1393,7 +1393,7 @@ public class ItemSheetsController : ControllerBase
 
             try
             {
-                _context.ItemSheet.Add(itemSheet);
+                _context.ItemSheets.Add(itemSheet);
                 await _context.SaveChangesAsync();
             }
             catch (Exception e)
@@ -1422,7 +1422,7 @@ public class ItemSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            var itemSheets = await _context.ItemSheet.Where(i => i.Guid == id).ToListAsync();
+            var itemSheets = await _context.ItemSheets.Where(i => i.Guid == id).ToListAsync();
             if (itemSheets == null) return NotFound();
 
             try
@@ -1430,7 +1430,7 @@ public class ItemSheetsController : ControllerBase
                 foreach (var item in itemSheets)
                 {
                     item.Isactive = false;
-                    _context.ItemSheet.Update(item);
+                    _context.ItemSheets.Update(item);
                     _context.SaveChanges();
                 }
             }
@@ -1447,10 +1447,10 @@ public class ItemSheetsController : ControllerBase
 
     private async Task<IteSheet> GetApprovedItemSheetOutput(Guid guid, List<Guid?> allowedTags)
     {
-        var itemSheet = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Guid == guid)
+        var itemSheet = await _context.ItemSheetApproveds.Where(ish => ish.Isactive == true && ish.Guid == guid)
             .FirstOrDefaultAsync();
 
-        var legalsheets = _context.ItemSheetApproved.Where(it => it.Isactive == true)
+        var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
             .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
 
         if (itemSheet == null) return null;
@@ -1493,6 +1493,6 @@ public class ItemSheetsController : ControllerBase
 
     private bool ItemSheetExists(Guid id)
     {
-        return _context.ItemSheet.Any(e => e.Guid == id);
+        return _context.ItemSheets.Any(e => e.Guid == id);
     }
 }

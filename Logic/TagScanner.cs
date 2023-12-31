@@ -87,12 +87,12 @@ public class TagScanner
 
     }
 
-    public static List<Tags> ReturnDictElementOrNull(Guid value, Dictionary<Guid, JsonElement> tagDictionary, List<Tags> fulltaglist) {
+    public static List<Tag> ReturnDictElementOrNull(Guid value, Dictionary<Guid, JsonElement> tagDictionary, List<Tag> fulltaglist) {
 
         if (tagDictionary.TryGetValue(value, out JsonElement tagList)) {
 
             var jsontags = JArray.Parse(tagList.ToString());
-            List<Tags> tagsout = new List<Tags>();
+            List<Tag> tagsout = new List<Tag>();
             foreach (var tag in jsontags) {
                 var tagVal = fulltaglist.Where(t => t.Guid == (Guid)tag).FirstOrDefault();
                 tagsout.Add(tagVal);

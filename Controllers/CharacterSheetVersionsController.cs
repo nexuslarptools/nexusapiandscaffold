@@ -16,9 +16,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class CharacterSheetVersionsController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public CharacterSheetVersionsController(NexusLARPContextBase context)
+    public CharacterSheetVersionsController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -40,17 +40,17 @@ public class CharacterSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
-            var sheetVersionInfo = await _context.CharacterSheetVersion.Select(csv => new
+            var sheetVersionInfo = await _context.CharacterSheetVersions.Select(csv => new
             {
                 csv.Id,
                 csv.Guid,
                 csv.Version,
                 csv.Name,
                 csv.Seriesguid,
-                csv.Seriesgu.Title,
+                csv.Series.Title,
                 csv.Createdate,
-                Createdby = csv.CreatedbyuserGu.Firstname + " " + csv.CreatedbyuserGu.Lastname,
-                CreatedbyEmail = csv.CreatedbyuserGu.Email,
+                Createdby = csv.Createdbyuser.Firstname + " " + csv.Createdbyuser.Lastname,
+                CreatedbyEmail = csv.Createdbyuser.Email,
                 csv.Reason4edit
             }).ToListAsync();
 
@@ -77,17 +77,17 @@ public class CharacterSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
-            var sheetVersionInfo = await _context.CharacterSheetVersion.Where(c => c.Guid == guid).Select(csv => new
+            var sheetVersionInfo = await _context.CharacterSheetVersions.Where(c => c.Guid == guid).Select(csv => new
             {
                 csv.Id,
                 csv.Guid,
                 csv.Version,
                 csv.Name,
                 csv.Seriesguid,
-                csv.Seriesgu.Title,
+                csv.Series.Title,
                 csv.Createdate,
-                Createdby = csv.CreatedbyuserGu.Firstname + " " + csv.CreatedbyuserGu.Lastname,
-                CreatedbyEmail = csv.CreatedbyuserGu.Email,
+                Createdby = csv.Createdbyuser.Firstname + " " + csv.Createdbyuser.Lastname,
+                CreatedbyEmail = csv.Createdbyuser.Email,
                 csv.Reason4edit
             }).ToListAsync();
 
@@ -116,7 +116,7 @@ public class CharacterSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
-            var characterSheetVersion = await _context.CharacterSheetVersion.FindAsync(id);
+            var characterSheetVersion = await _context.CharacterSheetVersions.FindAsync(id);
 
             if (characterSheetVersion == null) return NotFound();
 
@@ -151,14 +151,14 @@ public class CharacterSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            var oldSheet = await _context.CharacterSheetVersion.Where(csv => csv.Id == id).FirstOrDefaultAsync();
+            var oldSheet = await _context.CharacterSheetVersions.Where(csv => csv.Id == id).FirstOrDefaultAsync();
 
             if (oldSheet == null) return BadRequest();
 
 
-            var editSheet = await _context.CharacterSheet.Where(cs => cs.Guid == oldSheet.Guid).FirstOrDefaultAsync();
+            var editSheet = await _context.CharacterSheets.Where(cs => cs.Guid == oldSheet.Guid).FirstOrDefaultAsync();
 
-            editSheet.Seriesguid = oldSheet.Seriesguid;
+            editSheet.Seriesguid = (Guid)oldSheet.Seriesguid;
             editSheet.Name = oldSheet.Name;
             editSheet.Img1 = oldSheet.Img1;
             editSheet.Img2 = oldSheet.Img2;
@@ -174,7 +174,7 @@ public class CharacterSheetVersionsController : ControllerBase
             editSheet.Gmnotes = null;
             editSheet.Reason4edit = null;
 
-            _context.CharacterSheet.Update(editSheet);
+            _context.CharacterSheets.Update(editSheet);
             await _context.SaveChangesAsync();
 
             return Ok(editSheet);
@@ -243,7 +243,7 @@ public class CharacterSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            _context.CharacterSheetVersion.Add(characterSheetVersion);
+            _context.CharacterSheetVersions.Add(characterSheetVersion);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetCharacterSheetVersion", new { id = characterSheetVersion.Id },
@@ -266,10 +266,10 @@ public class CharacterSheetVersionsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            var characterSheetVersion = await _context.CharacterSheetVersion.FindAsync(id);
+            var characterSheetVersion = await _context.CharacterSheetVersions.FindAsync(id);
             if (characterSheetVersion == null) return NotFound();
 
-            _context.CharacterSheetVersion.Remove(characterSheetVersion);
+            _context.CharacterSheetVersions.Remove(characterSheetVersion);
             await _context.SaveChangesAsync();
 
             return characterSheetVersion;
@@ -280,6 +280,6 @@ public class CharacterSheetVersionsController : ControllerBase
 
     private bool CharacterSheetVersionExists(int id)
     {
-        return _context.CharacterSheetVersion.Any(e => e.Id == id);
+        return _context.CharacterSheetVersions.Any(e => e.Id == id);
     }
 }

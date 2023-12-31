@@ -105,23 +105,23 @@ public partial class NexusLARPContextBase : DbContext
                 .HasColumnName("version")
                 .HasDefaultValueSql("1");
 
-            entity.HasOne(d => d.CreatedbyuserGu)
-                .WithMany(p => p.CharacterSheetCreatedbyuserGu)
+            entity.HasOne(d => d.Createdbyuser)
+                .WithMany(p => p.CharacterSheetCreatedbyusers)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("CharacterSheet_createdby_fkey");
 
-            entity.HasOne(d => d.FirstapprovalbyuserGu)
-                .WithMany(p => p.CharacterSheetFirstapprovalbyuserGu)
+            entity.HasOne(d => d.Firstapprovalbyuser)
+                .WithMany(p => p.CharacterSheetFirstapprovalbyusers)
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("CharacterSheet_firstapprovalby_fkey");
 
-            entity.HasOne(d => d.SecondapprovalbyuserGu)
-                .WithMany(p => p.CharacterSheetSecondapprovalbyuserGu)
+            entity.HasOne(d => d.Secondapprovalbyuser)
+                .WithMany(p => p.CharacterSheetSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
                 .HasConstraintName("CharacterSheet_secondapprovalby_fkey");
 
-            entity.HasOne(d => d.Seriesgu)
-                .WithMany(p => p.CharacterSheet)
+            entity.HasOne(d => d.Series)
+                .WithMany(p => p.CharacterSheets)
                 .HasForeignKey(d => d.Seriesguid)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_series_guid");
@@ -186,28 +186,28 @@ public partial class NexusLARPContextBase : DbContext
                 .HasDefaultValueSql("1");
 
             entity.HasOne(d => d.Charactersheet)
-                .WithMany(p => p.CharacterSheetApproved)
+                .WithMany(p => p.CharacterSheetApproveds)
                 .HasForeignKey(d => d.CharactersheetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("CharacterSheetApproved_charactersheet_id_fkey");
 
-            entity.HasOne(d => d.CreatedbyuserGu)
-                .WithMany(p => p.CharacterSheetApprovedCreatedbyuserGu)
+            entity.HasOne(d => d.Createdbyuser)
+                .WithMany(p => p.CharacterSheetApprovedCreatedbyusers)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("CharacterSheetApproved_createdby_fkey");
 
-            entity.HasOne(d => d.FirstapprovalbyuserGu)
-                .WithMany(p => p.CharacterSheetApprovedFirstapprovalbyuserGu)
+            entity.HasOne(d => d.Firstapprovalbyuser)
+                .WithMany(p => p.CharacterSheetApprovedFirstapprovalbyusers)
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("CharacterSheetApproved_firstapprovalby_fkey");
 
-            entity.HasOne(d => d.SecondapprovalbyuserGu)
-                .WithMany(p => p.CharacterSheetApprovedSecondapprovalbyuserGu)
+            entity.HasOne(d => d.Secondapprovalbyuser)
+                .WithMany(p => p.CharacterSheetApprovedSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
                 .HasConstraintName("CharacterSheetApproved_secondapprovalby_fkey");
 
-            entity.HasOne(d => d.Seriesgu)
-                .WithMany(p => p.CharacterSheetApproved)
+            entity.HasOne(d => d.Series)
+                .WithMany(p => p.CharacterSheetApproveds)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid");
         });
@@ -271,28 +271,28 @@ public partial class NexusLARPContextBase : DbContext
                 .HasDefaultValueSql("1");
 
             entity.HasOne(d => d.Charactersheet)
-                .WithMany(p => p.CharacterSheetVersion)
+                .WithMany(p => p.CharacterSheetVersions)
                 .HasForeignKey(d => d.CharactersheetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("CharacterSheetVersion_charactersheet_id_fkey");
 
-            entity.HasOne(d => d.CreatedbyuserGu)
-                .WithMany(p => p.CharacterSheetVersionCreatedbyuserGu)
+            entity.HasOne(d => d.Createdbyuser)
+                .WithMany(p => p.CharacterSheetVersionCreatedbyusers)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("CharacterSheetVersion_createdby_fkey");
 
-            entity.HasOne(d => d.FirstapprovalbyuserGu)
-                .WithMany(p => p.CharacterSheetVersionFirstapprovalbyuserGu)
+            entity.HasOne(d => d.Firstapprovalbyuser)
+                .WithMany(p => p.CharacterSheetVersionFirstapprovalbyusers)
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("CharacterSheetVersion_firstapprovalby_fkey");
 
-            entity.HasOne(d => d.SecondapprovalbyuserGu)
-                .WithMany(p => p.CharacterSheetVersionSecondapprovalbyuserGu)
+            entity.HasOne(d => d.Secondapprovalbyuser)
+                .WithMany(p => p.CharacterSheetVersionSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
                 .HasConstraintName("CharacterSheetVersion_secondapprovalby_fkey");
 
-            entity.HasOne(d => d.Seriesgu)
-                .WithMany(p => p.CharacterSheetVersion)
+            entity.HasOne(d => d.Series)
+                .WithMany(p => p.CharacterSheetVersions)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid");
         });
@@ -355,23 +355,23 @@ public partial class NexusLARPContextBase : DbContext
                 .HasColumnName("version")
                 .HasDefaultValueSql("1");
 
-            entity.HasOne(d => d.CreatedbyuserGu)
-                .WithMany(p => p.ItemSheetCreatedbyuserGu)
+            entity.HasOne(d => d.Createdbyuser)
+                .WithMany(p => p.ItemSheetCreatedbyusers)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("ItemSheet_createdby_fkey");
 
-            entity.HasOne(d => d.FirstapprovalbyuserGu)
-                .WithMany(p => p.ItemSheetFirstapprovalbyuserGu)
+            entity.HasOne(d => d.Firstapprovalbyuser)
+                .WithMany(p => p.ItemSheetFirstapprovalbyusers)
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("ItemSheet_firstapprovalby_fkey");
 
-            entity.HasOne(d => d.SecondapprovalbyuserGu)
-                .WithMany(p => p.ItemSheetSecondapprovalbyuserGu)
+            entity.HasOne(d => d.Secondapprovalbyuser)
+                .WithMany(p => p.ItemSheetSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
                 .HasConstraintName("ItemSheet_secondapprovalby_fkey");
 
-            entity.HasOne(d => d.Seriesgu)
-                .WithMany(p => p.ItemSheet)
+            entity.HasOne(d => d.Series)
+                .WithMany(p => p.ItemSheets)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid_item");
         });
@@ -432,23 +432,23 @@ public partial class NexusLARPContextBase : DbContext
                 .HasColumnName("version")
                 .HasDefaultValueSql("1");
 
-            entity.HasOne(d => d.CreatedbyuserGu)
-                .WithMany(p => p.ItemSheetApprovedCreatedbyuserGu)
+            entity.HasOne(d => d.Createdbyuser)
+                .WithMany(p => p.ItemSheetApprovedCreatedbyusers)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("ItemSheetApproved_createdby_fkey");
 
-            entity.HasOne(d => d.FirstapprovalbyuserGu)
-                .WithMany(p => p.ItemSheetApprovedFirstapprovalbyuserGu)
+            entity.HasOne(d => d.Firstapprovalbyuser)
+                .WithMany(p => p.ItemSheetApprovedFirstapprovalbyusers)
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("ItemSheetApproved_firstapprovalby_fkey");
 
-            entity.HasOne(d => d.SecondapprovalbyuserGu)
-                .WithMany(p => p.ItemSheetApprovedSecondapprovalbyuserGu)
+            entity.HasOne(d => d.Secondapprovalbyuser)
+                .WithMany(p => p.ItemSheetApprovedSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
                 .HasConstraintName("ItemSheetApproved_secondapprovalby_fkey");
 
-            entity.HasOne(d => d.Seriesgu)
-                .WithMany(p => p.ItemSheetApproved)
+            entity.HasOne(d => d.Series)
+                .WithMany(p => p.ItemSheetApproveds)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid_itemappr");
         });
@@ -509,23 +509,23 @@ public partial class NexusLARPContextBase : DbContext
                 .HasColumnName("version")
                 .HasDefaultValueSql("1");
 
-            entity.HasOne(d => d.CreatedbyuserGu)
-                .WithMany(p => p.ItemSheetVersionCreatedbyuserGu)
+            entity.HasOne(d => d.Createdbyuser)
+                .WithMany(p => p.ItemSheetVersionCreatedbyusers)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("ItemSheetVersion_createdby_fkey");
 
-            entity.HasOne(d => d.FirstapprovalbyuserGu)
-                .WithMany(p => p.ItemSheetVersionFirstapprovalbyuserGu)
+            entity.HasOne(d => d.Firstapprovalbyuser)
+                .WithMany(p => p.ItemSheetVersionFirstapprovalbyusers)
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("ItemSheetVersion_firstapprovalby_fkey");
 
-            entity.HasOne(d => d.SecondapprovalbyuserGu)
-                .WithMany(p => p.ItemSheetVersionSecondapprovalbyuserGu)
+            entity.HasOne(d => d.Secondapprovalbyuser)
+                .WithMany(p => p.ItemSheetVersionSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
                 .HasConstraintName("ItemSheetVersion_secondapprovalby_fkey");
 
-            entity.HasOne(d => d.Seriesgu)
-                .WithMany(p => p.ItemSheetVersion)
+            entity.HasOne(d => d.Series)
+                .WithMany(p => p.ItemSheetVersions)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid_itemvers");
         });

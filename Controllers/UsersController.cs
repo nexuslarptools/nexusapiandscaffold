@@ -16,9 +16,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class UsersController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public UsersController(NexusLARPContextBase context)
+    public UsersController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -68,6 +68,7 @@ public class UsersController : ControllerBase
             var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
             var RolesList = _context.Roles.ToList();
             var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();
+            var pronounsList = _context.Pronouns.ToList();
 
             var rolefirst = new RoleIDFirst();
             Comparer<RoleOut> rc = rolefirst;
@@ -83,6 +84,11 @@ public class UsersController : ControllerBase
                     Email = user.Email,
                     Pronounsguid = user.Pronounsguid
                 };
+                if (user.Pronounsguid != null)
+                {
+                    newout.Pronouns = pronounsList.Where(pn => pn.Guid == user.Pronounsguid)
+                        .FirstOrDefault().Pronouns;
+                }
                 foreach (var larprole in UsersRolesList)
                     if (larprole.Userguid == newout.Guid)
                     {
@@ -103,7 +109,7 @@ public class UsersController : ControllerBase
 
                         var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
 
-                        var newRoleOut = new RoleOut(newRole.Id, newRole.Rolename);
+                        var newRoleOut = new RoleOut((int)newRole.Ord, newRole.Rolename);
 
                         currLARP.Roles.Add(newRoleOut);
 
@@ -186,7 +192,7 @@ public class UsersController : ControllerBase
 
                         var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
 
-                        var newRoleOut = new RoleOut(newRole.Id, newRole.Rolename);
+                        var newRoleOut = new RoleOut((int)newRole.Ord, newRole.Rolename);
 
                         currLARP.Roles.Add(newRoleOut);
 
@@ -267,7 +273,7 @@ public class UsersController : ControllerBase
 
                     var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
 
-                    var newRoleOut = new RoleOut(newRole.Id, newRole.Rolename);
+                    var newRoleOut = new RoleOut((int)newRole.Ord, newRole.Rolename);
 
                     currLARP.Roles.Add(newRoleOut);
                 }
@@ -295,7 +301,7 @@ public class UsersController : ControllerBase
         if (!UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context)) return Ok("{\"AuthLevel\":\"NONE\"}");
 
 
-        var Rolelist = _context.UserLarproles.Where(u => u.Usergu.Authid == authId && u.Isactive == true).ToList();
+        var Rolelist = _context.UserLarproles.Where(u => u.User.Authid == authId && u.Isactive == true).ToList();
 
         var authlevel = 0;
         foreach (var role in Rolelist)
@@ -374,7 +380,7 @@ public class UsersController : ControllerBase
 
                     if (foundrole == null)
                     {
-                        foundrole = new UserLarproles
+                        foundrole = new UserLarprole
                         {
                             Roleid = larpRole.Role.Id,
                             Larpguid = larpRole.Larpguid,
@@ -518,7 +524,7 @@ public class UsersController : ControllerBase
 
             if (userLARPRoleInfo == null)
             {
-                var newUserLARPRole = new UserLarproles
+                var newUserLARPRole = new UserLarprole
                 {
                     Userguid = oldUserinfo.Guid,
                     Larpguid = larpInfo.Guid,

@@ -11,7 +11,7 @@ public class UserOut
         EffectiveRole = new RoleOut();
     }
 
-    public UserOut(Guid guid, string firstname, string lastname, string preferedName, string email, Guid? pronounsguid,
+    public UserOut(Guid guid, string firstname, string lastname, string preferedName, string email, Guid? pronounsguid, string pronouns,
         string discordName
         , RoleOut userRoles)
     {
@@ -22,6 +22,7 @@ public class UserOut
         Preferredname = preferedName;
         Email = email;
         Pronounsguid = pronounsguid;
+        Pronouns = pronouns;
         Discordname = discordName;
     }
 
@@ -31,6 +32,7 @@ public class UserOut
     public string Preferredname { get; set; }
     public string Email { get; set; }
     public Guid? Pronounsguid { get; set; }
+    public string Pronouns { get; set; }
     public string Discordname { get; set; }
 
     public List<UserLarpRoleOut> LarpRoles { get; set; }

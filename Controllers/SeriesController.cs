@@ -19,9 +19,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class SeriesController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public SeriesController(NexusLARPContextBase context)
+    public SeriesController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -62,7 +62,7 @@ public class SeriesController : ControllerBase
                 newser.Guid = s.Guid;
                 newser.Title = s.Title;
                 newser.Titlejpn = s.Titlejpn;
-                newser.Tags = new List<Tags>();
+                newser.Tags = new List<Tag>();
 
                 if (s.Tags != null)
                 {
@@ -169,8 +169,8 @@ public class SeriesController : ControllerBase
                     Guid = s.Guid,
                     Title = s.Title,
                     Titlejpn = s.Titlejpn,
-                    Tags = new List<Tags>()
-                };
+                    Tags = new List<Tag>()
+                };  
 
                 if (s.Tags != null)
                 {
@@ -224,7 +224,7 @@ public class SeriesController : ControllerBase
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var foundTag = await _context.Tags
-                .Where(t => t.Isactive == true && t.Tagtypegu.Name == "Series" && t.Guid == pagingParameterModel.guid)
+                .Where(t => t.Isactive == true && t.Tagtype.Name == "Series" && t.Guid == pagingParameterModel.guid)
                 .FirstOrDefaultAsync();
 
             if (foundTag == null) return NotFound();
@@ -307,7 +307,7 @@ public class SeriesController : ControllerBase
                     Guid = s.Guid,
                     Title = s.Title,
                     Titlejpn = s.Titlejpn,
-                    Tags = new List<Tags>()
+                    Tags = new List<Tag>()
                 };
 
                 if (s.Tags != null)
@@ -370,7 +370,7 @@ public class SeriesController : ControllerBase
                 newser.Isactive = s.Isactive;
                 newser.Createdate = s.Createdate;
                 newser.Deactivedate = s.Deactivedate;
-                newser.Tags = new List<Tags>();
+                newser.Tags = new List<Tag>();
 
                 if (s.Tags != null)
                 {
@@ -422,7 +422,7 @@ public class SeriesController : ControllerBase
                     sc.Guid,
                     sc.Title,
                     sc.Titlejpn,
-                    Characters = sc.CharacterSheet.Where(ch => ch.Isactive == true)
+                    Characters = sc.CharacterSheets.Where(ch => ch.Isactive == true)
                         .Select(cha => new { cha.Guid, cha.Name })
                 }).ToListAsync();
 
@@ -462,7 +462,7 @@ public class SeriesController : ControllerBase
                 sc.Guid,
                 sc.Title,
                 sc.Titlejpn,
-                Characters = sc.CharacterSheetApproved.Where(ch => ch.Isactive == true)
+                Characters = sc.CharacterSheetApproveds.Where(ch => ch.Isactive == true)
                     .Select(cha => new { cha.Guid, cha.Name })
             }).ToListAsync();
 
@@ -502,7 +502,7 @@ public class SeriesController : ControllerBase
                     csi.Guid,
                     csi.Title,
                     csi.Titlejpn,
-                    Items = csi.ItemSheet.Where(i => i.Isactive == true).Select(ite => new { ite.Guid, ite.Name })
+                    Items = csi.ItemSheets.Where(i => i.Isactive == true).Select(ite => new { ite.Guid, ite.Name })
                 }).ToListAsync();
 
 
@@ -541,7 +541,7 @@ public class SeriesController : ControllerBase
                     csi.Guid,
                     csi.Title,
                     csi.Titlejpn,
-                    Items = csi.ItemSheetApproved.Where(i => i.Isactive == true)
+                    Items = csi.ItemSheetApproveds.Where(i => i.Isactive == true)
                         .Select(ite => new { ite.Guid, ite.Name })
                 }).ToListAsync();
 
@@ -577,25 +577,25 @@ public class SeriesController : ControllerBase
                     return BadRequest("Item Not Found");
                 }
 
-                var itemsListApproved = await _context.ItemSheetApproved.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                var itemsListApproved = await _context.ItemSheetApproveds.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
                 foreach (var item in itemsListApproved)
                 {
                     output.ItemLists.AddApproved(item);
                 }
 
-                var itemsList = await _context.ItemSheet.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                var itemsList = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
                 foreach (var item in itemsList)
                 {
                     output.ItemLists.AddUnapproved(item);
                 }
 
-                var characterListApproved = await _context.CharacterSheetApproved.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                var characterListApproved = await _context.CharacterSheetApproveds.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
                 foreach (var character in characterListApproved)
                 {
                     output.CharacterLists.AddApproved(character);
                 }
 
-                var characterList = await _context.CharacterSheet.Where(ish => ish.Isactive == true && ish.Seriesgu.Guid == guid).ToListAsync();
+                var characterList = await _context.CharacterSheets.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
                 foreach (var character in characterList)
                 {
                     output.CharacterLists.AddUnapproved(character);
@@ -753,7 +753,7 @@ public class SeriesController : ControllerBase
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
             .Select(it => new TagScanContainer(it.Guid, it.Tags)).ToList();
-        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
             .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
         var allowedTags = _context.Larptags.Where(lt =>
@@ -770,7 +770,7 @@ public class SeriesController : ControllerBase
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
             .Select(it => new TagScanContainer(it.Guid, it.Tags)).ToList();
-        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.Usergu.Authid == authId && ulr.Isactive == true)
+        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
             .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
         var allowedTags = _context.Larptags.Where(lt =>

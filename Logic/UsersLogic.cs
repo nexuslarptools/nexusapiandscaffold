@@ -12,15 +12,15 @@ namespace NEXUSDataLayerScaffold.Logic;
 
 public class UsersLogic
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public UsersLogic(NexusLARPContextBase context)
+    public UsersLogic(NexusLarpLocalContext context)
     {
         _context = context;
     }
 
     public static bool IsUserAuthed(string authIdValue, string accessToken, string authLevel,
-        NexusLARPContextBase _context)
+        NexusLarpLocalContext _context)
     {
         var foundUsers = _context.Users.Where(u => u.Authid == authIdValue).ToList();
 
@@ -47,7 +47,7 @@ public class UsersLogic
 
             if (autheduser.Result.authid != null && autheduser.Result.authid != string.Empty)
             {
-                var newUsers = new Users
+                var newUsers = new User
                 {
                     Email = autheduser.Result.email,
                     Preferredname = autheduser.Result.name,
@@ -82,10 +82,10 @@ public class UsersLogic
             return false;
         }
 
-        var roleNum = _context.Roles.Where(r => r.Rolename == authLevel).Select(r => r.Id).FirstOrDefault();
+        var roleNum = _context.Roles.Where(r => r.Rolename == authLevel).Select(r => r.Ord).FirstOrDefault();
 
         var foundrole = _context.UserLarproles
-            .Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Id >= roleNum && ulr.Isactive == true)
+            .Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Ord >= roleNum && ulr.Isactive == true)
             .FirstOrDefault();
 
         if (foundrole == null)
@@ -98,7 +98,7 @@ public class UsersLogic
 
                 if (foundrole == null)
                 {
-                    foundrole = new UserLarproles
+                    foundrole = new UserLarprole
                     {
                         Userguid = foundUser.Guid,
                         Larpguid = _context.Larps.Where(l => l.Isactive == true && l.Name == "Default")
@@ -124,7 +124,7 @@ public class UsersLogic
     }
 
 
-    public static async Task<AuthUser> GetUserInfo(string accessToken2, NexusLARPContextBase _context)
+    public static async Task<AuthUser> GetUserInfo(string accessToken2, NexusLarpLocalContext _context)
     {
         // Get the access token.
 
@@ -169,7 +169,7 @@ public class UsersLogic
         return returnuser;
     }
 
-    public static List<Guid?> GetUserTagsList(string authIdValue, NexusLARPContextBase _context, string level,
+    public static List<Guid?> GetUserTagsList(string authIdValue, NexusLarpLocalContext _context, string level,
         bool isWizard)
     {
         if (isWizard)
@@ -181,7 +181,7 @@ public class UsersLogic
         var querylevel = _context.Roles.Where(r => r.Rolename == level).FirstOrDefault();
 
         var userLarps = _context.UserLarproles.Where(ulr =>
-                ulr.Isactive == true && ulr.Usergu.Authid == authIdValue && ulr.Role.Id >= querylevel.Id)
+                ulr.Isactive == true && ulr.User.Authid == authIdValue && ulr.Role.Ord >= querylevel.Ord)
             .Select(ulr => ulr.Larpguid).ToList();
 
         returnlist = _context.Larptags.Where(lt => lt.Isactive == true && userLarps.Contains(lt.Larpguid))
@@ -190,7 +190,7 @@ public class UsersLogic
         return returnlist;
     }
 
-    public static Guid GetUserGuid(string authIdValue, NexusLARPContextBase _context)
+    public static Guid GetUserGuid(string authIdValue, NexusLarpLocalContext _context)
     {
         return _context.Users.Where(u => u.Authid == authIdValue).Select(u => u.Guid).FirstOrDefault();
     }

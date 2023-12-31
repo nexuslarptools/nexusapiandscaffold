@@ -14,9 +14,9 @@ namespace NEXUSDataLayerScaffold.Controllers;
 [ApiController]
 public class RolesController : ControllerBase
 {
-    private readonly NexusLARPContextBase _context;
+    private readonly NexusLarpLocalContext _context;
 
-    public RolesController(NexusLARPContextBase context)
+    public RolesController(NexusLarpLocalContext context)
     {
         _context = context;
     }
@@ -38,6 +38,9 @@ public class RolesController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             return await _context.Roles.Select(r => new RoleOut(r.Id, r.Rolename)).ToListAsync();
+
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+            return await _context.Roles.Where(ro => ro.Rolename != "HeadGM" && ro.Rolename != "Wizard").Select(r => new RoleOut(r.Id, r.Rolename)).ToListAsync();
 
         return Unauthorized();
     }
@@ -86,7 +89,7 @@ public class RolesController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<Roles>> PostTagTypes(Roles role)
+    public async Task<ActionResult<Role>> PostTagTypes(Role role)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -114,7 +117,7 @@ public class RolesController : ControllerBase
     // DELETE: api/TagTypes/5
     [HttpDelete("{id}")]
     [Authorize]
-    public async Task<ActionResult<Roles>> DeleteRole(int id)
+    public async Task<ActionResult<Role>> DeleteRole(int id)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 

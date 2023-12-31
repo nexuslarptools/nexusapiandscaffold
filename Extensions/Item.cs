@@ -22,12 +22,12 @@ public class Item
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
-        newiemSheet.Tags = new List<Tags>();
+        newiemSheet.Tags = new List<Tag>();
 
         var folderName = Path.Combine("images", "items", "UnApproved");
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-
+            
 
         if (iSheet.Img1 != null) {
             if (System.IO.File.Exists(pathToSave + iSheet.Img1)) {
@@ -52,7 +52,7 @@ public class Item
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
-        newiemSheet.Tags = new List<Tags>();
+        newiemSheet.Tags = new List<Tag>();
 
         var folderName = Path.Combine("images", "items", "Approved");
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
@@ -82,7 +82,7 @@ public class Item
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
-        newiemSheet.Tags = new List<Tags>();
+        newiemSheet.Tags = new List<Tag>();
 
         return newiemSheet;
     }
