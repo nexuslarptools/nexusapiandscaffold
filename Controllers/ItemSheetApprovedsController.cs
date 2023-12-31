@@ -94,7 +94,7 @@ public class ItemSheetApprovedsController : ControllerBase
 
             if (!allowedSheets.Contains(guid)) return Unauthorized();
 
-            var outputItem = Item.CreateItem(itemSheet);
+            var outputItem = new IteSheet(itemSheet, _context);
 
             var tagslist = new JsonElement();
 

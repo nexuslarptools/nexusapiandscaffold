@@ -32,6 +32,8 @@ public class IteSheet
     public int? Version { get; set; }
     public List<Tag> Tags { get; set; }
     public byte[] imagedata { get; set; }
+    public Guid? EditbyUserGuid { get; set; }
+    public string EditbyUser { get; set; }
 
     public IteSheet()
     {
@@ -48,7 +50,9 @@ public class IteSheet
         CreatedbyuserGuid = sheet.CreatedbyuserGuid;
         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid;
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
+        EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
+        Fields = JObject.Parse(sheet.Fields.RootElement.ToString());
         Tags = new List<Tag>();
 
         if (this.Img1 != null)
@@ -64,7 +68,11 @@ public class IteSheet
         {
             var creUser = _context.Users.Where(u => u.Guid == this.CreatedbyuserGuid)
                 .FirstOrDefault();
-            this.createdby = creUser.Firstname + " " + creUser.Lastname;
+            this.createdby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.createdby = creUser.Firstname;
+            }
         }
 
         if (this.FirstapprovalbyuserGuid != null)
@@ -72,7 +80,11 @@ public class IteSheet
             var creUser = _context.Users
                 .Where(u => u.Guid == this.FirstapprovalbyuserGuid)
                 .FirstOrDefault();
-            this.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
+            this.Firstapprovalby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.Firstapprovalby = creUser.Firstname;
+            }
         }
 
         if (this.SecondapprovalbyuserGuid != null)
@@ -80,7 +92,23 @@ public class IteSheet
             var creUser = _context.Users
                 .Where(u => u.Guid == this.SecondapprovalbyuserGuid)
                 .FirstOrDefault();
-            this.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
+            this.Secondapprovalby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.Secondapprovalby = creUser.Firstname;
+            }
+        }
+
+        if (this.EditbyUserGuid != null)
+        {
+            var creUser = _context.Users
+                .Where(u => u.Guid == this.EditbyUserGuid)
+                .FirstOrDefault();
+            this.EditbyUser = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.EditbyUser = creUser.Firstname;
+            }
         }
 
         JsonElement tagslist = new JsonElement();
@@ -114,7 +142,9 @@ public class IteSheet
         CreatedbyuserGuid = sheet.CreatedbyuserGuid;
         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid;
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
+        EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
+        Fields = JObject.Parse(sheet.Fields.RootElement.ToString());
         Tags = new List<Tag>();
 
         if (this.Img1 != null)
@@ -130,7 +160,11 @@ public class IteSheet
         {
             var creUser = _context.Users.Where(u => u.Guid == this.CreatedbyuserGuid)
                 .FirstOrDefault();
-            this.createdby = creUser.Firstname + " " + creUser.Lastname;
+            this.createdby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.createdby = creUser.Firstname;
+            }
         }
 
         if (this.FirstapprovalbyuserGuid != null)
@@ -138,7 +172,11 @@ public class IteSheet
             var creUser = _context.Users
                 .Where(u => u.Guid == this.FirstapprovalbyuserGuid)
                 .FirstOrDefault();
-            this.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
+            this.Firstapprovalby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.Firstapprovalby = creUser.Firstname;
+            }
         }
 
         if (this.SecondapprovalbyuserGuid != null)
@@ -146,7 +184,23 @@ public class IteSheet
             var creUser = _context.Users
                 .Where(u => u.Guid == this.SecondapprovalbyuserGuid)
                 .FirstOrDefault();
-            this.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
+            this.Secondapprovalby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.Secondapprovalby = creUser.Firstname;
+            }
+        }
+
+        if (this.EditbyUserGuid != null)
+        {
+            var creUser = _context.Users
+                .Where(u => u.Guid == this.EditbyUserGuid)
+                .FirstOrDefault();
+            this.EditbyUser = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
+            {
+                this.EditbyUser = creUser.Firstname;
+            }
         }
 
         JsonElement tagslist = new JsonElement();

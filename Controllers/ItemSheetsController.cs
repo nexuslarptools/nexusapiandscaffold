@@ -63,7 +63,15 @@ public class ItemSheetsController : ControllerBase
                     sh.Guid,
                     sh.Name,
                     sh.Seriesguid,
-                    sh.Series.Title
+                    sh.Series.Title,
+                    sh.EditbyUserGuid,
+                    Createdbyuser = sh.Createdbyuser.Preferredname,
+                    sh.FirstapprovalbyuserGuid,
+                    Firstapprovalbyuser = (sh.Firstapprovalbyuser.Preferredname == null || sh.Firstapprovalbyuser.Preferredname == string.Empty) ? sh.Firstapprovalbyuser.Firstname : sh.Firstapprovalbyuser.Preferredname,
+                    sh.SecondapprovalbyuserGuid,
+                    SecondApprovaluser = (sh.Secondapprovalbyuser.Preferredname == null || sh.Secondapprovalbyuser.Preferredname == string.Empty) ? sh.Secondapprovalbyuser.Firstname : sh.Secondapprovalbyuser.Preferredname,
+                    EditbyUser = (sh.EditbyUser.Preferredname == null || sh.EditbyUser.Preferredname == string.Empty) ? sh.EditbyUser.Firstname : sh.EditbyUser.Preferredname,
+                    CreatedBy = sh.Createdbyuser.Preferredname,
                 })
                 .OrderBy(x => x.Name)
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
@@ -109,8 +117,7 @@ public class ItemSheetsController : ControllerBase
 
             if (!allowedShets.Contains(guid)) return Unauthorized();
 
-
-            var outputItem = Item.CreateItem(itemSheet);
+            var outputItem = new IteSheet(itemSheet, _context);
 
             var tagslist = new JsonElement();
 
@@ -385,8 +392,8 @@ public class ItemSheetsController : ControllerBase
 
                 foreach (var sheet in allSheets)
                 {
-                    var newOutputSheet = new IteSheet
-                    {
+                    var newOutputSheet = new IteSheet(sheet, _context);
+                   /* {
                         Id = sheet.Id,
                         Guid = sheet.Guid,
                         Name = sheet.Name,
@@ -398,7 +405,7 @@ public class ItemSheetsController : ControllerBase
                         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                         Version = sheet.Version,
                         Tags = new List<Tag>()
-                    };
+                    };*/
                     if (newOutputSheet.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
                             newOutputSheet.imagedata =
