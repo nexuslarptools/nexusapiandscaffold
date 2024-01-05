@@ -894,6 +894,7 @@ public class CharacterSheetsController : ControllerBase
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
                 }
             }
             if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length != 0) {;
@@ -906,6 +907,7 @@ public class CharacterSheetsController : ControllerBase
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false);
                 }
             }
 
@@ -1162,7 +1164,7 @@ public class CharacterSheetsController : ControllerBase
 
             var characterSheet = new CharacterSheet();
 
-            if (charSheet.Guid != null) characterSheet.Guid = charSheet.Guid;
+            characterSheet.Guid = charSheet.Guid;
 
             if (charSheet.Name != null) characterSheet.Name = charSheet.Name;
 
@@ -1182,6 +1184,8 @@ public class CharacterSheetsController : ControllerBase
                     }
 
                     System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
+
+                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
                 }
             }
 
@@ -1197,6 +1201,7 @@ public class CharacterSheetsController : ControllerBase
                     }
 
                     System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false); ;
                 }
             }
 

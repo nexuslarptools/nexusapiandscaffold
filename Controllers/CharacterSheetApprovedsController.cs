@@ -863,6 +863,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img1, characterSheetApproved.imagedata1);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + characterSheetApproved.Img1, true);
                 }
             }
             if (characterSheetApproved.Img2 != null && characterSheetApproved.imagedata2 != null && characterSheetApproved.imagedata2.Length != 0) {
@@ -876,6 +877,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img2, characterSheetApproved.imagedata2);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + characterSheetApproved.Img2, false);
                 }
             }
 
@@ -933,6 +935,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img1, characterSheetApproved.imagedata1);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + characterSheetApproved.Img1, true);
                 }
             }
             if (characterSheetApproved.Img2 != null && characterSheetApproved.imagedata2 != null && characterSheetApproved.imagedata2.Length != 0) {
@@ -946,6 +949,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + characterSheetApproved.Img2, characterSheetApproved.imagedata2);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + characterSheetApproved.Img2, false);
                 }
             }
 

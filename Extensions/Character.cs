@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Extensions;
@@ -11,12 +12,15 @@ public class Character
 {
     public static CharSheet CreateCharSheet(CharacterSheet cSheet, NexusLarpLocalContext _context)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(cSheet.Fields.RootElement.ToString()));
+
+
         var newCharSheet = new CharSheet();
 
         newCharSheet.Guid = cSheet.Guid;
         newCharSheet.Seriesguid = cSheet.Seriesguid;
 
-        newCharSheet.Fields = JObject.Parse(cSheet.Fields.RootElement.ToString());
+        newCharSheet.Fields = FeildsWInit;
         newCharSheet.Name = cSheet.Name;
         newCharSheet.Img1 = cSheet.Img1;
         newCharSheet.Img2 = cSheet.Img2;
@@ -84,11 +88,13 @@ public class Character
 
     public static CharSheet CreateCharSheet(CharacterSheetApproved cSheet, NexusLarpLocalContext _context)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(cSheet.Fields.RootElement.ToString()));
+
         var newCharSheet = new CharSheet();
 
         newCharSheet.Guid = cSheet.Guid;
         newCharSheet.Seriesguid = cSheet.Seriesguid;
-        newCharSheet.Fields = JObject.Parse(cSheet.Fields.RootElement.ToString());
+        newCharSheet.Fields = FeildsWInit;
         newCharSheet.Name = cSheet.Name;
         newCharSheet.Img1 = cSheet.Img1;
         newCharSheet.Img2 = cSheet.Img2;
@@ -158,12 +164,15 @@ public class Character
     }
 
     public static CharSheet CreateCharSheet(CharacterSheetVersion cSheet)
-    {
+    { 
+
         var newCharSheet = new CharSheet();
+
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(cSheet.Fields.RootElement.ToString()));
 
         newCharSheet.Guid = cSheet.Guid;
         newCharSheet.Seriesguid = cSheet.Seriesguid;
-        newCharSheet.Fields = JObject.Parse(cSheet.Fields.RootElement.ToString());
+        newCharSheet.Fields = FeildsWInit;
         newCharSheet.Name = cSheet.Name;
         newCharSheet.Img1 = cSheet.Img1;
         newCharSheet.Img2 = cSheet.Img2;

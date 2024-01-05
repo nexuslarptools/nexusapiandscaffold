@@ -2,6 +2,7 @@
 using System.IO;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Extensions;
@@ -10,6 +11,8 @@ public class Item
 {
     public static IteSheet CreateItem(ItemSheet iSheet)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(iSheet.Fields.RootElement.ToString()));
+
         var newiemSheet = new IteSheet();
 
         newiemSheet.Name = iSheet.Name;
@@ -17,7 +20,7 @@ public class Item
         newiemSheet.Seriesguid = iSheet.Seriesguid;
         newiemSheet.Img1 = iSheet.Img1;
         newiemSheet.Gmnotes = iSheet.Gmnotes;
-        newiemSheet.Fields = JObject.Parse(iSheet.Fields.RootElement.ToString());
+        newiemSheet.Fields = FeildsWInit;
         newiemSheet.Createdate = iSheet.Createdate;
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
@@ -40,6 +43,9 @@ public class Item
     }
 
     public static IteSheet CreateItem(ItemSheetApproved iSheet) {
+
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(iSheet.Fields.RootElement.ToString()));
+
         var newiemSheet = new IteSheet();
 
         newiemSheet.Name = iSheet.Name;
@@ -47,7 +53,7 @@ public class Item
         newiemSheet.Seriesguid = iSheet.Seriesguid;
         newiemSheet.Img1 = iSheet.Img1;
         newiemSheet.Gmnotes = iSheet.Gmnotes;
-        newiemSheet.Fields = JObject.Parse(iSheet.Fields.RootElement.ToString());
+        newiemSheet.Fields = FeildsWInit;
         newiemSheet.Createdate = iSheet.Createdate;
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
@@ -70,6 +76,8 @@ public class Item
 
     public static IteSheet CreateItem(ItemSheetVersion iSheet)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(iSheet.Fields.RootElement.ToString()));
+
         var newiemSheet = new IteSheet();
 
         newiemSheet.Name = iSheet.Name;
@@ -77,7 +85,7 @@ public class Item
         newiemSheet.Seriesguid = iSheet.Seriesguid;
         newiemSheet.Img1 = iSheet.Img1;
         newiemSheet.Gmnotes = iSheet.Gmnotes;
-        newiemSheet.Fields = JObject.Parse(iSheet.Fields.RootElement.ToString());
+        newiemSheet.Fields = FeildsWInit;
         newiemSheet.Createdate = iSheet.Createdate;
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;

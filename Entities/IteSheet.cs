@@ -5,6 +5,7 @@ using System.Text.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Models;
 using System.Linq;
+using NEXUSDataLayerScaffold.Logic;
 
 namespace NEXUSDataLayerScaffold.Entities;
 
@@ -41,6 +42,8 @@ public class IteSheet
 
     public IteSheet(ItemSheet sheet, NexusLarpLocalContext _context)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
+
         Id = sheet.Id;
         Guid = sheet.Guid;
         Name = sheet.Name;
@@ -52,7 +55,7 @@ public class IteSheet
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
         EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
-        Fields = JObject.Parse(sheet.Fields.RootElement.ToString());
+        Fields = FeildsWInit;
         Tags = new List<Tag>();
 
         if (this.Img1 != null)
@@ -133,6 +136,8 @@ public class IteSheet
 
     public IteSheet(ItemSheetApproved sheet, NexusLarpLocalContext _context)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
+
         Id = sheet.Id;
         Guid = sheet.Guid;
         Name = sheet.Name;
@@ -144,7 +149,7 @@ public class IteSheet
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
         EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
-        Fields = JObject.Parse(sheet.Fields.RootElement.ToString());
+        Fields = FeildsWInit;
         Tags = new List<Tag>();
 
         if (this.Img1 != null)

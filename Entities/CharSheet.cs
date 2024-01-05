@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Extensions;
+using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Entities;
@@ -46,12 +47,14 @@ public class CharSheet
 
     public CharSheet(CharacterSheetApproved input, NexusLarpLocalContext _context)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
+
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
         Name = input.Name;
         Img1 = input.Img1;
         Img2 = input.Img2;
-        this.Fields = JObject.Parse(input.Fields.RootElement.ToString());
+        this.Fields = FeildsWInit;
         Isactive = input.Isactive;
         Createdate = input.Createdate;
         CreatedbyUserGuid = input.CreatedbyuserGuid;
@@ -165,12 +168,14 @@ public class CharSheet
 
     public CharSheet(CharacterSheet input, NexusLarpLocalContext _context)
     {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
+
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
         Name = input.Name;
         Img1 = input.Img1;
         Img2 = input.Img2;
-        this.Fields = JObject.Parse(input.Fields.RootElement.ToString());
+        this.Fields = FeildsWInit;
         Isactive = input.Isactive;
         Createdate = input.Createdate;
         CreatedbyUserGuid = input.CreatedbyuserGuid;

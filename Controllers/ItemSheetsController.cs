@@ -1252,6 +1252,7 @@ public class ItemSheetsController : ControllerBase
                         }
 
                         System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
+                        ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
                     }
 
                 }
@@ -1359,6 +1360,7 @@ public class ItemSheetsController : ControllerBase
                     }
 
                     System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
+                    ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
                 }
             }
 
