@@ -1,7 +1,5 @@
-﻿using System.Drawing.Imaging;
-using System;
-using System.Drawing.Drawing2D;
-using System.Drawing;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using System.Linq;
 
 namespace NEXUSDataLayerScaffold.Logic
@@ -9,7 +7,7 @@ namespace NEXUSDataLayerScaffold.Logic
     public class ImageLogic
     {
         public static void ResizeJpg(string path, bool isMainPic)
-        { 
+        {
             int nWidth = 375;
             int nHeight = 250;
 
@@ -19,22 +17,17 @@ namespace NEXUSDataLayerScaffold.Logic
                 nHeight = 550;
             }
 
-            using (var result = new Bitmap(nWidth, nHeight))
+            using (Image image = Image.Load(path))
             {
-                using (var input = new Bitmap(path))
-                {
-                    using (Graphics g = Graphics.FromImage((System.Drawing.Image)result))
-                    {
-                        g.DrawImage(input, 0, 0, nWidth, nHeight);
-                    }
-                }
+                // Resize the image in place and return it for chaining.
+                // 'x' signifies the current image processing context.
+                image.Mutate(x => x.Resize(nWidth, nHeight));
 
-                var ici = ImageCodecInfo.GetImageEncoders().FirstOrDefault(ie => ie.MimeType == "image/jpeg");
-                var eps = new EncoderParameters(1);
-                eps.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 100L);
-                result.Save(path, ici, eps);
+                // The library automatically picks an encoder based on the file extension then
+                // encodes and write the data to disk.
+                // You can optionally set the encoder to choose.
+                image.Save(path);
             }
         }
-
     }
 }
