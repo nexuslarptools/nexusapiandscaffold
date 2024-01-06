@@ -186,7 +186,7 @@ public class Startup
         var connstring = "Host=" + host + ";Port=" + port
                          + ";Database=" + database + "; Username=" + username + ";Password=" + password;
 
-        //connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
+        connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
         //if (host != _config.GetValue<string>("ConnectionSrings:Host"))
         //    connstring += ";SslMode=allow;Trust Server Certificate=true;";
 

@@ -173,6 +173,11 @@ public class CharacterSheetApprovedsController : ControllerBase
                 if (System.IO.File.Exists(@"./images/characters/Approved/" + outputSheet.Img1))
                     outputSheet.imagedata1 = System.IO.File.ReadAllBytes(@"./images/characters/Approved/" + outputSheet.Img1);
 
+            if (outputSheet.Img2 != null)
+                if (System.IO.File.Exists(@"./images/characters/Approved/" + outputSheet.Img2))
+                    outputSheet.imagedata2 = System.IO.File.ReadAllBytes(@"./images/characters/Approved/" + outputSheet.Img2);
+
+
             outputSheet.SeriesTitle = await _context.Series.Where(s => s.Guid == outputSheet.Seriesguid && s.Isactive == true)
     .Select(s => s.Title).FirstOrDefaultAsync();
 
