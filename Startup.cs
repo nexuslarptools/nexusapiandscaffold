@@ -193,7 +193,7 @@ public class Startup
         var connstring = "Host=" + host + ";Port=" + port
                          + ";Database=" + database + "; Username=" + username + ";Password=" + password;
 
-        connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
+        //connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
         // LOCAL DOCKER CONNSTTRING
         //connstring = "Host=localhost;Port=5433;Database=LARP_Docker;Username=postgres;Password=postgres";
 
