@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
@@ -51,7 +53,6 @@ public class ItemSheetApprovedsController : ControllerBase
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
-
 
             return await _context.ItemSheetApproveds
                 .Where(isa => isa.Isactive == true && allowedSheets.Contains(isa.Guid)).ToListAsync();
@@ -108,7 +109,7 @@ public class ItemSheetApprovedsController : ControllerBase
                 {
                     var fullTag = await _context.Tags
                         .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                    outputItem.Tags.Add(fullTag);
+                    outputItem.Tags.Add(new TagOut(fullTag));
                 }
             }
 
@@ -314,7 +315,7 @@ public class ItemSheetApprovedsController : ControllerBase
                         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
                         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                         Version = sheet.Version,
-                        Tags = new List<Tag>()
+                        Tags = new List<TagOut>()
                     };
                     if (newOutputSheet.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
@@ -355,7 +356,7 @@ public class ItemSheetApprovedsController : ControllerBase
                             var fullTag = await _context.Tags
                                 .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                                 .FirstOrDefaultAsync();
-                            newOutputSheet.Tags.Add(fullTag);
+                            newOutputSheet.Tags.Add(new TagOut(fullTag));
                         }
                     }
 
@@ -378,9 +379,124 @@ public class ItemSheetApprovedsController : ControllerBase
         return Unauthorized();
     }
 
+    [HttpGet("FullListWithTagsNoImagesRedo")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetFullItemListWithTagsNoImagesRedo()
+    {
+        var timer = new Stopwatch();
+        timer.Start();
+
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            try
+            {
+                var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                var outPutList = new List<IteSheet>();
+
+                var allowedLARPS = _context.UserLarproles
+                   .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                   .ToList();
+
+                var disAllowedTags = _context.Larptags.Where(lt =>
+                    !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                    && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                var allSheets = await _context.ItemSheetApproveds.Where(c => c.Isactive == true)
+                    .OrderBy(x => x.Name).ToListAsync();
+
+                if (!wizardauth)
+                {
+                    await _context.ItemSheetApproveds.Where(c => c.Isactive == true
+                      && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                    .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
+                    !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                    .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
+                     .OrderBy(x => x.Name).ToListAsync();
+                }
+
+                foreach (var sheet in allSheets)
+                {
+
+                    var newOutputSheet = new IteSheet(sheet, _context);
+
+                    if (newOutputSheet.CreatedbyuserGuid != null)
+                    {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.FirstapprovalbyuserGuid != null)
+                    {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.SecondapprovalbyuserGuid != null)
+                    {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.Seriesguid != null)
+                    {
+                        var ser = await _context.Series.Where(u => u.Guid == newOutputSheet.Seriesguid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Series = ser.Title;
+                    }
+
+                    var tagslist = new JsonElement();
+
+                    sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                    if (tagslist.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            var fullTag = await _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .FirstOrDefaultAsync();
+
+                            newOutputSheet.Tags.Add(new TagOut(fullTag));
+                        }
+                    }
+
+                    outPutList.Add(newOutputSheet);
+
+                }
+
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = outPutList.Count;
+
+                timer.Stop();
+                return Ok(output);
+
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        return Unauthorized();
+    }
+    
     [HttpGet("FullListWithTagsNoImages")]
     [Authorize]
     public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetApprovedItemFullListWithTagsNoImages() {
+
+        var timer = new Stopwatch();
+        timer.Start();
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
@@ -410,18 +526,7 @@ public class ItemSheetApprovedsController : ControllerBase
                     .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).OrderBy(x => x.Name).ToListAsync();
 
                 foreach (var sheet in allSheets) {
-                    var newOutputSheet = new IteSheet {
-                        Guid = sheet.Guid,
-                        Name = sheet.Name,
-                        Img1 = sheet.Img1,
-                        Seriesguid = sheet.Seriesguid,
-                        Createdate = sheet.Createdate,
-                        CreatedbyuserGuid = sheet.CreatedbyuserGuid,
-                        FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
-                        SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
-                        Version = sheet.Version,
-                        Tags = new List<Tag>()
-                    };
+                    var newOutputSheet = new IteSheet(sheet, _context);
 
                     if (newOutputSheet.CreatedbyuserGuid != null) {
                         var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
@@ -458,7 +563,7 @@ public class ItemSheetApprovedsController : ControllerBase
                             var fullTag = await _context.Tags
                                 .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                                 .FirstOrDefaultAsync();
-                            newOutputSheet.Tags.Add(fullTag);
+                            newOutputSheet.Tags.Add(new TagOut(fullTag));
                         }
                     }
 
@@ -469,6 +574,7 @@ public class ItemSheetApprovedsController : ControllerBase
                 output.IteList = outPutList.OrderBy(x => x.Name).ToList();
                 output.fulltotal = allowedSheets.Count;
 
+                timer.Stop();
                 return Ok(output);
             }
             catch (Exception e) {
@@ -659,7 +765,7 @@ public class ItemSheetApprovedsController : ControllerBase
                     FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
                     SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                     Version = sheet.Version,
-                    Tags = new List<Tag>()
+                    Tags = new List<TagOut>()
                 };
 
                 if (newOutputSheet.Img1 != null)
@@ -701,7 +807,7 @@ public class ItemSheetApprovedsController : ControllerBase
                         var fullTag = await _context.Tags
                             .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                             .FirstOrDefaultAsync();
-                        newOutputSheet.Tags.Add(fullTag);
+                        newOutputSheet.Tags.Add(new TagOut(fullTag));
                     }
                 }
 
@@ -719,6 +825,103 @@ public class ItemSheetApprovedsController : ControllerBase
         return Unauthorized();
     }
 
+
+    /// <summary>
+    /// Kick an approved sheet down to unapproved again. WIZARD ONLY
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <returns></returns>
+    [HttpPut("kick/{guid}")]
+    public async Task<IActionResult> KickItemSheetApproved(Guid guid, string newReviewMessage)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+
+            var approvedSheets = _context.ItemSheetApproveds.Where(csa => csa.Isactive == true
+                && csa.Guid == guid).ToList();
+
+            if (approvedSheets.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var selectedApprovedSheet = approvedSheets.Where(apps => apps.Id == approvedSheets.Max(aps => aps.Id)).FirstOrDefault();
+
+            var selectedUnapprovedSheets = _context.ItemSheets.Where(cs => cs.Guid == guid).ToList();
+
+            ItemSheet newUnaprovedsheet = new ItemSheet()
+            {
+                Guid = selectedApprovedSheet.Guid,
+                Seriesguid = (Guid)selectedApprovedSheet.Seriesguid,
+                Name = selectedApprovedSheet.Name,
+                Img1 = selectedApprovedSheet.Img1,
+                Fields = selectedApprovedSheet.Fields,
+                Isactive = true,
+                CreatedbyuserGuid = selectedApprovedSheet.CreatedbyuserGuid,
+                Gmnotes = selectedApprovedSheet.Gmnotes,
+                Version = selectedApprovedSheet.Version,
+                EditbyUserGuid = result,
+                Taglists = selectedApprovedSheet.Taglists
+            };
+
+            foreach (var sheet in approvedSheets)
+            {
+                sheet.Isactive = false;
+            }
+
+            foreach (var sheet in selectedUnapprovedSheets)
+            {
+                sheet.Isactive = false;
+            }
+
+            _context.ItemSheets.Add(newUnaprovedsheet);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception Ex)
+            {
+                throw;
+            }
+
+            var selectedUnapprovedSheet = _context.ItemSheets.Where(cs => cs.Guid == guid
+              && cs.Isactive == true && cs.Id == _context.ItemSheets.Where(ccs => ccs.Isactive == true)
+              .Max(aps => aps.Id)).FirstOrDefault();
+
+
+            ItemSheetReviewMessage newMessage = new ItemSheetReviewMessage()
+            {
+                Isactive = true,
+                CreatedbyuserGuid = result,
+                Message = newReviewMessage,
+                ItemsheetId = selectedUnapprovedSheet.Id
+            };
+
+
+            _context.ItemSheetReviewMessages.Add(newMessage);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception Ex)
+            {
+                throw;
+            }
+
+            return NoContent();
+        }
+
+        return Unauthorized();
+    }
 
     // POST: api/v1/ItemSheetApproveds
     // To protect from overposting attacks, enable the specific properties you want to bind to, for

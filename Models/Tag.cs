@@ -13,6 +13,12 @@ public partial class Tag
 
     public bool? Isactive { get; set; }
 
+    public bool? Isapproved { get; set; }
+
+    public Guid? ApprovedbyUserGuid { get; set; }
+
+    public virtual User ApprovedbyUser { get; set; }
+
     public virtual ICollection<LarpplayerTagAllowed> LarpplayerTagAlloweds { get; } = new List<LarpplayerTagAllowed>();
 
     public virtual ICollection<LarpplayerTagDisllowed> LarpplayerTagDislloweds { get; } = new List<LarpplayerTagDisllowed>();

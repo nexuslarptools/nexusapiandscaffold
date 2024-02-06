@@ -36,7 +36,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     // GET: api/V1/CharacterSheetApproveds
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetCharacterSheetApproved()
+    public async Task<ActionResult<IEnumerable<CharSheetListItem>>> GetCharacterSheetApproved()
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -64,15 +64,24 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             var fullTagList = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
 
-            var ret = await _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
-                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title, c.CreatedbyuserGuid, CreatedByUser = c.Createdbyuser.Preferredname,
-                    c.FirstapprovalbyuserGuid, FirstApprovalUser = c.Firstapprovalbyuser.Preferredname, c.SecondapprovalbyuserGuid,
-                    SecondApprovalUser = c.Secondapprovalbyuser.Preferredname,
-                    EditbyUser = c.EditbyUser.Preferredname,
-                    Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fullTagList) })
-                .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
+            var ret2 = await _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
+                .ToListAsync();
 
-            return Ok(ret);
+            List<CharSheetListItem> outp = new List<CharSheetListItem>();
+            foreach (var c in ret2)
+            {
+                var newshee = new CharSheetListItem(c, _context);
+                var tagsList = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fullTagList);
+                foreach(var t in tagsList)
+                {
+                    newshee.tags.Add(new TagOut(t));
+
+                }
+                outp.Add(newshee);
+            }
+
+
+            return Ok(outp.OrderBy(o => o.name).OrderBy(o => o.title));
         }
 
         return Unauthorized();
@@ -191,7 +200,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         .FirstOrDefault() != null)
                 {
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
-                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
                     if (outputSheet.Sheet_Item.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1))
                             outputSheet.Sheet_Item.imagedata =
@@ -204,7 +213,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                          null)
                 {
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
-                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
                     if (outputSheet.Sheet_Item.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1))
                             outputSheet.Sheet_Item.imagedata =
@@ -223,7 +232,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                         .FirstOrDefault() != null) {
                     var starting_I = Item.CreateItem(await _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
-                        issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync());
+                        issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), _context);
 
                     if (starting_I.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
@@ -239,7 +248,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
                     var starting_I = Item.CreateItem(await _context.ItemSheets.Where(issh => issh.Isactive == true &&
                                                                             issh.Guid.ToString() == iGuid.ToString())
-                        .FirstOrDefaultAsync());
+                        .FirstOrDefaultAsync(), _context);
 
                     if (starting_I.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
@@ -668,13 +677,13 @@ public class CharacterSheetApprovedsController : ControllerBase
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                         .FirstOrDefault() != null)
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
-                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
 
                 else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                              .FirstOrDefault() !=
                          null)
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
-                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
             }
 
 
@@ -766,13 +775,13 @@ public class CharacterSheetApprovedsController : ControllerBase
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                         .FirstOrDefault() != null)
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
-                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
 
                 else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                              .FirstOrDefault() !=
                          null)
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
-                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
             }
 
             var Start_Items = new List<IteSheet>();
@@ -788,7 +797,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync();
 
 
-                    Start_Items.Add(Item.CreateItem(starting_I));
+                    Start_Items.Add(Item.CreateItem(starting_I, _context));
                 }
                 else if (_context.ItemSheets
                              .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
@@ -800,7 +809,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                                                                             issh.Guid.ToString() == iGuid.ToString())
                         .FirstOrDefaultAsync();
 
-                    Start_Items.Add(Item.CreateItem(starting_I));
+                    Start_Items.Add(Item.CreateItem(starting_I, _context));
                 }
 
             if (Start_Items != null) outputSheet.Starting_Items = Start_Items;
@@ -896,6 +905,104 @@ public class CharacterSheetApprovedsController : ControllerBase
             {
                 if (!CharacterSheetApprovedExists(id))
                     return NotFound();
+                throw;
+            }
+
+            return NoContent();
+        }
+
+        return Unauthorized();
+    }
+
+
+    /// <summary>
+    /// Kick an approved sheet down to unapproved again. WIZARD ONLY
+    /// </summary>
+    /// <param name="guid"></param>
+    /// <returns></returns>
+    [HttpPut("kick/{guid}")]
+    public async Task<IActionResult> KickCharacterSheetApproved(Guid guid, string newReviewMessage)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+
+            var approvedSheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
+                && csa.Guid == guid).ToList();
+
+            if (approvedSheets.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var selectedApprovedSheet = approvedSheets.Where(apps => apps.Id == approvedSheets.Max(aps => aps.Id)).FirstOrDefault();
+
+            var selectedUnapprovedSheets = _context.CharacterSheets.Where(cs => cs.Guid == guid).ToList();
+
+            CharacterSheet newUnaprovedsheet = new CharacterSheet()
+            {
+                Guid = selectedApprovedSheet.Guid,
+                Seriesguid = (Guid)selectedApprovedSheet.Seriesguid,
+                Name = selectedApprovedSheet.Name,
+                Img1 = selectedApprovedSheet.Img1,
+                Img2 = selectedApprovedSheet.Img2,
+                Fields = selectedApprovedSheet.Fields,
+                Isactive = true,
+                CreatedbyuserGuid = selectedApprovedSheet.CreatedbyuserGuid,
+                Gmnotes = selectedApprovedSheet.Gmnotes,
+                Version = selectedApprovedSheet.Version,
+                EditbyUserGuid = result,
+                Taglists = selectedApprovedSheet.Taglists
+            };
+
+            foreach (var sheet in approvedSheets)
+            {
+                sheet.Isactive = false;
+            }
+
+            foreach (var sheet in selectedUnapprovedSheets)
+            {
+                sheet.Isactive = false;
+            }
+
+            _context.CharacterSheets.Add(newUnaprovedsheet);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception Ex)
+            {
+                throw;
+            }
+
+            var selectedUnapprovedSheet = _context.CharacterSheets.Where(cs => cs.Guid == guid 
+              && cs.Isactive == true && cs.Id == _context.CharacterSheets.Where(ccs => ccs.Isactive == true)
+              .Max(aps => aps.Id)).FirstOrDefault();
+
+
+            CharacterSheetReviewMessage newMessage = new CharacterSheetReviewMessage()
+            {
+                Isactive = true,
+                CreatedbyuserGuid = result,
+                Message = newReviewMessage,
+                CharactersheetId = selectedUnapprovedSheet.Id
+            };
+
+            _context.CharacterSheetReviewMessages.Add(newMessage);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception Ex)
+            {
                 throw;
             }
 

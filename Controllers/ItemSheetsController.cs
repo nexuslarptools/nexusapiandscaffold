@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
@@ -131,7 +132,7 @@ public class ItemSheetsController : ControllerBase
                 {
                     var fullTag = await _context.Tags
                         .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                    outputItem.Tags.Add(fullTag);
+                    outputItem.Tags.Add(new TagOut(fullTag));
                 }
             }
 
@@ -312,7 +313,7 @@ public class ItemSheetsController : ControllerBase
 
                 if (!allowedShets.Contains(guid)) return Unauthorized();
 
-                outputItem = Item.CreateItem(itemSheet);
+                outputItem = Item.CreateItem(itemSheet, _context);
 
                 var tagslist = new JsonElement();
 
@@ -327,7 +328,7 @@ public class ItemSheetsController : ControllerBase
                         var fullTag = await _context.Tags
                             .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                             .FirstOrDefaultAsync();
-                        outputItem.Tags.Add(fullTag);
+                        outputItem.Tags.Add(new TagOut(fullTag));
                     }
                 }
 
@@ -393,19 +394,19 @@ public class ItemSheetsController : ControllerBase
                 foreach (var sheet in allSheets)
                 {
                     var newOutputSheet = new IteSheet(sheet, _context);
-                   /* {
-                        Id = sheet.Id,
-                        Guid = sheet.Guid,
-                        Name = sheet.Name,
-                        Img1 = sheet.Img1,
-                        Seriesguid = sheet.Seriesguid,
-                        Createdate = sheet.Createdate,
-                        CreatedbyuserGuid = sheet.CreatedbyuserGuid,
-                        FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
-                        SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
-                        Version = sheet.Version,
-                        Tags = new List<Tag>()
-                    };*/
+                    /* {
+                         Id = sheet.Id,
+                         Guid = sheet.Guid,
+                         Name = sheet.Name,
+                         Img1 = sheet.Img1,
+                         Seriesguid = sheet.Seriesguid,
+                         Createdate = sheet.Createdate,
+                         CreatedbyuserGuid = sheet.CreatedbyuserGuid,
+                         FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
+                         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
+                         Version = sheet.Version,
+                         Tags = new List<Tag>()
+                     };*/
                     if (newOutputSheet.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
                             newOutputSheet.imagedata =
@@ -446,7 +447,7 @@ public class ItemSheetsController : ControllerBase
                                 .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                                 .FirstOrDefaultAsync();
 
-                            newOutputSheet.Tags.Add(fullTag);
+                            newOutputSheet.Tags.Add(new TagOut(fullTag));
                         }
                     }
 
@@ -463,6 +464,117 @@ public class ItemSheetsController : ControllerBase
             catch (Exception e)
             {
                 return BadRequest(e);
+            }
+
+        return Unauthorized();
+    }
+
+    [HttpGet("FullListWithTagsNoImagesRedo")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetFullItemListWithTagsNoImagesRedo()
+    {
+        var timer = new Stopwatch();
+        timer.Start();
+
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+            try
+            {
+                var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                var outPutList = new List<IteSheet>();
+
+                var allowedLARPS = _context.UserLarproles
+                   .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                   .ToList();
+
+                var disAllowedTags = _context.Larptags.Where(lt =>
+                    !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                    && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                var allSheets = await _context.ItemSheets.Where(c => c.Isactive == true)
+                    .OrderBy(x => x.Name).ToListAsync();
+
+                if (!wizardauth)
+                {
+                    await _context.ItemSheets.Where(c => c.Isactive == true
+                      && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                    .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
+                    !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                    .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
+                     .OrderBy(x => x.Name).ToListAsync();
+                }
+
+                foreach (var sheet in allSheets)
+                {
+                    var newOutputSheet = new IteSheet(sheet, _context);
+
+                    if (newOutputSheet.CreatedbyuserGuid != null)
+                    {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.createdby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.FirstapprovalbyuserGuid != null)
+                    {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.FirstapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Firstapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.SecondapprovalbyuserGuid != null)
+                    {
+                        var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.SecondapprovalbyuserGuid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Secondapprovalby = creUser.Firstname + " " + creUser.Lastname;
+                    }
+
+                    if (newOutputSheet.Seriesguid != null)
+                    {
+                        var ser = await _context.Series.Where(u => u.Guid == newOutputSheet.Seriesguid)
+                            .FirstOrDefaultAsync();
+                        newOutputSheet.Series = ser.Title;
+                    }
+
+                    var tagslist = new JsonElement();
+
+                    sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                    if (tagslist.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            var fullTag = await _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .FirstOrDefaultAsync();
+
+                            newOutputSheet.Tags.Add(new TagOut(fullTag));
+                        }
+                    }
+
+                    outPutList.Add(newOutputSheet);
+
+                }
+
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = outPutList.Count;
+
+                timer.Stop();
+                return Ok(output);
+
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
             }
 
         return Unauthorized();
@@ -501,19 +613,7 @@ public class ItemSheetsController : ControllerBase
                     .OrderBy(x => x.Name).ToListAsync();
 
                 foreach (var sheet in allSheets) {
-                    var newOutputSheet = new IteSheet {
-                        Id = sheet.Id,
-                        Guid = sheet.Guid,
-                        Name = sheet.Name,
-                        Img1 = sheet.Img1,
-                        Seriesguid = sheet.Seriesguid,
-                        Createdate = sheet.Createdate,
-                        CreatedbyuserGuid = sheet.CreatedbyuserGuid,
-                        FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
-                        SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
-                        Version = sheet.Version,
-                        Tags = new List<Tag>()
-                    };
+                    var newOutputSheet = new IteSheet(sheet, _context);
 
                     if (newOutputSheet.CreatedbyuserGuid != null) {
                         var creUser = await _context.Users.Where(u => u.Guid == newOutputSheet.CreatedbyuserGuid)
@@ -553,7 +653,7 @@ public class ItemSheetsController : ControllerBase
                                 .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                                 .FirstOrDefaultAsync();
 
-                            newOutputSheet.Tags.Add(fullTag);
+                            newOutputSheet.Tags.Add(new TagOut(fullTag));
                         }
                     }
 
@@ -734,6 +834,7 @@ public class ItemSheetsController : ControllerBase
 
                     List<TagScanContainer> legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                         .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+
                     List<Guid> allowedLARPS = _context.UserLarproles
                         .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                         .Select(ulr => (Guid)ulr.Larpguid).ToList();
@@ -957,7 +1058,7 @@ public class ItemSheetsController : ControllerBase
                             FirstapprovalbyuserGuid = sheet.FirstapprovalbyuserGuid,
                             SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid,
                             Version = sheet.Version,
-                            Tags = new List<Tag>(),
+                            Tags = new List<TagOut>(),
                         };
                         if (newOutputSheet.Img1 != null)
                         {
@@ -1004,7 +1105,7 @@ public class ItemSheetsController : ControllerBase
                                 var fullTag = await _context.Tags
                                     .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                                     .FirstOrDefaultAsync();
-                                newOutputSheet.Tags.Add(fullTag);
+                                newOutputSheet.Tags.Add(new TagOut(fullTag));
 
                             }
                         }
@@ -1070,7 +1171,7 @@ public class ItemSheetsController : ControllerBase
 
             if (itemSheet.FirstapprovalbyuserGuid != null && itemSheet.SecondapprovalbyuserGuid == null)
             {
-                if (result != itemSheet.CreatedbyuserGuid && result != itemSheet.FirstapprovalbyuserGuid)
+                if (result != itemSheet.EditbyUserGuid && result != itemSheet.FirstapprovalbyuserGuid)
                 {
                     itemSheet.SecondapprovalbyuserGuid = result;
                     itemSheet.Secondapprovaldate = DateTime.Now;
@@ -1086,7 +1187,7 @@ public class ItemSheetsController : ControllerBase
 
             if (itemSheet.FirstapprovalbyuserGuid == null)
             {
-                if (result != itemSheet.CreatedbyuserGuid)
+                if (result != itemSheet.EditbyUserGuid)
                 {
                     itemSheet.FirstapprovalbyuserGuid = result;
                     itemSheet.Firstapprovaldate = DateTime.Now;
@@ -1279,6 +1380,52 @@ public class ItemSheetsController : ControllerBase
                     }
                 }
 
+
+                TagsObject listTags = new TagsObject();
+
+                if (item.Fields != null)
+                {
+                    foreach (var tag in item.Fields)
+                    {
+                        if (tag.Key == "Tags")
+                        {
+                            var TestJsonFeilds = item.Fields["Tags"];
+
+                            foreach (Guid tagValue in TestJsonFeilds)
+                            {
+                                if (!allowedTags.Contains(tagValue))
+                                {
+                                    return Unauthorized();
+                                }
+                                if (!listTags.MainTags.Contains(tagValue))
+                                    listTags.MainTags.Add(tagValue);
+                            }
+                        }
+
+                        if (tag.Key == "Special_Skills")
+                        {
+                            var TestJsonFeilds = item.Fields["Special_Skills"];
+
+                            foreach (var tagValues in TestJsonFeilds)
+                            {
+                                var fields = tagValues["Tags"];
+
+                                foreach (Guid tagValue in fields)
+                                {
+                                    if (!allowedTags.Contains(tagValue))
+                                    {
+                                        return Unauthorized();
+                                    }
+                                    if (!listTags.AbilityTags.Contains(tagValue))
+                                        listTags.AbilityTags.Add(tagValue);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                itemSheet.Taglists = Newtonsoft.Json.JsonConvert.SerializeObject(listTags);
+
                 _context.Add(itemSheet);
 
                 try
@@ -1297,7 +1444,7 @@ public class ItemSheetsController : ControllerBase
                     }
                 }
 
-                var nwoutputItem = Extensions.Item.CreateItem(itemSheet);
+                var nwoutputItem = Extensions.Item.CreateItem(itemSheet, _context);
 
                 return nwoutputItem;
             }
@@ -1342,6 +1489,17 @@ public class ItemSheetsController : ControllerBase
 
             if (item.Guid == null) item.Guid = Guid.NewGuid();
 
+            var itemcheck = _context.ItemSheets.Where(i => i.Guid == item.Guid).FirstOrDefault();
+            if (itemcheck != null)
+            {
+                return BadRequest(item.Guid.ToString() + " is associated with " + itemcheck.Name);
+            }
+            var itemcheck2 = _context.ItemSheetApproveds.Where(i => i.Guid == item.Guid).FirstOrDefault();
+            if (itemcheck2 != null)
+            {
+                return BadRequest(item.Guid.ToString() + " is associated with " + itemcheck2.Name);
+            }
+
             itemSheet.Guid = item.Guid;
             if (item.Name != null) itemSheet.Name = item.Name;
 
@@ -1385,6 +1543,52 @@ public class ItemSheetsController : ControllerBase
 
             if (item.Seriesguid != null) itemSheet.Seriesguid = item.Seriesguid;
 
+
+            TagsObject listTags = new TagsObject();
+
+            if (item.Fields != null)
+            {
+                foreach (var tag in item.Fields)
+                {
+                    if (tag.Key == "Tags")
+                    {
+                        var TestJsonFeilds = item.Fields["Tags"];
+
+                        foreach (Guid tagValue in TestJsonFeilds)
+                        {
+                            if (!allowedTags.Contains(tagValue))
+                            {
+                                return Unauthorized();
+                            }
+                            if (!listTags.MainTags.Contains(tagValue))
+                                listTags.MainTags.Add(tagValue);
+                        }
+                    }
+
+                    if (tag.Key == "Special_Skills")
+                    {
+                        var TestJsonFeilds = item.Fields["Special_Skills"];
+
+                        foreach (var tagValues in TestJsonFeilds)
+                        {
+                            var fields = tagValues["Tags"];
+
+                            foreach (Guid tagValue in fields)
+                            {
+                                if (!allowedTags.Contains(tagValue))
+                                {
+                                    return Unauthorized();
+                                }
+                                if (!listTags.AbilityTags.Contains(tagValue))
+                                    listTags.AbilityTags.Add(tagValue);
+                            }
+                        }
+                    }
+                }
+            }
+
+            itemSheet.Taglists = Newtonsoft.Json.JsonConvert.SerializeObject(listTags);
+
             itemSheet.Createdate = DateTime.Now;
             itemSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
@@ -1395,6 +1599,7 @@ public class ItemSheetsController : ControllerBase
             itemSheet.SecondapprovalbyuserGuid = null;
             itemSheet.Secondapprovaldate = null;
             itemSheet.Isactive = true;
+            itemSheet.Readyforapproval = item.readyforapproval;
 
 
             var isheets = await _context.ItemSheets.Where(cs => cs.Guid == itemSheet.Guid).ToListAsync();
@@ -1416,7 +1621,7 @@ public class ItemSheetsController : ControllerBase
                 return BadRequest(e.Message);
             }
 
-            var nwoutputItem = Item.CreateItem(itemSheet);
+            var nwoutputItem = Item.CreateItem(itemSheet, _context);
 
             return Ok(nwoutputItem);
         }
@@ -1474,7 +1679,7 @@ public class ItemSheetsController : ControllerBase
 
         if (!allowedSheets.Contains(guid)) return null;
 
-        var outputItem = Item.CreateItem(itemSheet);
+        var outputItem = Item.CreateItem(itemSheet, _context);
 
         var tagslist = new JsonElement();
 
@@ -1488,7 +1693,7 @@ public class ItemSheetsController : ControllerBase
             {
                 var fullTag = await _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                outputItem.Tags.Add(fullTag);
+                outputItem.Tags.Add(new TagOut(fullTag));
             }
         }
 

@@ -42,6 +42,8 @@ public partial class ItemSheetApproved
 
     public Guid? EditbyUserGuid { get; set; }
 
+    public string Taglists { get; set; }
+
     public virtual User Createdbyuser { get; set; }
 
     public virtual User EditbyUser { get; set; }

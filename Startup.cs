@@ -11,6 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
 
@@ -34,7 +36,12 @@ public class Startup
         //services.AddTransient<SampleMiddleware>();
         //services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
-        services.AddControllers().AddNewtonsoftJson();
+        services.AddControllers().AddNewtonsoftJson(options =>
+        {
+            // Use the default property (Pascal) casing
+            options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        });
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
@@ -186,7 +193,10 @@ public class Startup
         var connstring = "Host=" + host + ";Port=" + port
                          + ";Database=" + database + "; Username=" + username + ";Password=" + password;
 
-        //connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
+        connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
+        // LOCAL DOCKER CONNSTTRING
+        //connstring = "Host=localhost;Port=5433;Database=LARP_Docker;Username=postgres;Password=postgres";
+
         //if (host != _config.GetValue<string>("ConnectionSrings:Host"))
         //    connstring += ";SslMode=allow;Trust Server Certificate=true;";
 

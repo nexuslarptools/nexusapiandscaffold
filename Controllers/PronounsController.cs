@@ -66,7 +66,7 @@ public class PronounsController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
     [Authorize]
-    public async Task<IActionResult> PutPronouns(Guid guid, Pronouns pronouns)
+    public async Task<IActionResult> PutPronouns(Guid guid, Pronoun pronouns)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 

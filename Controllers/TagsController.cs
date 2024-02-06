@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
@@ -301,11 +304,166 @@ public class TagsController : ControllerBase
         return Unauthorized();
     }
 
-    /// <summary>
-    ///     Returns all Tag Types and Guids
-    /// </summary>
-    /// <returns></returns>
-    // GET: api/v1/Tags/
+    [HttpPut("RedoTags")]
+    [Authorize]
+    public async Task<IActionResult> RedoTags()
+    {
+
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var itemSheets = _context.ItemSheets.ToList();
+
+            foreach (var item in itemSheets)
+            {
+                TagsObject newTagsObject = new TagsObject();
+                if (item.Fields != null)
+                {
+                    if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
+                    {
+                        foreach (var tag in itemTags.EnumerateArray())
+                        {
+                            newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
+                        }
+                    }
+                    if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
+                    {
+                        foreach (var skill in skills.EnumerateArray())
+                        {
+                            if (skill.TryGetProperty("Tags", out var skilltags))
+                            {
+                                foreach (var skilltag in skilltags.EnumerateArray())
+                                {
+                                    newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
+                                }
+                            }
+                        }
+                    }
+
+                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    item.Taglists = JSONTags;
+
+                }
+            }
+
+
+            var itemSheetsA = _context.ItemSheetApproveds.ToList();
+
+            foreach (var item in itemSheetsA)
+            {
+                TagsObject newTagsObject = new TagsObject();
+                if (item.Fields != null)
+                {
+                    if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
+                    {
+                        foreach (var tag in itemTags.EnumerateArray())
+                        {
+                            newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
+                        }
+                    }
+                    if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
+                    {
+                        foreach (var skill in skills.EnumerateArray())
+                        {
+                            if (skill.TryGetProperty("Tags", out var skilltags))
+                            {
+                                foreach (var skilltag in skilltags.EnumerateArray())
+                                {
+                                    newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
+                                }
+                            }
+                        }
+                    }
+
+                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    item.Taglists = JSONTags;
+
+                }
+            }
+
+            var charSheets = _context.CharacterSheets.ToList();
+
+            foreach (var item in charSheets)
+            {
+                TagsObject newTagsObject = new TagsObject();
+                if (item.Fields != null)
+                {
+                    if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
+                    {
+                        foreach (var tag in itemTags.EnumerateArray())
+                        {
+                            newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
+                        }
+                    }
+                    if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
+                    {
+                        foreach (var skill in skills.EnumerateArray())
+                        {
+                            if (skill.TryGetProperty("Tags", out var skilltags))
+                            {
+                                foreach (var skilltag in skilltags.EnumerateArray())
+                                {
+                                    newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
+                                }
+                            }
+                        }
+                    }
+
+                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    item.Taglists = JSONTags;
+
+                }
+            }
+
+            var charSheetA = _context.CharacterSheetApproveds.ToList();
+
+            foreach (var item in charSheetA)
+            {
+                TagsObject newTagsObject = new TagsObject();
+                if (item.Fields != null)
+                {
+                    if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
+                    {
+                        foreach (var tag in itemTags.EnumerateArray())
+                        {
+                            newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
+                        }
+                    }
+                    if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
+                    {
+                        foreach (var skill in skills.EnumerateArray())
+                        {
+                            if (skill.TryGetProperty("Tags", out var skilltags))
+                            {
+                                foreach (var skilltag in skilltags.EnumerateArray())
+                                {
+                                    newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
+                                }
+                            }
+                        }
+                    }
+
+                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    item.Taglists = JSONTags;
+
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        return Unauthorized();
+    }
+
+        /// <summary>
+        ///     Returns all Tag Types and Guids
+        /// </summary>
+        /// <returns></returns>
+        // GET: api/v1/Tags/
     [HttpGet("AllTagsByTypeName/{TypeName}")]
     [Authorize]
     public async Task<ActionResult<TagsOutput>> GetTagTypesWithTags(string TypeName)

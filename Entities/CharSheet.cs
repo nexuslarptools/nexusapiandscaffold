@@ -40,6 +40,8 @@ public class CharSheet
     public byte[] imagedata2 { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string Editby { get; set; }
+    public List<ReviewMessage> ReviewMessages { get; set; }
+    public bool Readyforapproval { get; set; }
 
     public CharSheet()
     {
@@ -66,6 +68,7 @@ public class CharSheet
         Gmnotes = input.Gmnotes;
         Reason4edit = input.Reason4edit;
         Version = input.Version;
+        Readyforapproval = false;
 
         var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
     .FirstOrDefault();
@@ -81,13 +84,13 @@ public class CharSheet
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                     .FirstOrDefault() != null)
                 this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
 
             else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                          .FirstOrDefault() !=
                      null)
                 this.Sheet_Item = Item.CreateItem(_context.ItemSheets
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
         }
 
         var Start_Items = new List<IteSheet>();
@@ -103,7 +106,7 @@ public class CharSheet
                     issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
 
 
-                Start_Items.Add(Item.CreateItem(starting_I));
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
             }
             else if (_context.ItemSheets
                          .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
@@ -115,7 +118,7 @@ public class CharSheet
                                                                         issh.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault();
 
-                Start_Items.Add(Item.CreateItem(starting_I));
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
             }
 
         if (Start_Items != null) this.Starting_Items = Start_Items;
@@ -163,6 +166,16 @@ public class CharSheet
             {
                 this.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
             }
+        }
+
+        ReviewMessages = new List<ReviewMessage>();
+
+        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
+          && isrm.CharactersheetId == input.Id).ToList();
+
+        foreach (var message in ListMessages)
+        {
+            ReviewMessages.Add(new ReviewMessage(message, _context));
         }
     }
 
@@ -186,7 +199,8 @@ public class CharSheet
         Secondapprovaldate = input.Secondapprovaldate;
         Gmnotes = input.Gmnotes;
         Reason4edit = input.Reason4edit;
-        Version = input.Version;    
+        Version = input.Version;
+        Readyforapproval = input.Readyforapproval;
 
         var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
           .FirstOrDefault();
@@ -201,13 +215,13 @@ public class CharSheet
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                     .FirstOrDefault() != null)
                 this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
 
             else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                          .FirstOrDefault() !=
                      null)
                 this.Sheet_Item = Item.CreateItem(_context.ItemSheets
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault());
+                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
         }
 
         var Start_Items = new List<IteSheet>();
@@ -223,7 +237,7 @@ public class CharSheet
                     issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
 
 
-                Start_Items.Add(Item.CreateItem(starting_I));
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
             }
             else if (_context.ItemSheets
                          .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
@@ -232,7 +246,7 @@ public class CharSheet
                 var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
                                      issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
 
-                Start_Items.Add(Item.CreateItem(starting_I));
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
             }
 
         if (Start_Items != null) this.Starting_Items = Start_Items;
@@ -282,6 +296,16 @@ public class CharSheet
             }
         }
 
+        ReviewMessages = new List<ReviewMessage>();
+
+        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
+          && isrm.CharactersheetId == input.Id).ToList();
+
+        foreach (var message in ListMessages)
+        {
+            ReviewMessages.Add(new ReviewMessage(message, _context));
+        }
+
     }
 
     public CharacterSheet OutputToCharacterSheet() 
@@ -302,7 +326,8 @@ public class CharSheet
             SecondapprovalbyuserGuid = this.SecondapprovalbyUserGuid,
             Secondapprovaldate = this.Secondapprovaldate,
             Gmnotes = this.Gmnotes,
-            Reason4edit = this.Reason4edit
+            Reason4edit = this.Reason4edit,
+            Readyforapproval = this.Readyforapproval
         };
 
         return Charsheet;

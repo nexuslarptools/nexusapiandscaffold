@@ -37,6 +37,8 @@ public partial class User
 
     public virtual ICollection<CharacterSheet> CharacterSheetFirstapprovalbyusers { get; } = new List<CharacterSheet>();
 
+    public virtual ICollection<CharacterSheetReviewMessage> CharacterSheetReviewMessages { get; } = new List<CharacterSheetReviewMessage>();
+
     public virtual ICollection<CharacterSheet> CharacterSheetSecondapprovalbyusers { get; } = new List<CharacterSheet>();
 
     public virtual ICollection<CharacterSheetVersion> CharacterSheetVersionCreatedbyusers { get; } = new List<CharacterSheetVersion>();
@@ -58,6 +60,8 @@ public partial class User
     public virtual ICollection<ItemSheet> ItemSheetEditbyUsers { get; } = new List<ItemSheet>();
 
     public virtual ICollection<ItemSheet> ItemSheetFirstapprovalbyusers { get; } = new List<ItemSheet>();
+
+    public virtual ICollection<ItemSheetReviewMessage> ItemSheetReviewMessages { get; } = new List<ItemSheetReviewMessage>();
 
     public virtual ICollection<ItemSheet> ItemSheetSecondapprovalbyusers { get; } = new List<ItemSheet>();
 
@@ -94,6 +98,8 @@ public partial class User
     public virtual ICollection<SheetUsersContact> SheetUsersContactCreatedbyusers { get; } = new List<SheetUsersContact>();
 
     public virtual ICollection<SheetUsersContact> SheetUsersContactUsers { get; } = new List<SheetUsersContact>();
+
+    public virtual ICollection<Tag> Tags { get; } = new List<Tag>();
 
     public virtual ICollection<UserLarprole> UserLarproles { get; } = new List<UserLarprole>();
 }

@@ -31,6 +31,7 @@ public class IteSheetInput
     public int? Version { get; set; }
     public List<Guid> Tags { get; set; }
     public byte[] imagedata { get; set; }
+    public bool Readyforapproval { get; set; }
 
     public ItemSheet OutputToItemSheet()
     {
@@ -51,6 +52,8 @@ public class IteSheetInput
             SecondapprovalbyuserGuid = this.SecondapprovalbyuserGuid,
             Gmnotes = this.Gmnotes,
             Reason4edit = this.Reason4edit,
+            Readyforapproval = this.Readyforapproval
+
         };
 
         if (this.Fields != null)

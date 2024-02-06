@@ -44,6 +44,8 @@ public partial class CharacterSheetApproved
 
     public Guid? EditbyUserGuid { get; set; }
 
+    public string Taglists { get; set; }
+
     public virtual CharacterSheet Charactersheet { get; set; }
 
     public virtual User Createdbyuser { get; set; }

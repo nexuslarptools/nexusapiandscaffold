@@ -30,10 +30,8 @@ public class TagScanner
                             okay = false;
                 }
             }
-
             if (okay) outputter.Add(sheet.Guid);
         }
-
         return outputter;
     }
 

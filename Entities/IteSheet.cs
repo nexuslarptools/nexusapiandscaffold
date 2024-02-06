@@ -31,10 +31,15 @@ public class IteSheet
     public string Gmnotes { get; set; }
     public string Reason4edit { get; set; }
     public int? Version { get; set; }
-    public List<Tag> Tags { get; set; }
+    public List<TagOut> Tags { get; set; }
     public byte[] imagedata { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string EditbyUser { get; set; }
+    public bool readyforapproval { get; set; }
+    public bool hasreview { get; set; }
+
+    public List<ReviewMessage> ReviewMessages { get; set; }
+
 
     public IteSheet()
     {
@@ -56,7 +61,9 @@ public class IteSheet
         EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
         Fields = FeildsWInit;
-        Tags = new List<Tag>();
+        Tags = new List<TagOut>();
+        readyforapproval = sheet.Readyforapproval;
+        Gmnotes = sheet.Gmnotes;
 
         if (this.Img1 != null)
         {
@@ -127,9 +134,21 @@ public class IteSheet
                 var fullTag = _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                     .FirstOrDefault();
-                this.Tags.Add(fullTag);
+                this.Tags.Add(new TagOut(fullTag));
 
             }
+        }
+
+        ReviewMessages = new List<ReviewMessage>();
+
+        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true 
+          && isrm.ItemsheetId == sheet.Id).ToList();
+
+        hasreview = false;
+        foreach (var message in ListMessages)
+        {
+            hasreview = true;
+            ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
     }
@@ -150,7 +169,9 @@ public class IteSheet
         EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
         Fields = FeildsWInit;
-        Tags = new List<Tag>();
+        Tags = new List<TagOut>();
+        readyforapproval = false;
+        Gmnotes = sheet.Gmnotes;
 
         if (this.Img1 != null)
         {
@@ -221,9 +242,20 @@ public class IteSheet
                 var fullTag = _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                     .FirstOrDefault();
-                this.Tags.Add(fullTag);
+                this.Tags.Add(new TagOut(fullTag));
 
             }
+        }
+
+        ReviewMessages = new List<ReviewMessage>();
+        hasreview = false;
+        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+          && isrm.ItemsheetId == sheet.ItemsheetId).ToList();
+
+        foreach (var message in ListMessages)
+        {
+            hasreview = true;
+            ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
     }

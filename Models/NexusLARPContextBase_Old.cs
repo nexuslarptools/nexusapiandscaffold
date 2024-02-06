@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class NexusLarpLocalContext : DbContext
+public partial class NexusLARPContextBase : DbContext
 {
-    public NexusLarpLocalContext()
+    public NexusLARPContextBase()
     {
     }
 
-    public NexusLarpLocalContext(DbContextOptions<NexusLarpLocalContext> options)
+    public NexusLARPContextBase(DbContextOptions<NexusLARPContextBase> options)
         : base(options)
     {
     }
@@ -19,15 +19,11 @@ public partial class NexusLarpLocalContext : DbContext
 
     public virtual DbSet<CharacterSheetApproved> CharacterSheetApproveds { get; set; }
 
-    public virtual DbSet<CharacterSheetReviewMessage> CharacterSheetReviewMessages { get; set; }
-
     public virtual DbSet<CharacterSheetVersion> CharacterSheetVersions { get; set; }
 
     public virtual DbSet<ItemSheet> ItemSheets { get; set; }
 
     public virtual DbSet<ItemSheetApproved> ItemSheetApproveds { get; set; }
-
-    public virtual DbSet<ItemSheetReviewMessage> ItemSheetReviewMessages { get; set; }
 
     public virtual DbSet<ItemSheetVersion> ItemSheetVersions { get; set; }
 
@@ -117,7 +113,6 @@ public partial class NexusLarpLocalContext : DbContext
                 .IsRequired()
                 .HasMaxLength(1000)
                 .HasColumnName("name");
-            entity.Property(e => e.Readyforapproval).HasColumnName("readyforapproval");
             entity.Property(e => e.Reason4edit)
                 .HasMaxLength(2000)
                 .HasColumnName("reason4edit");
@@ -235,29 +230,6 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasConstraintName("fk_series_guid");
         });
 
-        modelBuilder.Entity<CharacterSheetReviewMessage>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("charactersheetreviewmessages_id");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.CharactersheetId).HasColumnName("charactersheet_id");
-            entity.Property(e => e.Createdate)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createdate");
-            entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
-            entity.Property(e => e.Isactive)
-                .HasDefaultValueSql("true")
-                .HasColumnName("isactive");
-            entity.Property(e => e.Message)
-                .HasMaxLength(5000)
-                .HasColumnName("message");
-
-            entity.HasOne(d => d.Createdbyuser).WithMany(p => p.CharacterSheetReviewMessages)
-                .HasForeignKey(d => d.CreatedbyuserGuid)
-                .HasConstraintName("CharacterSheetReviewMessages_createdbyuser_guid_fkey");
-        });
-
         modelBuilder.Entity<CharacterSheetVersion>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("csheetvers_guid");
@@ -367,7 +339,6 @@ public partial class NexusLarpLocalContext : DbContext
                 .IsRequired()
                 .HasMaxLength(1000)
                 .HasColumnName("name");
-            entity.Property(e => e.Readyforapproval).HasColumnName("readyforapproval");
             entity.Property(e => e.Reason4edit)
                 .HasMaxLength(2000)
                 .HasColumnName("reason4edit");
@@ -476,29 +447,6 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Series).WithMany(p => p.ItemSheetApproveds)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid_itemappr");
-        });
-
-        modelBuilder.Entity<ItemSheetReviewMessage>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("itemsheetreviewmessages_id");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Createdate)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("createdate");
-            entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
-            entity.Property(e => e.Isactive)
-                .HasDefaultValueSql("true")
-                .HasColumnName("isactive");
-            entity.Property(e => e.ItemsheetId).HasColumnName("itemsheet_id");
-            entity.Property(e => e.Message)
-                .HasMaxLength(5000)
-                .HasColumnName("message");
-
-            entity.HasOne(d => d.Createdbyuser).WithMany(p => p.ItemSheetReviewMessages)
-                .HasForeignKey(d => d.CreatedbyuserGuid)
-                .HasConstraintName("ItemSheetReviewMessages_createdbyuser_guid_fkey");
         });
 
         modelBuilder.Entity<ItemSheetVersion>(entity =>

@@ -37,10 +37,10 @@ public class RolesController : ControllerBase
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-            return await _context.Roles.Select(r => new RoleOut(r.Id, r.Rolename)).ToListAsync();
+            return await _context.Roles.Select(r => new RoleOut((int)r.Ord, r.Rolename)).ToListAsync();
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
-            return await _context.Roles.Where(ro => ro.Rolename != "HeadGM" && ro.Rolename != "Wizard").Select(r => new RoleOut(r.Id, r.Rolename)).ToListAsync();
+            return await _context.Roles.Where(ro => ro.Rolename != "HeadGM" && ro.Rolename != "Wizard").Select(r => new RoleOut((int)r.Ord, r.Rolename)).ToListAsync();
 
         return Unauthorized();
     }
@@ -67,7 +67,7 @@ public class RolesController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-            if (id != role.Id) return BadRequest();
+            if (id != role.Ord) return BadRequest();
 
             _context.Entry(role).State = EntityState.Modified;
 

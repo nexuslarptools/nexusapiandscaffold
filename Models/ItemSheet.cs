@@ -40,6 +40,10 @@ public partial class ItemSheet
 
     public Guid? EditbyUserGuid { get; set; }
 
+    public string Taglists { get; set; }
+
+    public bool Readyforapproval { get; set; }
+
     public virtual User Createdbyuser { get; set; }
 
     public virtual User EditbyUser { get; set; }

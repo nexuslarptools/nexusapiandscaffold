@@ -11,6 +11,7 @@ public class Roles
 
     public int Id { get; set; }
     public string Rolename { get; set; }
+    public int Ord { get; set; }
 
     public virtual ICollection<UserLarproles> UserLarproles { get; set; }
 }
