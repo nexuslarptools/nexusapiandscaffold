@@ -301,16 +301,17 @@ public class UsersController : ControllerBase
         if (!UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context)) return Ok("{\"AuthLevel\":\"NONE\"}");
 
 
-        var Rolelist = _context.UserLarproles.Where(u => u.User.Authid == authId && u.Isactive == true).ToList();
+        var Rolelist = _context.UserLarproles.Where(u => u.User.Authid == authId && u.Isactive == true)
+            .Include("Role").ToList();
 
         var authlevel = 0;
         foreach (var role in Rolelist)
-            if (role.Roleid > authlevel)
-                authlevel = (int)role.Roleid;
+            if (role.Role.Ord > authlevel)
+                authlevel = (int)role.Role.Ord;
 
         if (authlevel == 0) return Ok("{\"AuthLevel\":\"None\"}");
 
-        var maxrole = _context.Roles.Where(r => r.Id == authlevel).Select(r => r.Rolename.Replace(" ", ""))
+        var maxrole = _context.Roles.Where(r => r.Ord == authlevel).Select(r => r.Rolename.Replace(" ", ""))
             .FirstOrDefault();
 
         return Ok("{\"AuthLevel\":\"" + maxrole + "\"}");

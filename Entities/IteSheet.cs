@@ -6,6 +6,8 @@ using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Models;
 using System.Linq;
 using NEXUSDataLayerScaffold.Logic;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Newtonsoft.Json;
 
 namespace NEXUSDataLayerScaffold.Entities;
 
@@ -47,7 +49,46 @@ public class IteSheet
 
     public IteSheet(ItemSheet sheet, NexusLarpLocalContext _context)
     {
-        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
+
+        JsonElement tagslist = new JsonElement();
+        Tags = new List<TagOut>();
+
+        if (sheet.Taglists != null && sheet.Taglists != string.Empty)
+        {
+            TagsObject tagslists = JsonConvert.DeserializeObject<TagsObject>(sheet.Taglists);
+
+            foreach (var tag in tagslists.MainTags)
+            {
+                var fullTag = _context.Tags
+                    .Where(t => t.Isactive == true && t.Guid == tag)
+                    .FirstOrDefault();
+                this.Tags.Add(new TagOut(fullTag));
+            }
+        }
+
+        if (sheet.Fields != null)
+        {
+            Fields = JObject.Parse(sheet.Fields.RootElement.ToString());
+            if (this.Tags.Count == 0)
+            {
+                var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
+                Fields = FeildsWInit;
+                sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                if (tagslist.ValueKind.ToString() != "Undefined")
+                {
+                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                    foreach (var tag in TestJsonFeilds)
+                    {
+                        var fullTag = _context.Tags
+                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                            .FirstOrDefault();
+                        this.Tags.Add(new TagOut(fullTag));
+                    }
+                }
+            }
+        }
 
         Id = sheet.Id;
         Guid = sheet.Guid;
@@ -60,8 +101,6 @@ public class IteSheet
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
         EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
-        Fields = FeildsWInit;
-        Tags = new List<TagOut>();
         readyforapproval = sheet.Readyforapproval;
         Gmnotes = sheet.Gmnotes;
 
@@ -121,24 +160,6 @@ public class IteSheet
             }
         }
 
-        JsonElement tagslist = new JsonElement();
-
-        sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-        if (tagslist.ValueKind.ToString() != "Undefined")
-        {
-            var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-            foreach (var tag in TestJsonFeilds)
-            {
-                var fullTag = _context.Tags
-                    .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                    .FirstOrDefault();
-                this.Tags.Add(new TagOut(fullTag));
-
-            }
-        }
-
         ReviewMessages = new List<ReviewMessage>();
 
         var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true 
@@ -155,7 +176,45 @@ public class IteSheet
 
     public IteSheet(ItemSheetApproved sheet, NexusLarpLocalContext _context)
     {
-        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
+        JsonElement tagslist = new JsonElement();
+        Tags = new List<TagOut>();
+
+        if (sheet.Taglists != null && sheet.Taglists != string.Empty)
+        {
+            TagsObject tagslists = JsonConvert.DeserializeObject<TagsObject>(sheet.Taglists);
+
+            foreach (var tag in tagslists.MainTags)
+            {
+                var fullTag = _context.Tags
+                    .Where(t => t.Isactive == true && t.Guid == tag)
+                    .FirstOrDefault();
+                this.Tags.Add(new TagOut(fullTag));
+            }
+        }
+
+        if (sheet.Fields != null)
+        {
+            Fields = JObject.Parse(sheet.Fields.RootElement.ToString());
+            if (this.Tags.Count == 0)
+            {
+                var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
+                Fields = FeildsWInit;
+                sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                if (tagslist.ValueKind.ToString() != "Undefined")
+                {
+                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                    foreach (var tag in TestJsonFeilds)
+                    {
+                        var fullTag = _context.Tags
+                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                            .FirstOrDefault();
+                        this.Tags.Add(new TagOut(fullTag));
+                    }
+                }
+            }
+        }
 
         Id = sheet.Id;
         Guid = sheet.Guid;
@@ -168,8 +227,6 @@ public class IteSheet
         SecondapprovalbyuserGuid = sheet.SecondapprovalbyuserGuid;
         EditbyUserGuid = sheet.EditbyUserGuid;
         Version = sheet.Version;
-        Fields = FeildsWInit;
-        Tags = new List<TagOut>();
         readyforapproval = false;
         Gmnotes = sheet.Gmnotes;
 
@@ -226,24 +283,6 @@ public class IteSheet
             if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
             {
                 this.EditbyUser = creUser.Firstname;
-            }
-        }
-
-        JsonElement tagslist = new JsonElement();
-
-        sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-        if (tagslist.ValueKind.ToString() != "Undefined")
-        {
-            var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-            foreach (var tag in TestJsonFeilds)
-            {
-                var fullTag = _context.Tags
-                    .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                    .FirstOrDefault();
-                this.Tags.Add(new TagOut(fullTag));
-
             }
         }
 

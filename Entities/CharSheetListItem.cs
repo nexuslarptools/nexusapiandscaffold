@@ -1,9 +1,14 @@
-﻿using NEXUSDataLayerScaffold.Models;
+﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using NEXUSDataLayerScaffold.Logic;
+using NEXUSDataLayerScaffold.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using static Npgsql.PostgresTypes.PostgresCompositeType;
+using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Entities
 {
@@ -26,6 +31,43 @@ namespace NEXUSDataLayerScaffold.Entities
 
         public CharSheetListItem(CharacterSheetApproved charSheet, NexusLarpLocalContext _context)
         {
+            JsonElement tagslist = new JsonElement();
+            tags = new List<TagOut>();
+
+            if (charSheet.Taglists != null && charSheet.Taglists != string.Empty)
+            {
+                TagsObject tagslists = JsonConvert.DeserializeObject<TagsObject>(charSheet.Taglists);
+
+                foreach (var tag in tagslists.MainTags)
+                {
+                    var fullTag = _context.Tags
+                        .Where(t => t.Isactive == true && t.Guid == tag)
+                        .FirstOrDefault();
+                    this.tags.Add(new TagOut(fullTag));
+                }
+            }
+
+            if (charSheet.Fields != null)
+            {
+                if (this.tags.Count == 0)
+                {
+                    charSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                    if (tagslist.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeilds = charSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            var fullTag = _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .FirstOrDefault();
+                            this.tags.Add(new TagOut(fullTag));
+                        }
+                    }
+                }
+            }
+
             guid = charSheet.Guid;
             name = charSheet.Name;
             seriesguid = (Guid)charSheet.Seriesguid;
@@ -38,12 +80,48 @@ namespace NEXUSDataLayerScaffold.Entities
             secondApprovalUser = IsNullOrEmpty(charSheet.SecondapprovalbyuserGuid) ? null :  _context.Users.Where(u => u.Guid == (Guid)charSheet.SecondapprovalbyuserGuid).FirstOrDefault().Preferredname;
             editbyUser = IsNullOrEmpty(charSheet.EditbyUserGuid) ? null : _context.Users.Where(u => u.Guid == (Guid)charSheet.EditbyUserGuid).FirstOrDefault().Preferredname;
             hasreview = _context.CharacterSheetReviewMessages.Any(csrm => csrm.CharactersheetId == charSheet.CharactersheetId);
-            tags = new List<TagOut>();
             readyforapproval = false;
         }
 
         public CharSheetListItem(CharacterSheet charSheet, NexusLarpLocalContext _context)
         {
+            JsonElement tagslist = new JsonElement();
+            tags = new List<TagOut>();
+
+            if (charSheet.Taglists != null && charSheet.Taglists != string.Empty)
+            {
+                TagsObject tagslists = JsonConvert.DeserializeObject<TagsObject>(charSheet.Taglists);
+
+                foreach (var tag in tagslists.MainTags)
+                {
+                    var fullTag = _context.Tags
+                        .Where(t => t.Isactive == true && t.Guid == tag)
+                        .FirstOrDefault();
+                    this.tags.Add(new TagOut(fullTag));
+                }
+            }
+
+            if (charSheet.Fields != null)
+            {
+                if (this.tags.Count == 0)
+                {
+                    charSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                    if (tagslist.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeilds = charSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            var fullTag = _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .FirstOrDefault();
+                            this.tags.Add(new TagOut(fullTag));
+                        }
+                    }
+                }
+            }
+
             guid = charSheet.Guid;
             name = charSheet.Name;
             seriesguid = (Guid)charSheet.Seriesguid;
@@ -56,7 +134,6 @@ namespace NEXUSDataLayerScaffold.Entities
             secondApprovalUser = IsNullOrEmpty(charSheet.SecondapprovalbyuserGuid) ? null : _context.Users.Where(u => u.Guid == (Guid)charSheet.SecondapprovalbyuserGuid).FirstOrDefault().Preferredname;
             editbyUser = IsNullOrEmpty(charSheet.EditbyUserGuid) ? null : _context.Users.Where(u => u.Guid == (Guid)charSheet.EditbyUserGuid).FirstOrDefault().Preferredname;
             hasreview = _context.CharacterSheetReviewMessages.Any(csrm => csrm.CharactersheetId == charSheet.Id);
-            tags = new List<TagOut>();
             readyforapproval = charSheet.Readyforapproval;
         }
 

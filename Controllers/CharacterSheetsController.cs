@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
@@ -43,42 +44,55 @@ public class CharacterSheetsController : ControllerBase
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
-                .Select(ulr => (Guid)ulr.Larpguid).ToList();
+            var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
 
-            var allowedTags = _context.Larptags.Where(lt =>
-                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+            //var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
+            //    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+            var allowedLARPS = _context.UserLarproles
+               .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+               .ToList();
+
+            var disAllowedTags = _context.Larptags.Where(lt =>
+                !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+            var allSheets = await _context.CharacterSheets.Where(c => c.Isactive == true)
+                .Select(x => new CharacterSheet
+                {
+                    Guid = x.Guid,
+                    Seriesguid = x.Seriesguid,
+                    Name = x.Name,
+                    Createdate = x.Createdate,
+                    CreatedbyuserGuid = x.CreatedbyuserGuid,
+                    FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                    Firstapprovaldate = x.Firstapprovaldate,
+                    SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                    Secondapprovaldate = x.Secondapprovaldate,
+                    EditbyUserGuid = x.EditbyUserGuid,
+                    Taglists = x.Taglists,
+                    Readyforapproval = x.Readyforapproval
+                })
+                .OrderBy(x => x.Name).ToListAsync();
 
-            var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
-
-            var tagDictionary = TagScanner.getAllTagsLists(legalsheets);
-
-            var fulltaglist = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
-
-            var ret2 = await _context.CharacterSheets.Where(cs => cs.Isactive == true && allowedSheets.Contains(cs.Guid))
-                .ToListAsync();
+            if (!wizardauth)
+            {
+                await _context.CharacterSheets.Where(c => c.Isactive == true
+                  && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
+                !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
+                 .OrderBy(x => x.Name).ToListAsync();
+            }
 
             List<CharSheetListItem> outp = new List<CharSheetListItem>();
-            foreach (var c in ret2)
+            foreach (var c in allSheets)
             {
                 var newshee = new CharSheetListItem(c, _context);
-                var tagsList = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist);
-                foreach (var t in tagsList)
-                {
-                    newshee.tags.Add(new TagOut(t));
-
-                }
                 outp.Add(newshee);
             }
 
 
-            if (ret2 == null) return NotFound();
+            if (outp == null) return NotFound();
 
             return Ok(outp.OrderBy(o => o.name).OrderBy(o => o.title));
         }
@@ -375,7 +389,7 @@ public class CharacterSheetsController : ControllerBase
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-            var json = JsonSerializer.Serialize(input);
+            var json = System.Text.Json.JsonSerializer.Serialize(input);
 
             using var dynJson = JsonDocument.Parse(json);
 
