@@ -76,12 +76,15 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             if (!wizardauth)
             {
-                await _context.CharacterSheetApproveds.Where(c => c.Isactive == true
-                  && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
-                !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
-                 .OrderBy(x => x.Name).ToListAsync();
+                allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.Taglists != null
+                && ash.Taglists.Contains(dat.ToString()))).ToList();
+
+                //await _context.CharacterSheetApproveds.Where(c => c.Isactive == true
+                //  && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                //.MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
+                //!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                //.AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
+                // .OrderBy(x => x.Name).ToListAsync();
             }
 
             List<CharSheetListItem> outp = new List<CharSheetListItem>();

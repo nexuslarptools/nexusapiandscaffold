@@ -160,6 +160,14 @@ public class IteSheet
             }
         }
 
+        if (this.Seriesguid != null)
+        {
+            var curseries = _context.Series
+                .Where(u => u.Guid == this.Seriesguid)
+                .FirstOrDefault();
+            this.Series = curseries.Title;
+        }
+
         ReviewMessages = new List<ReviewMessage>();
 
         var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true 
@@ -284,6 +292,14 @@ public class IteSheet
             {
                 this.EditbyUser = creUser.Firstname;
             }
+        }
+
+        if (this.Seriesguid != null)
+        {
+            var curseries = _context.Series
+                .Where(u => u.Guid == this.Seriesguid)
+                .FirstOrDefault();
+            this.Series = curseries.Title;
         }
 
         ReviewMessages = new List<ReviewMessage>();

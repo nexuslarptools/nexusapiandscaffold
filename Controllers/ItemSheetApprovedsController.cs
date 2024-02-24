@@ -425,12 +425,15 @@ public class ItemSheetApprovedsController : ControllerBase
 
                 if (!wizardauth)
                 {
-                    await _context.ItemSheetApproveds.Where(c => c.Isactive == true
-                      && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                    .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
-                    !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                    .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
-                     .OrderBy(x => x.Name).ToListAsync();
+                    allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.Taglists != null
+                        && ash.Taglists.Contains(dat.ToString()))).ToList();
+
+                  //  await _context.ItemSheetApproveds.Where(c => c.Isactive == true
+                  //    && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                  //  .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
+                  //  !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                  //  .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
+                  //   .OrderBy(x => x.Name).ToListAsync();
                 }
 
                 foreach (var sheet in allSheets)
