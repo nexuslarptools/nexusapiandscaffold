@@ -233,10 +233,11 @@ public class UsersController : ControllerBase
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-
+        var currUseGuid = _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context) ||
+            currUseGuid == id)
         {
             var user = _context.Users.Where(u => u.Guid == id).FirstOrDefault();
             if (user == null) { return NoContent(); }
@@ -347,25 +348,32 @@ public class UsersController : ControllerBase
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (guid != user.Guid) return BadRequest();
+
+        var oldUserinfo = _context.Users.Where(u => u.Guid == user.Guid).FirstOrDefault();
+
+        var curUser = _context.Users.Where(u => u.Authid == authId).FirstOrDefault();
+        if (user.Guid != user.Guid && !UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
         {
-            if (guid != user.Guid) return BadRequest();
+            return Unauthorized();
+        }
 
-            var oldUserinfo = _context.Users.Where(u => u.Guid == user.Guid).FirstOrDefault();
+        if (oldUserinfo == null) return NotFound();
 
-            if (oldUserinfo == null) return NotFound();
+        // change all dffering info.
+        if (oldUserinfo.Firstname != user.Firstname && user.Firstname != null)
+            oldUserinfo.Firstname = user.Firstname;
 
-            if (oldUserinfo.Firstname != user.Firstname && user.Firstname != null)
-                oldUserinfo.Firstname = user.Firstname;
+        if (oldUserinfo.Lastname != user.Lastname && user.Lastname != null) oldUserinfo.Lastname = user.Lastname;
 
-            if (oldUserinfo.Lastname != user.Lastname && user.Lastname != null) oldUserinfo.Lastname = user.Lastname;
+        if (oldUserinfo.Preferredname != user.Preferredname && user.Preferredname != null)
+            oldUserinfo.Preferredname = user.Preferredname;
 
-            if (oldUserinfo.Preferredname != user.Preferredname && user.Preferredname != null)
-                oldUserinfo.Preferredname = user.Preferredname;
+        if (oldUserinfo.Pronounsguid != user.Pronounsguid) oldUserinfo.Pronounsguid = user.Pronounsguid;
 
-            if (oldUserinfo.Pronounsguid != user.Pronounsguid) oldUserinfo.Pronounsguid = user.Pronounsguid;
-
-
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        {
+            //check if any user larp roles were added
             if (user.UserLarproles != null)
             {
                 var currroles = await _context.UserLarproles
@@ -374,16 +382,20 @@ public class UsersController : ControllerBase
 
                 foreach (var larpRole in user.UserLarproles)
                 {
+                    //Check if the role eixsts already.
                     var foundrole = await _context.UserLarproles.Where(ulr => ulr.Userguid == guid &&
                                                                               ulr.Larpguid == larpRole.Larpguid &&
-                                                                              ulr.Roleid == larpRole.Role.Id)
+                                                                              ulr.Role.Ord == larpRole.Role.Id)
                         .FirstOrDefaultAsync();
 
+                    // if it doesn't make a new userlaprrole.
                     if (foundrole == null)
                     {
+                        var actualroleID = _context.Roles.Where(r => r.Ord == larpRole.Role.Id).FirstOrDefault().Id;
+
                         foundrole = new UserLarprole
                         {
-                            Roleid = larpRole.Role.Id,
+                            Roleid = actualroleID,
                             Larpguid = larpRole.Larpguid,
                             Userguid = guid,
                             Isactive = true
@@ -410,15 +422,23 @@ public class UsersController : ControllerBase
                         _context.UserLarproles.Update(currRole);
                     }
             }
+            else
+            {
+                //remove all UserLarpRoles
+                var foundroles = await _context.UserLarproles.Where(ulr => ulr.Userguid == guid).ToListAsync();
+                foreach (var fndrole in foundroles)
+                {
+                    fndrole.Isactive = false;
+                    _context.UserLarproles.Update(fndrole);
+                }
+            }
 
             _context.Users.Update(oldUserinfo);
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
         }
 
-        return Unauthorized();
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 
     [HttpPut("DeactivateUser/{guid}")]
@@ -521,7 +541,7 @@ public class UsersController : ControllerBase
 
             var userLARPRoleInfo = _context.UserLarproles.Where(ulr =>
                 (larpInfo == null || ulr.Larpguid == larpInfo.Guid) && ulr.Userguid == oldUserinfo.Guid
-                                                                    && ulr.Roleid == roleinfo.Id).FirstOrDefault();
+                                                                    && ulr.Roleid == roleinfo.Ord).FirstOrDefault();
 
             if (userLARPRoleInfo == null)
             {
@@ -575,7 +595,7 @@ public class UsersController : ControllerBase
 
             var userLARPRoleInfo = _context.UserLarproles.Where(ulr => ulr.Larpguid == user.LarpGuid &&
                                                                        ulr.Userguid == user.Guid
-                                                                       && ulr.Roleid == roleinfo.Id).FirstOrDefault();
+                                                                       && ulr.Roleid == roleinfo.Ord).FirstOrDefault();
 
             if (userLARPRoleInfo == null) return NotFound();
 
