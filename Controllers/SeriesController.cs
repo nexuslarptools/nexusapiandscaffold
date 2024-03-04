@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
@@ -47,6 +48,12 @@ public class SeriesController : ControllerBase
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
+                .Select(s => new
+                {
+                    Series = s,
+                    Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
+                    && csa.Seriesguid == s.Guid).ToList()
+        })
                 .ToListAsync();
 
             var outputSeries = new List<Seri>();
@@ -59,23 +66,21 @@ public class SeriesController : ControllerBase
             {
                 var newser = new Seri();
 
-                newser.Guid = s.Guid;
-                newser.Title = s.Title;
-                newser.Titlejpn = s.Titlejpn;
-                newser.Tags = new List<Tag>();
+                newser.Guid = s.Series.Guid;
+                newser.Title = s.Series.Title;
+                newser.Titlejpn = s.Series.Titlejpn;
+                newser.Createdate = s.Series.Createdate;
+                newser.SheetTotal = s.Sheets.Count();
+                newser.Tags = new List<TagOut>();
 
-                if (s.Tags != null)
+                if (s.Series.Tags != null)
                 {
-                    var taglist = JObject.Parse(s.Tags.RootElement.ToString());
+                    var taglist = JObject.Parse(s.Series.Tags.RootElement.ToString());
                     foreach (var tag in taglist["SeriesTags"])
                     {
-                        newser.Tags.Add(allTagsList.Where(atl => atl.Guid == (Guid)tag).FirstOrDefault());
+                        newser.Tags.Add(new TagOut(allTagsList.Where(atl => atl.Guid == (Guid)tag).FirstOrDefault()));
                     }
                 }
-
-                newser.Createdate = s.Createdate;
-
-
                 outputSeries.Add(newser);
             }
 
@@ -85,6 +90,76 @@ public class SeriesController : ControllerBase
 
         return Unauthorized();
     }
+
+
+    [HttpGet("FullListWithApprovedChar")]
+    [Authorize]
+    public async Task<ActionResult<List<SeriWithCharSheets>>> GetSeriesWithApprovedCharList()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        {
+            var allowedSeries = GetAllowedSeries(authId, accessToken);
+
+            var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
+                .OrderBy(o => o.Title)
+                .Select(s => new
+                {
+                    Series = s,
+                    Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
+                    && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList()
+                })
+                .ToListAsync();
+
+            ser = ser.Where(s => s.Sheets != null && s.Sheets.Count > 0).ToList();
+
+            var outputSeries = new List<SeriWithCharSheets>();
+
+            if (ser == null) return NotFound();
+
+            var allTagsList = _context.Tags.ToList();
+
+            foreach (var s in ser)
+            {
+                var newser = new SeriWithCharSheets();
+
+                newser.Guid = s.Series.Guid;
+                newser.Title = s.Series.Title;
+                newser.Titlejpn = s.Series.Titlejpn;
+                newser.Createdate = s.Series.Createdate;
+                newser.SheetTotal = s.Sheets.Count();
+                newser.CharSheets = new List<CharSheetMini>();
+
+                foreach (var s2 in s.Sheets)
+                {
+                    newser.CharSheets.Add(new CharSheetMini(s2, _context));
+                }
+
+                newser.Tags = new List<TagOut>();
+
+                if (s.Series.Tags != null)
+                {
+                    var taglist = JObject.Parse(s.Series.Tags.RootElement.ToString());
+                    foreach (var tag in taglist["SeriesTags"])
+                    {
+                        newser.Tags.Add(new TagOut(allTagsList.Where(atl => atl.Guid == (Guid)tag).FirstOrDefault()));
+                    }
+                }
+                outputSeries.Add(newser);
+            }
+
+
+            return Ok(outputSeries);
+        }
+
+        return Unauthorized();
+    }
+
 
     /// <summary>
     ///     This lists all series and their titles along with ids, and nothing else.
@@ -169,7 +244,7 @@ public class SeriesController : ControllerBase
                     Guid = s.Guid,
                     Title = s.Title,
                     Titlejpn = s.Titlejpn,
-                    Tags = new List<Tag>()
+                    Tags = new List<TagOut>()
                 };  
 
                 if (s.Tags != null)
@@ -180,7 +255,7 @@ public class SeriesController : ControllerBase
                     {
                         var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
                             .FirstOrDefaultAsync();
-                        newOutput.Tags.Add(pulledtag);
+                        newOutput.Tags.Add(new TagOut(pulledtag));
                     }
 
 
@@ -201,6 +276,93 @@ public class SeriesController : ControllerBase
         return Unauthorized();
     }
 
+    /// <summary>
+    ///     This lists all series and their titles along with ids, and nothing else.
+    /// </summary>
+    /// <returns></returns>
+    // GET: api/v1/Series/ShortList
+    [HttpGet("FullShortListWithTags")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<Series>>> GetFullSeriesListWithTags()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        {
+            var allowedSeries = GetAllowedSeries(authId, accessToken);
+
+            //var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty
+            //                                                              && allowedSeries.Contains(s.Guid))
+            //    .GroupBy(s => s.Guid )
+            //    .Select(
+            //        sc => new
+            //        {
+            //            Guid = sc.Key,
+            //            Title = sc.Title,
+            //            Titlejpn = sc.Titlejpn,
+            //            Tags = sc.Tags,
+            //            SheetCount = sc.CharacterSheetApproveds.Count()
+            //        }).OrderBy(x => x.Title).ToListAsync();
+
+
+            var ser = await _context.Series
+                .Join(_context.CharacterSheetApproveds, 
+                s => s.Guid,
+                csa => csa.Seriesguid, 
+                (s, csa) =>  
+                new
+                {
+                    Guid = s.Guid,
+                    Title = s.Title,
+                    Titlejpn = s.Titlejpn,
+                    Tags = s.Tags,
+                    isActive = csa.Isactive
+                })
+                .Where(g => g.isActive == true)
+                .OrderBy(x => x.Title)
+                .GroupBy(d => d.Guid).ToListAsync();
+
+            var serOutPut = new List<Seri>();
+
+            foreach (var s in ser)
+            {
+                var newOutput = new Seri
+                {
+                    Guid = s.FirstOrDefault().Guid,
+                    Title = s.FirstOrDefault().Title,
+                    Titlejpn = s.FirstOrDefault().Titlejpn,
+                    Tags = new List<TagOut>(),
+                    SheetTotal = s.Count() 
+                };
+
+                if (s.FirstOrDefault().Tags != null)
+                {
+                    var taglist = JObject.Parse(s.FirstOrDefault().Tags.RootElement.ToString());
+                    foreach (var tag in taglist)
+                        foreach (var tagguid in tag.Value)
+                        {
+                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                                .FirstOrDefaultAsync();
+                            newOutput.Tags.Add(new TagOut(pulledtag));
+                        }
+                }
+
+                serOutPut.Add(newOutput);
+            }
+
+            var output = new SeriListOut();
+            output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
+            output.fulltotal = allowedSeries.Count;
+
+            return Ok(output);
+        }
+
+        return Unauthorized();
+    }
 
     /// <summary>
     ///     Finds a series based on a series tag guid.
@@ -307,7 +469,7 @@ public class SeriesController : ControllerBase
                     Guid = s.Guid,
                     Title = s.Title,
                     Titlejpn = s.Titlejpn,
-                    Tags = new List<Tag>()
+                    Tags = new List<TagOut>()
                 };
 
                 if (s.Tags != null)
@@ -318,7 +480,7 @@ public class SeriesController : ControllerBase
                     {
                         var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
                             .FirstOrDefaultAsync();
-                        newOutput.Tags.Add(pulledtag);
+                        newOutput.Tags.Add(new TagOut(pulledtag));
                     }
 
 
@@ -370,7 +532,7 @@ public class SeriesController : ControllerBase
                 newser.Isactive = s.Isactive;
                 newser.Createdate = s.Createdate;
                 newser.Deactivedate = s.Deactivedate;
-                newser.Tags = new List<Tag>();
+                newser.Tags = new List<TagOut>();
 
                 if (s.Tags != null)
                 {
@@ -380,7 +542,7 @@ public class SeriesController : ControllerBase
                     {
                         var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
                             .FirstOrDefaultAsync();
-                        newser.Tags.Add(pulledtag);
+                        newser.Tags.Add(new TagOut(pulledtag));
                     }
                 }
 
