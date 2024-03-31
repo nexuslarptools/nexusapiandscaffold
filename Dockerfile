@@ -24,7 +24,6 @@ RUN apt-get update && apt-get install -y curl unzip &&     OTEL_DOTNET_AUTO_HOME
 
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://prometheus-agent-agent-1:4318
 ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
 ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll"]
 #ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
