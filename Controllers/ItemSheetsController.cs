@@ -120,7 +120,7 @@ public class ItemSheetsController : ControllerBase
 
             var outputItem = new IteSheet(itemSheet, _context);
 
-            var tagslist = new JsonElement();
+/*            var tagslist = new JsonElement();
 
             itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
 
@@ -134,7 +134,7 @@ public class ItemSheetsController : ControllerBase
                         .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
                     outputItem.Tags.Add(new TagOut(fullTag));
                 }
-            }
+            }*/
 
             if (outputItem.Img1 != null)
                 if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
@@ -157,7 +157,7 @@ public class ItemSheetsController : ControllerBase
     // GET: api/ItemSheets/5
     [HttpGet("LinkedCharacters/{guid}")]
     [Authorize]
-    public async Task<ActionResult<ListCharacterSheets>> GetAllCharactersLinkedItemSheet(Guid guid)
+    public async Task<ActionResult<ListItemsAndCharacters>> GetAllCharactersLinkedItemSheet(Guid guid)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -170,6 +170,7 @@ public class ItemSheetsController : ControllerBase
             {
 
                 ListCharacterSheets output = new ListCharacterSheets();
+                ListItemsAndCharacters fullOutput = new ListItemsAndCharacters();
 
                 var itemsList = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid).ToListAsync();
 
@@ -182,7 +183,7 @@ public class ItemSheetsController : ControllerBase
 
                 if (itemsListApproved.Count > 0)
                 {
-                    return output;
+                    return fullOutput;
                 }
 
                 var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).ToList();
@@ -251,7 +252,9 @@ public class ItemSheetsController : ControllerBase
                     }
                 }
 
-                return output;
+                fullOutput.CharacterLists = output;
+
+                return fullOutput;
             }
             catch (Exception e)
             {
@@ -1113,7 +1116,9 @@ public class ItemSheetsController : ControllerBase
                     SecondapprovalbyuserGuid = itemSheet.SecondapprovalbyuserGuid,
                     Secondapprovaldate = itemSheet.Secondapprovaldate,
                     Gmnotes = itemSheet.Gmnotes,
-                    Version = maxversion
+                    Version = maxversion,
+                    Taglists = itemSheet.Taglists,
+                    EditbyUserGuid = itemSheet.EditbyUserGuid
                 };
 
                 _context.ItemSheetApproveds.Add(newapproval);

@@ -33,6 +33,27 @@ public class LarpsController : ControllerBase
         return larpList.OrderBy(ll => ll.Name).ToList();
     }
 
+    [HttpGet("Accessible")]
+    [Authorize]
+    public async Task<ActionResult<List<LARPOut>>> GetCurrUserLarps()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+        var larpList = await _context.Larps.Where(l => l.Isactive == true
+          && l.UserLarproles.Any(ulr => ulr.Isactive == true && ulr.Role.Ord > 1 
+          && ulr.User.Authid == authId))
+          .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
+
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            larpList = await _context.Larps.Where(l => l.Isactive == true)
+            .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
+        }
+
+        return larpList.OrderBy(ll => ll.Name).ToList();
+    }
+
     [HttpGet("GMAccess")]
     [Authorize]
     public async Task<ActionResult<List<LARPOut>>> GetLarpsWithGMAccess()

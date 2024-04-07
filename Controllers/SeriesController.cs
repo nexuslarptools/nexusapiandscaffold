@@ -295,53 +295,31 @@ public class SeriesController : ControllerBase
         {
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
-            //var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty
-            //                                                              && allowedSeries.Contains(s.Guid))
-            //    .GroupBy(s => s.Guid )
-            //    .Select(
-            //        sc => new
-            //        {
-            //            Guid = sc.Key,
-            //            Title = sc.Title,
-            //            Titlejpn = sc.Titlejpn,
-            //            Tags = sc.Tags,
-            //            SheetCount = sc.CharacterSheetApproveds.Count()
-            //        }).OrderBy(x => x.Title).ToListAsync();
-
-
-            var ser = await _context.Series
-                .Join(_context.CharacterSheetApproveds, 
-                s => s.Guid,
-                csa => csa.Seriesguid, 
-                (s, csa) =>  
-                new
-                {
-                    Guid = s.Guid,
-                    Title = s.Title,
-                    Titlejpn = s.Titlejpn,
-                    Tags = s.Tags,
-                    isActive = csa.Isactive
+            var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
+              .OrderBy(o => o.Title)
+              .Select(s => new
+               {
+                  Series = s,
+                  Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
+                  && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList()
                 })
-                .Where(g => g.isActive == true)
-                .OrderBy(x => x.Title)
-                .GroupBy(d => d.Guid).ToListAsync();
-
+                 .ToListAsync();
             var serOutPut = new List<Seri>();
 
             foreach (var s in ser)
             {
                 var newOutput = new Seri
                 {
-                    Guid = s.FirstOrDefault().Guid,
-                    Title = s.FirstOrDefault().Title,
-                    Titlejpn = s.FirstOrDefault().Titlejpn,
+                    Guid = s.Series.Guid,
+                    Title = s.Series.Title,
+                    Titlejpn = s.Series.Titlejpn,
                     Tags = new List<TagOut>(),
-                    SheetTotal = s.Count() 
+                    SheetTotal = s.Sheets.Count()
                 };
 
-                if (s.FirstOrDefault().Tags != null)
+                if (s.Series.Tags != null)
                 {
-                    var taglist = JObject.Parse(s.FirstOrDefault().Tags.RootElement.ToString());
+                    var taglist = JObject.Parse(s.Series.Tags.RootElement.ToString());
                     foreach (var tag in taglist)
                         foreach (var tagguid in tag.Value)
                         {

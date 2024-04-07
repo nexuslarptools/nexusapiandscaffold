@@ -1035,7 +1035,7 @@ public class CharacterSheetsController : ControllerBase
                 throw;
             }
 
-            return NoContent();
+            return Ok(charSheet);
         }
 
         return Unauthorized();
@@ -1157,7 +1157,9 @@ public class CharacterSheetsController : ControllerBase
                     Secondapprovaldate = characterSheet.Secondapprovaldate,
                     Gmnotes = characterSheet.Gmnotes,
                     Reason4edit = characterSheet.Reason4edit,
-                    Version = characterSheet.Version
+                    Version = characterSheet.Version,
+                    Taglists = characterSheet.Taglists,
+                    EditbyUserGuid = characterSheet.EditbyUserGuid
                 };
 
                 if (theNewSheet.Img1 != null)

@@ -239,7 +239,7 @@ public class UsersController : ControllerBase
             UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context) ||
             currUseGuid == id)
         {
-            var user = _context.Users.Where(u => u.Guid == id).FirstOrDefault();
+            var user = _context.Users.Where(u => u.Guid == id).Include("Pronouns").FirstOrDefault();
             if (user == null) { return NoContent(); }
 
             var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
@@ -253,7 +253,8 @@ public class UsersController : ControllerBase
                 Lastname = user.Lastname,
                 Preferredname = user.Preferredname,
                 Email = user.Email,
-                Pronounsguid = user.Pronounsguid
+                Pronounsguid = user.Pronounsguid,
+                Pronouns = user.Pronouns.Pronouns,
             };
             foreach (var larprole in UsersRolesList)
                 if (larprole.Userguid == newout.Guid)
@@ -438,7 +439,7 @@ public class UsersController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(user);
     }
 
     [HttpPut("DeactivateUser/{guid}")]
