@@ -18,6 +18,12 @@ FROM build AS publish
 RUN dotnet publish "NEXUSDataLayerScaffold.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
+ARG OTEL_VERSION=1.4.0
+ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v${OTEL_VERSION}/otel-dotnet-auto-install.sh otel-dotnet-auto-install.sh
+RUN apt-get update && apt-get install -y curl unzip &&     OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto" sh otel-dotnet-auto-install.sh &&     chmod +x /otel-dotnet-auto/instrument.sh
+
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
+ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
+ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll"]
+#ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
