@@ -18,7 +18,7 @@ RUN dotnet build "NEXUSDataLayerScaffold.csproj" -c Release -o /app/build
 
 FROM build AS publish
 ARG TARGETARCH
-RUN dotnet publish "NEXUSDataLayerScaffold.csproj" -c Release -a $TARGETARCH -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "NEXUSDataLayerScaffold.csproj" -c Release -a $TARGETARCH -o /app/publish
 
 FROM base AS final
 ARG OTEL_VERSION=1.4.0
