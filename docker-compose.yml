@@ -1,17 +1,45 @@
-version: "3"
 
 services:
-  dockercomposeproductapi:
-    image: nexusdatalayerapi
-    build:
-      context: .
-      dockerfile: Dockerfile
+  nexusapi:
+    image: kbrighton/nexuslarp:latest
+    container_name: nexusapi
+    depends_on:
+      - postgres
     ports:
-      - "6001:80"
-    networks:
-      - product-network
+      - "6004:443"
+      - "6005:80"
+    volumes:
+      - ${NEXUSAPI}/images:/app/images
+    environment:
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - ASPNETCORE_URLS=http://+:80;http://+:443
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - Host=postgres
+      - Password=<password>
+      - DBUsername=postgres
+      - Database=NexusLARP
+      - Port=5432
+      - VIRTUAL_HOST=decade.kylebrighton.com
+      - VIRTUAL_PORT=443
+      - LETSENCRYPT_HOST=decade.kylebrighton.com
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://prometheus-agent-agent-1:4318
 
+  nexusfrontend:
+    image: kbrighton/nexusfrontend:latest
+    container_name: nexusfrontend
+    ports:
+      - "3001:80"
+      - "3002:3002"
+    environment:
+      - PATH=/app/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - NODE_VERSION=13.12.0
+      - YARN_VERSION=1.22.4
+      - HTTPS=true
 
-networks:
-  product-network:
-    driver: bridge
+  postgres:
+    image: postgres:12
+    container_name: postgres
+    ports:
+      - 32775:5432
+    volumes:
+      - ${POSTGRES}:/var/lib/postgresql/data
