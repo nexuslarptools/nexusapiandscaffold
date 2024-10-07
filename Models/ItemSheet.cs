@@ -44,11 +44,21 @@ public partial class ItemSheet
 
     public bool Readyforapproval { get; set; }
 
+    public bool? Isdoubleside { get; set; }
+
+    public JsonDocument Fields2ndside { get; set; }
+
+    public Guid? ItemtypeGuid { get; set; }
+
     public virtual User Createdbyuser { get; set; }
 
     public virtual User EditbyUser { get; set; }
 
     public virtual User Firstapprovalbyuser { get; set; }
+
+    public virtual ICollection<ItemSheetTag> ItemSheetTags { get; } = new List<ItemSheetTag>();
+
+    public virtual ItemType Itemtype { get; set; }
 
     public virtual User Secondapprovalbyuser { get; set; }
 

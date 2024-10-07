@@ -35,4 +35,6 @@ public partial class Series
     public virtual ICollection<LarpplayerSeriesAllowed> LarpplayerSeriesAlloweds { get; } = new List<LarpplayerSeriesAllowed>();
 
     public virtual ICollection<LarpplayerSeriesDisllowed> LarpplayerSeriesDislloweds { get; } = new List<LarpplayerSeriesDisllowed>();
+
+    public virtual ICollection<SeriesTag> SeriesTags { get; } = new List<SeriesTag>();
 }

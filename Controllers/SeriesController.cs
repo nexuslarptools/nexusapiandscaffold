@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -254,7 +255,7 @@ public class SeriesController : ControllerBase
                     foreach (var tagguid in tag.Value)
                     {
                         var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                            .FirstOrDefaultAsync();
+                            .Include("Tagtype").FirstOrDefaultAsync();
                         newOutput.Tags.Add(new TagOut(pulledtag));
                     }
 
@@ -301,8 +302,9 @@ public class SeriesController : ControllerBase
                {
                   Series = s,
                   Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
-                  && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList()
-                })
+                  && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList(),
+                  TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
+              })
                  .ToListAsync();
             var serOutPut = new List<Seri>();
 
@@ -317,16 +319,12 @@ public class SeriesController : ControllerBase
                     SheetTotal = s.Sheets.Count()
                 };
 
-                if (s.Series.Tags != null)
+                if (s.TagsList.Count > 0)
                 {
-                    var taglist = JObject.Parse(s.Series.Tags.RootElement.ToString());
-                    foreach (var tag in taglist)
-                        foreach (var tagguid in tag.Value)
-                        {
-                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                                .FirstOrDefaultAsync();
-                            newOutput.Tags.Add(new TagOut(pulledtag));
-                        }
+                    foreach (var tag in s.TagsList)
+                    {
+                        newOutput.Tags.Add(new TagOut(tag));
+                    }
                 }
 
                 serOutPut.Add(newOutput);
@@ -457,7 +455,7 @@ public class SeriesController : ControllerBase
                     foreach (var tagguid in tag.Value)
                     {
                         var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                            .FirstOrDefaultAsync();
+                            .Include("Tagtype").FirstOrDefaultAsync();
                         newOutput.Tags.Add(new TagOut(pulledtag));
                     }
 
@@ -519,7 +517,7 @@ public class SeriesController : ControllerBase
                     foreach (var tagguid in tag.Value)
                     {
                         var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                            .FirstOrDefaultAsync();
+                            .Include("Tagtype").FirstOrDefaultAsync();
                         newser.Tags.Add(new TagOut(pulledtag));
                     }
                 }

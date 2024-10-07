@@ -35,7 +35,7 @@ public class CharSheet
     public string Gmnotes { get; set; }
     public string Reason4edit { get; set; }
     public int Version { get; set; }
-    public List<Tag> Tags { get; set; }
+    public List<TagOut> Tags { get; set; }
     public byte[] imagedata1 { get; set; }
     public byte[] imagedata2 { get; set; }
     public Guid? EditbyUserGuid { get; set; }

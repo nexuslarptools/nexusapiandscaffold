@@ -19,6 +19,11 @@ namespace NEXUSDataLayerScaffold.Entities
             Name = outputTag.Name;
             Tagtypeguid= outputTag.Tagtypeguid;
             Tagtype = null;
+
+            if (outputTag.Tagtype != null)
+            {
+                Tagtype = outputTag.Tagtype.Name;
+            }
         }
     }
 

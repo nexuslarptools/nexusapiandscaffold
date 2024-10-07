@@ -13,10 +13,15 @@ namespace NEXUSDataLayerScaffold.Entities;
 
 public class IteSheet
 {
+    private object sheet;
+    private NexusLarpLocalContext context;
+
     public int Id { get; set; }
     public Guid Guid { get; set; }
     public Guid? Seriesguid { get; set; }
     public string Series { get; set; }
+    public Guid? ItemTypeGuid { get; set; }
+    public string Type { get; set; }
     public string Name { get; set; }
     public string Img1 { get; set; }
     public JObject Fields { get; set; }
@@ -39,6 +44,10 @@ public class IteSheet
     public string EditbyUser { get; set; }
     public bool readyforapproval { get; set; }
     public bool hasreview { get; set; }
+    public bool Isdoubleside { get; set; }
+    public bool Isfrontonly { get; set; }
+    public bool Isbackonly { get; set; }
+    public Backside Back { get; set; }
 
     public List<ReviewMessage> ReviewMessages { get; set; }
 
@@ -49,21 +58,32 @@ public class IteSheet
 
     public IteSheet(ItemSheet sheet, NexusLarpLocalContext _context)
     {
-
         JsonElement tagslist = new JsonElement();
         Tags = new List<TagOut>();
 
-        if (sheet.Taglists != null && sheet.Taglists != string.Empty)
+        if (sheet.ItemSheetTags != null)
         {
-            TagsObject tagslists = JsonConvert.DeserializeObject<TagsObject>(sheet.Taglists);
-
-            foreach (var tag in tagslists.MainTags)
+            foreach (var tag in sheet.ItemSheetTags)
             {
                 var fullTag = _context.Tags
-                    .Where(t => t.Isactive == true && t.Guid == tag)
-                    .FirstOrDefault();
-                this.Tags.Add(new TagOut(fullTag));
+                    .Where(t => t.Isactive == true && t.Guid == tag.TagGuid && t.Tagtype.Name == "Item")
+                    .Include("Tagtype").FirstOrDefault();
+                if (fullTag != null)
+                {
+                    this.Tags.Add(new TagOut(fullTag));
+                }
             }
+        }
+
+        if (sheet.ItemtypeGuid != null)
+        {
+            var thistype = _context.ItemTypes.Where(i => i.Guid == (Guid)sheet.ItemtypeGuid).FirstOrDefault();
+            this.Type = thistype.Type;
+            this.ItemTypeGuid = (Guid)sheet.ItemtypeGuid;
+        }
+        else
+        {
+            Type = "Generic";
         }
 
         if (sheet.Fields != null)
@@ -73,20 +93,6 @@ public class IteSheet
             {
                 var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
                 Fields = FeildsWInit;
-                sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined")
-                {
-                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
-                    {
-                        var fullTag = _context.Tags
-                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                            .FirstOrDefault();
-                        this.Tags.Add(new TagOut(fullTag));
-                    }
-                }
             }
         }
 
@@ -103,6 +109,14 @@ public class IteSheet
         Version = sheet.Version;
         readyforapproval = sheet.Readyforapproval;
         Gmnotes = sheet.Gmnotes;
+        Isdoubleside = (bool)sheet.Isdoubleside;
+        Back = new Backside(sheet);
+
+        if (this.Type != null)
+        {
+            this.Back.Type = this.Type;
+        }
+
 
         if (this.Img1 != null)
         {
@@ -195,9 +209,20 @@ public class IteSheet
             {
                 var fullTag = _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == tag)
-                    .FirstOrDefault();
+                    .Include("Tagtype").FirstOrDefault();
                 this.Tags.Add(new TagOut(fullTag));
             }
+        }
+
+        if (sheet.ItemtypeGuid != null)
+        {
+            var thistype = _context.ItemTypes.Where(i => i.Guid == (Guid)sheet.ItemtypeGuid).FirstOrDefault();
+            this.Type = thistype.Type;
+            this.ItemTypeGuid = (Guid)sheet.ItemtypeGuid;
+        }
+        else
+        {
+            Type = "Generic";
         }
 
         if (sheet.Fields != null)
@@ -217,7 +242,7 @@ public class IteSheet
                     {
                         var fullTag = _context.Tags
                             .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                            .FirstOrDefault();
+                            .Include("Tagtype").FirstOrDefault();
                         this.Tags.Add(new TagOut(fullTag));
                     }
                 }
@@ -237,6 +262,13 @@ public class IteSheet
         Version = sheet.Version;
         readyforapproval = false;
         Gmnotes = sheet.Gmnotes;
+        Isdoubleside = (bool)sheet.Isdoubleside;
+        Back = new Backside(sheet);
+
+        if (this.Type != null)
+        {
+            this.Back.Type = this.Type;
+        }
 
         if (this.Img1 != null)
         {
@@ -313,5 +345,273 @@ public class IteSheet
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
+    }
+
+    public IteSheet(ItemSheetDO sheet, NexusLarpLocalContext _context)
+    {
+        Tags = new List<TagOut>();
+
+        if (sheet.TagList != null)
+        {
+            foreach (var tag in sheet.TagList)
+            {
+                this.Tags.Add(new TagOut(tag));
+            }
+        }
+
+        if (sheet.Sheet.ItemtypeGuid != null)
+        {
+            var thistype = _context.ItemTypes.Where(i => i.Guid == (Guid)sheet.Sheet.ItemtypeGuid).FirstOrDefault();
+            this.Type = thistype.Type;
+            this.ItemTypeGuid = (Guid)sheet.Sheet.ItemtypeGuid;
+        }
+        else
+        {
+            Type = "Generic";
+        }
+
+        Id = sheet.Sheet.Id;
+        Guid = sheet.Sheet.Guid;
+        Name = sheet.Sheet.Name;
+        Img1 = sheet.Sheet.Img1;
+        Seriesguid = sheet.Sheet.Seriesguid;
+        Createdate = sheet.Sheet.Createdate;
+        CreatedbyuserGuid = sheet.Sheet.CreatedbyuserGuid;
+        FirstapprovalbyuserGuid = sheet.Sheet.FirstapprovalbyuserGuid;
+        SecondapprovalbyuserGuid = sheet.Sheet.SecondapprovalbyuserGuid;
+        EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
+        Version = sheet.Sheet.Version;
+        Back = new Backside(sheet.Sheet);
+
+        if (this.Type != null)
+        {
+            this.Back.Type = this.Type;
+        }
+
+        if (sheet.Sheet.Readyforapproval != null)
+        {
+            readyforapproval = sheet.Sheet.Readyforapproval;
+        }
+
+        Gmnotes = sheet.Sheet.Gmnotes;
+
+        if (this.Img1 != null)
+        {
+            if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
+            {
+                this.imagedata =
+                    System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
+            }
+        }
+
+        this.createdby = sheet.Createdbyuser.Preferredname;
+        if (sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
+        {
+            this.createdby = sheet.Createdbyuser.Firstname;
+        }
+
+        if (sheet.Firstapprovalbyuser != null)
+        {
+            this.Firstapprovalby = sheet.Firstapprovalbyuser.Preferredname;
+            if (sheet.Firstapprovalbyuser.Preferredname == null || sheet.Firstapprovalbyuser.Preferredname == string.Empty)
+            {
+                this.Firstapprovalby = sheet.Firstapprovalbyuser.Firstname;
+            }
+        }
+
+        if (sheet.Secondapprovalbyuser != null)
+        {
+            this.Secondapprovalby = sheet.Secondapprovalbyuser.Preferredname;
+            if (sheet.Secondapprovalbyuser.Preferredname == null || sheet.Secondapprovalbyuser.Preferredname == string.Empty)
+            {
+                this.Secondapprovalby = sheet.Secondapprovalbyuser.Firstname;
+            }
+        }
+
+        this.EditbyUser = sheet.EditbyUser.Preferredname;
+        if (sheet.EditbyUser.Preferredname == null || sheet.EditbyUser.Preferredname == string.Empty)
+        {
+            this.EditbyUser = sheet.EditbyUser.Firstname;
+        }
+
+        if (sheet.Series != null)
+        {
+            this.Series = sheet.Series.Title;
+        }
+        
+        ReviewMessages = new List<ReviewMessage>();
+
+        hasreview = false;
+        foreach (var message in sheet.ListMessages)
+        {
+            hasreview = true;
+            ReviewMessages.Add(new ReviewMessage(message, _context));
+        }
+
+    }
+
+    public IteSheet(ItemSheetApprovedDO sheet, NexusLarpLocalContext _context)
+    {
+        Tags = new List<TagOut>();
+
+        if (sheet.TagList != null)
+        {
+            foreach (var tag in sheet.TagList)
+            {
+                this.Tags.Add(new TagOut(tag));
+            }
+        }
+
+        if (sheet.Sheet.ItemtypeGuid != null)
+        {
+            var thistype = _context.ItemTypes.Where(i => i.Guid == (Guid)sheet.Sheet.ItemtypeGuid).FirstOrDefault();
+            this.Type = thistype.Type;
+            this.ItemTypeGuid = (Guid)sheet.Sheet.ItemtypeGuid;
+        }
+        else
+        {
+            Type = "Generic";
+        }
+
+        Id = sheet.Sheet.Id;
+        Guid = sheet.Sheet.Guid;
+        Name = sheet.Sheet.Name;
+        Img1 = sheet.Sheet.Img1;
+        Seriesguid = sheet.Sheet.Seriesguid;
+        Createdate = sheet.Sheet.Createdate;
+        CreatedbyuserGuid = sheet.Sheet.CreatedbyuserGuid;
+        FirstapprovalbyuserGuid = sheet.Sheet.FirstapprovalbyuserGuid;
+        SecondapprovalbyuserGuid = sheet.Sheet.SecondapprovalbyuserGuid;
+        EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
+        Version = sheet.Sheet.Version;
+
+        Gmnotes = sheet.Sheet.Gmnotes;
+        Back = new Backside(sheet.Sheet);
+
+        if (this.Type != null)
+        {
+            this.Back.Type = this.Type;
+        }
+
+        if (this.Img1 != null)
+        {
+            if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
+            {
+                this.imagedata =
+                    System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
+            }
+        }
+
+        this.createdby = sheet.Createdbyuser.Preferredname;
+        if (sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
+        {
+            this.createdby = sheet.Createdbyuser.Firstname;
+        }
+
+        if (sheet.Firstapprovalbyuser != null)
+        {
+            this.Firstapprovalby = sheet.Firstapprovalbyuser.Preferredname;
+            if (sheet.Firstapprovalbyuser.Preferredname == null || sheet.Firstapprovalbyuser.Preferredname == string.Empty)
+            {
+                this.Firstapprovalby = sheet.Firstapprovalbyuser.Firstname;
+            }
+        }
+
+        if (sheet.Secondapprovalbyuser != null)
+        {
+            this.Secondapprovalby = sheet.Secondapprovalbyuser.Preferredname;
+            if (sheet.Secondapprovalbyuser.Preferredname == null || sheet.Secondapprovalbyuser.Preferredname == string.Empty)
+            {
+                this.Secondapprovalby = sheet.Secondapprovalbyuser.Firstname;
+            }
+        }
+
+        if (sheet.EditbyUser != null)
+        {
+            this.EditbyUser = sheet.EditbyUser.Preferredname;
+            if (sheet.EditbyUser.Preferredname == null || sheet.EditbyUser.Preferredname == string.Empty)
+            {
+                this.EditbyUser = sheet.EditbyUser.Firstname;
+            }
+        }
+
+        if (sheet.Series != null)
+        {
+            this.Series = sheet.Series.Title;
+        }
+
+        ReviewMessages = new List<ReviewMessage>();
+
+        hasreview = false;
+        foreach (var message in sheet.ListMessages)
+        {
+            hasreview = true;
+            ReviewMessages.Add(new ReviewMessage(message, _context));
+        }
+
+    }
+
+    public ItemSheet OutputToItemSheet()
+    {
+        ItemSheet output = new ItemSheet()
+        {
+            Version = 1,
+            Guid = this.Guid,
+            Id = this.Id,
+            Seriesguid = this.Seriesguid,
+            Name = this.Name,
+            Img1 = this.Img1,
+            Fields = null,
+            Isactive = true,
+            CreatedbyuserGuid = this.CreatedbyuserGuid,
+            FirstapprovalbyuserGuid = this.FirstapprovalbyuserGuid,
+            Firstapprovaldate = this.Firstapprovaldate,
+            Secondapprovaldate = this.Secondapprovaldate,
+            SecondapprovalbyuserGuid = this.SecondapprovalbyuserGuid,
+            Gmnotes = this.Gmnotes,
+            Reason4edit = this.Reason4edit,
+            Readyforapproval = this.readyforapproval,
+            Isdoubleside = this.Isdoubleside
+
+        };
+
+        if (this.Fields != null)
+        {
+            output.Fields = JsonDocument.Parse(this.Fields.ToString());
+        }
+
+        return output;
+    }
+
+    public class Backside
+    {
+        public string Name { get; set; }
+        public string Type { get; set; }
+        public JObject Fields { get; set; }
+
+        public Backside()
+        {
+
+        }
+
+        public Backside(ItemSheet iSheet)
+        {
+            this.Name = iSheet.Name;
+
+            if (iSheet.Fields2ndside != null)
+            {
+                this.Fields = JObject.Parse(iSheet.Fields2ndside.RootElement.ToString());
+            }
+        }
+
+        public Backside(ItemSheetApproved iSheet)
+        {
+            this.Name = iSheet.Name;
+
+            if (iSheet.Fields2ndside != null)
+            {
+                this.Fields = JObject.Parse(iSheet.Fields2ndside.RootElement.ToString());
+            }
+        }
     }
 }
