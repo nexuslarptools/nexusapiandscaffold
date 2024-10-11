@@ -1136,14 +1136,17 @@ public class CharacterSheetsController : ControllerBase
                         {
                             var fields = tagValues["Tags"];
 
-                            foreach (Guid tagValue in fields)
+                            if (fields != null)
                             {
-                                if (!allowedTags.Contains(tagValue))
+                                foreach (Guid tagValue in fields)
                                 {
-                                    return Unauthorized();
+                                    if (!allowedTags.Contains(tagValue))
+                                    {
+                                        return Unauthorized();
+                                    }
+                                    if (!listTags.AbilityTags.Contains(tagValue))
+                                        listTags.AbilityTags.Add(tagValue);
                                 }
-                                if (!listTags.AbilityTags.Contains(tagValue))
-                                    listTags.AbilityTags.Add(tagValue);
                             }
                         }
                     }
