@@ -195,7 +195,7 @@ public class Startup
 
         //connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
         // LOCAL DOCKER CONNSTTRING
-        //connstring = "Host=localhost;Port=5433;Database=LARP_Docker;Username=postgres;Password=postgres";
+        //connstring = "Host=LARPpi;Port=32775;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!";
 
         //if (host != _config.GetValue<string>("ConnectionSrings:Host"))
         //    connstring += ";SslMode=allow;Trust Server Certificate=true;";

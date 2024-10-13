@@ -19,7 +19,11 @@ public partial class NexusLarpLocalContext : DbContext
 
     public virtual DbSet<CharacterSheetApproved> CharacterSheetApproveds { get; set; }
 
+    public virtual DbSet<CharacterSheetApprovedTag> CharacterSheetApprovedTags { get; set; }
+
     public virtual DbSet<CharacterSheetReviewMessage> CharacterSheetReviewMessages { get; set; }
+
+    public virtual DbSet<CharacterSheetTag> CharacterSheetTags { get; set; }
 
     public virtual DbSet<CharacterSheetVersion> CharacterSheetVersions { get; set; }
 
@@ -27,9 +31,15 @@ public partial class NexusLarpLocalContext : DbContext
 
     public virtual DbSet<ItemSheetApproved> ItemSheetApproveds { get; set; }
 
+    public virtual DbSet<ItemSheetApprovedTag> ItemSheetApprovedTags { get; set; }
+
     public virtual DbSet<ItemSheetReviewMessage> ItemSheetReviewMessages { get; set; }
 
+    public virtual DbSet<ItemSheetTag> ItemSheetTags { get; set; }
+
     public virtual DbSet<ItemSheetVersion> ItemSheetVersions { get; set; }
+
+    public virtual DbSet<ItemType> ItemTypes { get; set; }
 
     public virtual DbSet<ItemUsersContact> ItemUsersContacts { get; set; }
 
@@ -59,6 +69,8 @@ public partial class NexusLarpLocalContext : DbContext
 
     public virtual DbSet<Series> Series { get; set; }
 
+    public virtual DbSet<SeriesTag> SeriesTags { get; set; }
+
     public virtual DbSet<SheetUsersContact> SheetUsersContacts { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
@@ -70,8 +82,8 @@ public partial class NexusLarpLocalContext : DbContext
     public virtual DbSet<UserLarprole> UserLarproles { get; set; }
 
     //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-  //      => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!");
+    //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+    //      => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NexusLARP;Username=postgres;Password=postgres");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -127,7 +139,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("secondapprovaldate");
             entity.Property(e => e.Seriesguid).HasColumnName("seriesguid");
             entity.Property(e => e.Taglists)
-                .HasColumnType("jsonb")
+                .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
                 .HasDefaultValueSql("1")
@@ -203,7 +215,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("secondapprovaldate");
             entity.Property(e => e.Seriesguid).HasColumnName("seriesguid");
             entity.Property(e => e.Taglists)
-                .HasColumnType("jsonb")
+                .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
                 .HasDefaultValueSql("1")
@@ -235,6 +247,25 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasConstraintName("fk_series_guid");
         });
 
+        modelBuilder.Entity<CharacterSheetApprovedTag>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("charactersheetapprovedtags_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CharactersheetapprovedId).HasColumnName("charactersheetapproved_id");
+            entity.Property(e => e.TagGuid).HasColumnName("tag_guid");
+
+            entity.HasOne(d => d.Charactersheetapproved).WithMany(p => p.CharacterSheetApprovedTags)
+                .HasForeignKey(d => d.CharactersheetapprovedId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("CharacterSheetApprovedTags_CharacterSheet_Id_fkey");
+
+            entity.HasOne(d => d.Tag).WithMany(p => p.CharacterSheetApprovedTags)
+                .HasForeignKey(d => d.TagGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("CharacterSheetApprovedTags_Tag_guid");
+        });
+
         modelBuilder.Entity<CharacterSheetReviewMessage>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("charactersheetreviewmessages_id");
@@ -256,6 +287,25 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.CharacterSheetReviewMessages)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("CharacterSheetReviewMessages_createdbyuser_guid_fkey");
+        });
+
+        modelBuilder.Entity<CharacterSheetTag>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("charactersheettags_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CharactersheetId).HasColumnName("charactersheet_id");
+            entity.Property(e => e.TagGuid).HasColumnName("tag_guid");
+
+            entity.HasOne(d => d.Charactersheet).WithMany(p => p.CharacterSheetTags)
+                .HasForeignKey(d => d.CharactersheetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("CharacterSheetTags_CharacterSheet_Id_fkey");
+
+            entity.HasOne(d => d.Tag).WithMany(p => p.CharacterSheetTags)
+                .HasForeignKey(d => d.TagGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("CharacterSheetTags_Tag_guid");
         });
 
         modelBuilder.Entity<CharacterSheetVersion>(entity =>
@@ -346,6 +396,9 @@ public partial class NexusLarpLocalContext : DbContext
             entity.Property(e => e.Fields)
                 .HasColumnType("jsonb")
                 .HasColumnName("fields");
+            entity.Property(e => e.Fields2ndside)
+                .HasColumnType("jsonb")
+                .HasColumnName("fields2ndside");
             entity.Property(e => e.FirstapprovalbyuserGuid).HasColumnName("firstapprovalbyuser_guid");
             entity.Property(e => e.Firstapprovaldate)
                 .HasColumnType("timestamp without time zone")
@@ -363,6 +416,10 @@ public partial class NexusLarpLocalContext : DbContext
                 .IsRequired()
                 .HasDefaultValueSql("true")
                 .HasColumnName("isactive");
+            entity.Property(e => e.Isdoubleside)
+                .HasDefaultValueSql("false")
+                .HasColumnName("isdoubleside");
+            entity.Property(e => e.ItemtypeGuid).HasColumnName("itemtype_guid");
             entity.Property(e => e.Name)
                 .IsRequired()
                 .HasMaxLength(1000)
@@ -377,7 +434,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("secondapprovaldate");
             entity.Property(e => e.Seriesguid).HasColumnName("seriesguid");
             entity.Property(e => e.Taglists)
-                .HasColumnType("jsonb")
+                .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
                 .HasDefaultValueSql("1")
@@ -394,6 +451,10 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Firstapprovalbyuser).WithMany(p => p.ItemSheetFirstapprovalbyusers)
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("ItemSheet_firstapprovalby_fkey");
+
+            entity.HasOne(d => d.Itemtype).WithMany(p => p.ItemSheets)
+                .HasForeignKey(d => d.ItemtypeGuid)
+                .HasConstraintName("ItemSheet_ItemType_fkey");
 
             entity.HasOne(d => d.Secondapprovalbyuser).WithMany(p => p.ItemSheetSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
@@ -420,6 +481,9 @@ public partial class NexusLarpLocalContext : DbContext
             entity.Property(e => e.Fields)
                 .HasColumnType("jsonb")
                 .HasColumnName("fields");
+            entity.Property(e => e.Fields2ndside)
+                .HasColumnType("jsonb")
+                .HasColumnName("fields2ndside");
             entity.Property(e => e.FirstapprovalbyuserGuid).HasColumnName("firstapprovalbyuser_guid");
             entity.Property(e => e.Firstapprovaldate)
                 .HasColumnType("timestamp without time zone")
@@ -437,7 +501,11 @@ public partial class NexusLarpLocalContext : DbContext
                 .IsRequired()
                 .HasDefaultValueSql("true")
                 .HasColumnName("isactive");
+            entity.Property(e => e.Isdoubleside)
+                .HasDefaultValueSql("false")
+                .HasColumnName("isdoubleside");
             entity.Property(e => e.ItemsheetId).HasColumnName("itemsheet_id");
+            entity.Property(e => e.ItemtypeGuid).HasColumnName("itemtype_guid");
             entity.Property(e => e.Name)
                 .IsRequired()
                 .HasMaxLength(1000)
@@ -451,7 +519,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("secondapprovaldate");
             entity.Property(e => e.Seriesguid).HasColumnName("seriesguid");
             entity.Property(e => e.Taglists)
-                .HasColumnType("jsonb")
+                .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
                 .HasDefaultValueSql("1")
@@ -469,6 +537,10 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasForeignKey(d => d.FirstapprovalbyuserGuid)
                 .HasConstraintName("ItemSheetApproved_firstapprovalby_fkey");
 
+            entity.HasOne(d => d.Itemtype).WithMany(p => p.ItemSheetApproveds)
+                .HasForeignKey(d => d.ItemtypeGuid)
+                .HasConstraintName("ItemSheetApproved_ItemType_fkey");
+
             entity.HasOne(d => d.Secondapprovalbyuser).WithMany(p => p.ItemSheetApprovedSecondapprovalbyusers)
                 .HasForeignKey(d => d.SecondapprovalbyuserGuid)
                 .HasConstraintName("ItemSheetApproved_secondapprovalby_fkey");
@@ -476,6 +548,25 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Series).WithMany(p => p.ItemSheetApproveds)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid_itemappr");
+        });
+
+        modelBuilder.Entity<ItemSheetApprovedTag>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("itemsheetapprovedtags_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ItemsheetapprovedId).HasColumnName("itemsheetapproved_id");
+            entity.Property(e => e.TagGuid).HasColumnName("tag_guid");
+
+            entity.HasOne(d => d.Itemsheetapproved).WithMany(p => p.ItemSheetApprovedTags)
+                .HasForeignKey(d => d.ItemsheetapprovedId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ItemSheetApprovedTags_ItemSheetApproved_fkey");
+
+            entity.HasOne(d => d.Tag).WithMany(p => p.ItemSheetApprovedTags)
+                .HasForeignKey(d => d.TagGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ItemSheetApprovedTags_Tag_guid");
         });
 
         modelBuilder.Entity<ItemSheetReviewMessage>(entity =>
@@ -499,6 +590,25 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.ItemSheetReviewMessages)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("ItemSheetReviewMessages_createdbyuser_guid_fkey");
+        });
+
+        modelBuilder.Entity<ItemSheetTag>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("itemsheettags_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ItemsheetId).HasColumnName("itemsheet_id");
+            entity.Property(e => e.TagGuid).HasColumnName("tag_guid");
+
+            entity.HasOne(d => d.Itemsheet).WithMany(p => p.ItemSheetTags)
+                .HasForeignKey(d => d.ItemsheetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ItemSheetTags_ItemSheet_fkey");
+
+            entity.HasOne(d => d.Tag).WithMany(p => p.ItemSheetTags)
+                .HasForeignKey(d => d.TagGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ItemSheetTags_Tag_guid");
         });
 
         modelBuilder.Entity<ItemSheetVersion>(entity =>
@@ -565,6 +675,20 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Series).WithMany(p => p.ItemSheetVersions)
                 .HasForeignKey(d => d.Seriesguid)
                 .HasConstraintName("fk_series_guid_itemvers");
+        });
+
+        modelBuilder.Entity<ItemType>(entity =>
+        {
+            entity.HasKey(e => e.Guid).HasName("itemtypes_guid");
+
+            entity.Property(e => e.Guid)
+                .HasDefaultValueSql("uuid_generate_v1()")
+                .HasColumnName("guid");
+            entity.Property(e => e.Isactive)
+                .IsRequired()
+                .HasDefaultValueSql("true")
+                .HasColumnName("isactive");
+            entity.Property(e => e.Type).HasMaxLength(1000);
         });
 
         modelBuilder.Entity<ItemUsersContact>(entity =>
@@ -1005,6 +1129,25 @@ public partial class NexusLarpLocalContext : DbContext
             entity.Property(e => e.Titlejpn)
                 .HasMaxLength(1000)
                 .HasColumnName("titlejpn");
+        });
+
+        modelBuilder.Entity<SeriesTag>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("seriestags_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.SeriesGuid).HasColumnName("series_guid");
+            entity.Property(e => e.TagGuid).HasColumnName("tag_guid");
+
+            entity.HasOne(d => d.Series).WithMany(p => p.SeriesTags)
+                .HasForeignKey(d => d.SeriesGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("SeriesTags_CharacterSheet_Guid_fkey");
+
+            entity.HasOne(d => d.Tag).WithMany(p => p.SeriesTags)
+                .HasForeignKey(d => d.TagGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("SeriesTags_Tag_guid");
         });
 
         modelBuilder.Entity<SheetUsersContact>(entity =>

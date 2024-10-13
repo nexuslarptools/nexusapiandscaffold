@@ -58,33 +58,35 @@ public class CharacterSheetApprovedsController : ControllerBase
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allSheets = await _context.CharacterSheetApproveds.Where(c => c.Isactive == true)
-                .Select(x => new CharacterSheetApproved
-                {
-                    Guid = x.Guid,
-                    Seriesguid = x.Seriesguid,
-                    Name = x.Name,
-                    Createdate = x.Createdate,
-                    CreatedbyuserGuid = x.CreatedbyuserGuid,
-                    FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
-                    Firstapprovaldate = x.Firstapprovaldate,
-                    SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
-                    Secondapprovaldate = x.Secondapprovaldate,
-                    EditbyUserGuid = x.EditbyUserGuid,
-                    Taglists = x.Taglists
-                })
-                .OrderBy(x => x.Name).ToListAsync();
+.Select(x => new CharacterSheetApprovedDO
+{
+    Sheet = new CharacterSheetApproved
+    {
+        Guid = x.Guid,
+        Seriesguid = x.Seriesguid,
+        Name = x.Name,
+        Createdate = x.Createdate,
+        CreatedbyuserGuid = x.CreatedbyuserGuid,
+        FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+        Firstapprovaldate = x.Firstapprovaldate,
+        SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+        Secondapprovaldate = x.Secondapprovaldate,
+        EditbyUserGuid = x.EditbyUserGuid,
+        Taglists = x.Taglists
+    },
+    TagList = x.CharacterSheetApprovedTags.Select(cst => cst.Tag).ToList(),
+    Createdbyuser = x.Createdbyuser,
+    EditbyUser = x.EditbyUser,
+    Firstapprovalbyuser = x.Firstapprovalbyuser,
+    Secondapprovalbyuser = x.Secondapprovalbyuser,
+    Series = x.Series,
+    CharacterSheetReviewMessages = _context.CharacterSheetReviewMessages.Where(csr => csr.CharactersheetId == x.Id).ToList()
+})
+                .OrderBy(x => x.Sheet.Name).ToListAsync();
 
             if (!wizardauth)
             {
-                allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.Taglists != null
-                && ash.Taglists.Contains(dat.ToString()))).ToList();
-
-                //await _context.CharacterSheetApproveds.Where(c => c.Isactive == true
-                //  && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                //.MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
-                //!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                //.AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
-                // .OrderBy(x => x.Name).ToListAsync();
+                allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat))).ToList();
             }
 
             List<CharSheetListItem> outp = new List<CharSheetListItem>();
@@ -189,8 +191,8 @@ public class CharacterSheetApprovedsController : ControllerBase
 
                 foreach (var tag in TestJsonFeilds) {
                     var fullTag = await _context.Tags
-                        .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                    outputSheet.Tags.Add(fullTag);
+                        .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).Include("Tagtype").FirstOrDefaultAsync();
+                    outputSheet.Tags.Add(new TagOut(fullTag));
                 }
             }
 
