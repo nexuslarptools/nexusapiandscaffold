@@ -58,21 +58,22 @@ public class CharacterSheetsController : ControllerBase
 
             var allSheets = await _context.CharacterSheets.Where(c => c.Isactive == true)
                 .Select(x => new CharacterSheetDO
-                { Sheet = new CharacterSheet
                 {
-                    Guid = x.Guid,
-                    Seriesguid = x.Seriesguid,
-                    Name = x.Name,
-                    Createdate = x.Createdate,
-                    CreatedbyuserGuid = x.CreatedbyuserGuid,
-                    FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
-                    Firstapprovaldate = x.Firstapprovaldate,
-                    SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
-                    Secondapprovaldate = x.Secondapprovaldate,
-                    EditbyUserGuid = x.EditbyUserGuid,
-                    Taglists = x.Taglists,
-                    Readyforapproval = x.Readyforapproval
-                },
+                    Sheet = new CharacterSheet
+                    {
+                        Guid = x.Guid,
+                        Seriesguid = x.Seriesguid,
+                        Name = x.Name,
+                        Createdate = x.Createdate,
+                        CreatedbyuserGuid = x.CreatedbyuserGuid,
+                        FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                        Firstapprovaldate = x.Firstapprovaldate,
+                        SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                        Secondapprovaldate = x.Secondapprovaldate,
+                        EditbyUserGuid = x.EditbyUserGuid,
+                        Taglists = x.Taglists,
+                        Readyforapproval = x.Readyforapproval
+                    },
                     TagList = x.CharacterSheetTags.Select(cst => cst.Tag).ToList(),
                     Createdbyuser = x.Createdbyuser,
                     EditbyUser = x.EditbyUser,
@@ -123,14 +124,18 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
             var legalsheets = _context.CharacterSheets
-            .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+            .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
 
             var tagDictionary = TagScanner.getAllTagsLists(legalsheets);
 
             var fulltaglist = await _context.Tags.Where(t => t.Isactive == true).ToListAsync();
 
             var ret = await _context.CharacterSheets
-                .Select(c => new { c.Guid, c.Name, c.Seriesguid, c.Series.Title,
+                .Select(c => new {
+                    c.Guid,
+                    c.Name,
+                    c.Seriesguid,
+                    c.Series.Title,
                     c.EditbyUserGuid,
                     Createdbyuser = c.Createdbyuser.Preferredname,
                     c.FirstapprovalbyuserGuid,
@@ -139,7 +144,8 @@ public class CharacterSheetsController : ControllerBase
                     SecondApprovaluser = (c.Secondapprovalbyuser.Preferredname == null || c.Secondapprovalbyuser.Preferredname == string.Empty) ? c.Secondapprovalbyuser.Firstname : c.Secondapprovalbyuser.Preferredname,
                     EditbyUser = (c.EditbyUser.Preferredname == null || c.EditbyUser.Preferredname == string.Empty) ? c.EditbyUser.Firstname : c.EditbyUser.Preferredname,
                     CreatedBy = c.Createdbyuser.Preferredname,
-                    Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist) })
+                    Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist)
+                })
                 .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
 
             return Ok(ret);
@@ -167,7 +173,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -266,7 +272,8 @@ public class CharacterSheetsController : ControllerBase
             foreach (var iGuid in StartIguids)
                 if (_context.ItemSheetApproveds
                         .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
-                        .FirstOrDefault() != null) {
+                        .FirstOrDefault() != null)
+                {
                     var starting_I = Item.CreateItem(await _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
                         issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), _context);
 
@@ -280,7 +287,8 @@ public class CharacterSheetsController : ControllerBase
                 }
                 else if (_context.ItemSheets
                              .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
-                             .FirstOrDefault() != null) {
+                             .FirstOrDefault() != null)
+                {
                     //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
                     //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
                     var starting_I = Item.CreateItem(await _context.ItemSheets.Where(issh => issh.Isactive == true &&
@@ -328,7 +336,7 @@ public class CharacterSheetsController : ControllerBase
             {
 
                 var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                    .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
                 var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                     .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -490,9 +498,9 @@ public class CharacterSheetsController : ControllerBase
                 WriteIndented = true
             };
             var legalseries = _context.Series.Where(it => it.Isactive == true)
-    .Select(it => new TagScanContainer(it.Guid, it.Tags)).ToList();
+    .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -547,7 +555,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -625,7 +633,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -656,15 +664,18 @@ public class CharacterSheetsController : ControllerBase
                 Tags = new List<Tag>()
             }).ToList();
 
-            foreach (var sheet in output) {
+            foreach (var sheet in output)
+            {
                 var tagslist = new JsonElement();
 
                 sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
 
-                if (tagslist.ValueKind.ToString() != "Undefined") {
+                if (tagslist.ValueKind.ToString() != "Undefined")
+                {
                     var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
 
-                    foreach (var tag in TestJsonFeilds) {
+                    foreach (var tag in TestJsonFeilds)
+                    {
                         var fullTag = await _context.Tags
                             .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
                             .FirstOrDefaultAsync();
@@ -699,7 +710,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -777,7 +788,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -813,13 +824,13 @@ public class CharacterSheetsController : ControllerBase
 
             var output = await _context.CharacterSheets.Where(c => c.Isactive == true &&
                                                                   allFound.Contains(c.Guid)).Select(ch => new
-            {
-                ch.Name,
-                ch.Guid,
-                ch.Seriesguid,
-                SeriesTitle = _context.Series.Where(s => s.Isactive == true && s.Guid == ch.Seriesguid).FirstOrDefault()
+                                                                  {
+                                                                      ch.Name,
+                                                                      ch.Guid,
+                                                                      ch.Seriesguid,
+                                                                      SeriesTitle = _context.Series.Where(s => s.Isactive == true && s.Guid == ch.Seriesguid).FirstOrDefault()
                     .Title
-            }).ToListAsync();
+                                                                  }).ToListAsync();
 
 
             return Ok(output);
@@ -843,7 +854,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -943,7 +954,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -1067,7 +1078,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -1078,26 +1089,33 @@ public class CharacterSheetsController : ControllerBase
             // This obviously needs work when we get to characters.
             if (guid != charSheet.Guid) return BadRequest();
 
-            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length != 0) {
+            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length != 0)
+            {
 
                 var folderName = Path.Combine("images", "characters", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata1.Length > 0) {
-                    if (!Directory.Exists(pathToSave + "/")) {
+                if (charSheet.imagedata1.Length > 0)
+                {
+                    if (!Directory.Exists(pathToSave + "/"))
+                    {
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
                     ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
                 }
             }
-            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length != 0) {;
+            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length != 0)
+            {
+                ;
 
                 var folderName = Path.Combine("images", "characters", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata2.Length > 0) {
-                    if (!Directory.Exists(pathToSave + "/")) {
+                if (charSheet.imagedata2.Length > 0)
+                {
+                    if (!Directory.Exists(pathToSave + "/"))
+                    {
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
                     System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
@@ -1182,14 +1200,17 @@ public class CharacterSheetsController : ControllerBase
                 characterSheet.Version++;
             }
 
-            foreach (var sheet in charsheets) {
+            foreach (var sheet in charsheets)
+            {
                 sheet.Isactive = false;
                 _context.Update(sheet);
 
-                try {
+                try
+                {
                     await _context.SaveChangesAsync();
                 }
-                catch (DbUpdateConcurrencyException) {
+                catch (DbUpdateConcurrencyException)
+                {
                     if (!CharacterSheetExists(guid))
                         return NotFound();
                     throw;
@@ -1268,7 +1289,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -1359,7 +1380,7 @@ public class CharacterSheetsController : ControllerBase
                 {
                     CharactersheetId = characterSheet.Id,
                     Guid = characterSheet.Guid,
-                    Seriesguid =  characterSheet.Seriesguid,
+                    Seriesguid = characterSheet.Seriesguid,
                     Name = characterSheet.Name,
                     Img1 = characterSheet.Img1,
                     Img2 = characterSheet.Img2,
@@ -1462,7 +1483,7 @@ public class CharacterSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
         {
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -1483,14 +1504,17 @@ public class CharacterSheetsController : ControllerBase
 
             if (charSheet.Img2 != null) characterSheet.Img2 = charSheet.Img2;
 
-            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length != 0) {
+            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length != 0)
+            {
                 charSheet.Img1 = charSheet.Img1;
 
                 var folderName = Path.Combine("images", "characters", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata1.Length > 0) {
-                    if (!Directory.Exists(pathToSave + "/")) {
+                if (charSheet.imagedata1.Length > 0)
+                {
+                    if (!Directory.Exists(pathToSave + "/"))
+                    {
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
 
@@ -1500,14 +1524,17 @@ public class CharacterSheetsController : ControllerBase
                 }
             }
 
-            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length != 0) {
+            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length != 0)
+            {
                 charSheet.Img2 = charSheet.Img2;
 
                 var folderName = Path.Combine("images", "characters", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata2.Length > 0) {
-                    if (!Directory.Exists(pathToSave + "/")) {
+                if (charSheet.imagedata2.Length > 0)
+                {
+                    if (!Directory.Exists(pathToSave + "/"))
+                    {
                         var di = Directory.CreateDirectory(pathToSave + "/");
                     }
 

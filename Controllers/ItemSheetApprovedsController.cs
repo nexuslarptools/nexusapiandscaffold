@@ -41,7 +41,7 @@ public class ItemSheetApprovedsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.ItemSheetApprovedTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -80,7 +80,7 @@ public class ItemSheetApprovedsController : ControllerBase
             if (itemSheet == null) return NotFound();
 
             var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.ItemSheetApprovedTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -97,21 +97,21 @@ public class ItemSheetApprovedsController : ControllerBase
 
             var outputItem = new IteSheet(itemSheet, _context);
 
-/*            var tagslist = new JsonElement();
+            /*            var tagslist = new JsonElement();
 
-            itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+                        itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
 
-            if (tagslist.ValueKind.ToString() != "Undefined")
-            {
-                var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+                        if (tagslist.ValueKind.ToString() != "Undefined")
+                        {
+                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
 
-                foreach (var tag in TestJsonFeilds)
-                {
-                    var fullTag = await _context.Tags
-                        .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
-                    outputItem.Tags.Add(new TagOut(fullTag));
-                }
-            }*/
+                            foreach (var tag in TestJsonFeilds)
+                            {
+                                var fullTag = await _context.Tags
+                                    .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).FirstOrDefaultAsync();
+                                outputItem.Tags.Add(new TagOut(fullTag));
+                            }
+                        }*/
 
             if (outputItem.Img1 != null)
                 if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
@@ -153,7 +153,7 @@ public class ItemSheetApprovedsController : ControllerBase
                     var unappitemSheet = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid)
                 .FirstOrDefaultAsync();
                     var legalunappsheets = _context.ItemSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
                     var allowedunappLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                         .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -188,7 +188,7 @@ public class ItemSheetApprovedsController : ControllerBase
 
                     if (outputunappItem.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/Approved/" + outputunappItem.Img1))
-                            outputunappItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" 
+                            outputunappItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/"
                           + outputunappItem.Img1);
 
                     if (outputunappItem.Seriesguid != null)
@@ -201,11 +201,11 @@ public class ItemSheetApprovedsController : ControllerBase
                     return Ok(outputunappItem);
 
                 }
-                    return NotFound();
+                return NotFound();
             }
 
             var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.ItemSheetApprovedTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -409,7 +409,7 @@ public class ItemSheetApprovedsController : ControllerBase
             try
             {
                 var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
-                    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                    .Select(it => new TagScanContainer(it.Guid, it.ItemSheetApprovedTags)).ToList();
                 var allowedLARPS = _context.UserLarproles
                     .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
                     .ToList();
@@ -619,7 +619,7 @@ public class ItemSheetApprovedsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
+                .Select(it => new TagScanContainer(it.Guid, it.ItemSheetApprovedTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -691,28 +691,28 @@ public class ItemSheetApprovedsController : ControllerBase
                                 // Iterate through the special skills array of the input json
                                 foreach (JObject tagSkills in tag.Value)
                                     // iterate through all of the special skills on the item sheet
-                                foreach (var itemSkills in TestJsonFeilds)
-                                {
-                                    var foundskills = new List<bool>();
+                                    foreach (var itemSkills in TestJsonFeilds)
+                                    {
+                                        var foundskills = new List<bool>();
 
-                                    //iterate through all feilds of the input json
-                                    foreach (var skillTag in tagSkills)
-                                        if (skillTag.Key == "Tags")
-                                        {
-                                            var TagArray = JArray.Parse(itemSkills[skillTag.Key].ToString());
-                                            var tags2 = TagArray.Select(s => Guid.Parse(s.ToString())).ToList();
-                                            var tags1 = skillTag.Value.ToObject<List<Guid>>();
-                                            var alltagsfound = tags1.Intersect(tags2).Count();
-                                            if (alltagsfound == skillTag.Value.ToArray().Length) foundskills.Add(true);
-                                        }
-                                        else if (itemSkills[skillTag.Key].ToString().ToLower()
-                                                 .Contains(skillTag.Value.ToString().ToLower()))
-                                        {
-                                            foundskills.Add(true);
-                                        }
+                                        //iterate through all feilds of the input json
+                                        foreach (var skillTag in tagSkills)
+                                            if (skillTag.Key == "Tags")
+                                            {
+                                                var TagArray = JArray.Parse(itemSkills[skillTag.Key].ToString());
+                                                var tags2 = TagArray.Select(s => Guid.Parse(s.ToString())).ToList();
+                                                var tags1 = skillTag.Value.ToObject<List<Guid>>();
+                                                var alltagsfound = tags1.Intersect(tags2).Count();
+                                                if (alltagsfound == skillTag.Value.ToArray().Length) foundskills.Add(true);
+                                            }
+                                            else if (itemSkills[skillTag.Key].ToString().ToLower()
+                                                     .Contains(skillTag.Value.ToString().ToLower()))
+                                            {
+                                                foundskills.Add(true);
+                                            }
 
-                                    if (foundskills.Count == tagSkills.Count) skillsfound.Add(true);
-                                }
+                                        if (foundskills.Count == tagSkills.Count) skillsfound.Add(true);
+                                    }
 
                                 if (skillsfound.Count != tag.Value.ToList().Count) isfound = false;
                             }
@@ -976,7 +976,7 @@ public class ItemSheetApprovedsController : ControllerBase
             var itemSheetApproved = await _context.ItemSheetApproveds.Where(i => i.Guid == id).ToListAsync();
             if (itemSheetApproved == null) return NotFound();
 
-            foreach(var item in itemSheetApproved)
+            foreach (var item in itemSheetApproved)
             {
                 item.Isactive = false;
                 _context.ItemSheetApproveds.Update(item);
