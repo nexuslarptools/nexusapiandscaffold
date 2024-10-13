@@ -54,7 +54,7 @@ public class SeriesController : ControllerBase
                     Series = s,
                     Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
                     && csa.Seriesguid == s.Guid).ToList()
-        })
+                })
                 .ToListAsync();
 
             var outputSeries = new List<Seri>();
@@ -86,7 +86,7 @@ public class SeriesController : ControllerBase
             }
 
 
-            return Ok(outputSeries.OrderBy(o =>o.Title));
+            return Ok(outputSeries.OrderBy(o => o.Title));
         }
 
         return Unauthorized();
@@ -246,18 +246,18 @@ public class SeriesController : ControllerBase
                     Title = s.Title,
                     Titlejpn = s.Titlejpn,
                     Tags = new List<TagOut>()
-                };  
+                };
 
                 if (s.Tags != null)
                 {
                     var taglist = JObject.Parse(s.Tags.RootElement.ToString());
                     foreach (var tag in taglist)
-                    foreach (var tagguid in tag.Value)
-                    {
-                        var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                            .Include("Tagtype").FirstOrDefaultAsync();
-                        newOutput.Tags.Add(new TagOut(pulledtag));
-                    }
+                        foreach (var tagguid in tag.Value)
+                        {
+                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                                .Include("Tagtype").FirstOrDefaultAsync();
+                            newOutput.Tags.Add(new TagOut(pulledtag));
+                        }
 
 
                     //newser.Tags
@@ -299,7 +299,7 @@ public class SeriesController : ControllerBase
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
               .OrderBy(o => o.Title)
               .Select(s => new
-               {
+              {
                   Series = s,
                   Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
                   && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList(),
@@ -333,6 +333,67 @@ public class SeriesController : ControllerBase
             var output = new SeriListOut();
             output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
             output.fulltotal = allowedSeries.Count;
+
+            return Ok(output);
+        }
+
+        return Unauthorized();
+    }
+
+    /// <summary>
+    ///     This lists all series and their titles along with ids, and nothing else.
+    /// </summary>
+    /// <returns></returns>
+    // GET: api/v1/Series/ShortList
+    [HttpGet("FullShortListWithTagsAndDeactive")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<Series>>> GetFullSeriesListWithTagsAndDeactive()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+
+            var ser = await _context.Series.Where(s => s.Title != "")
+              .OrderBy(o => o.Title)
+              .Select(s => new
+              {
+                  Series = s,
+                  TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
+              })
+                 .ToListAsync();
+            var serOutPut = new List<Seri>();
+
+            foreach (var s in ser)
+            {
+                var newOutput = new Seri
+                {
+                    Guid = s.Series.Guid,
+                    Title = s.Series.Title,
+                    Titlejpn = s.Series.Titlejpn,
+                    Tags = new List<TagOut>(),
+                    Isactive = s.Series.Isactive,
+                    Createdate = s.Series.Createdate,
+                    Deactivedate = s.Series.Deactivedate
+                };
+
+                if (s.TagsList.Count > 0)
+                {
+                    foreach (var tag in s.TagsList)
+                    {
+                        newOutput.Tags.Add(new TagOut(tag));
+                    }
+                }
+
+                serOutPut.Add(newOutput);
+            }
+
+            var output = new SeriListOut();
+            output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
 
             return Ok(output);
         }
@@ -452,12 +513,12 @@ public class SeriesController : ControllerBase
                 {
                     var taglist = JObject.Parse(s.Tags.RootElement.ToString());
                     foreach (var tag in taglist)
-                    foreach (var tagguid in tag.Value)
-                    {
-                        var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                            .Include("Tagtype").FirstOrDefaultAsync();
-                        newOutput.Tags.Add(new TagOut(pulledtag));
-                    }
+                        foreach (var tagguid in tag.Value)
+                        {
+                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                                .Include("Tagtype").FirstOrDefaultAsync();
+                            newOutput.Tags.Add(new TagOut(pulledtag));
+                        }
 
 
                     //newser.Tags
@@ -514,12 +575,12 @@ public class SeriesController : ControllerBase
                 {
                     var taglist = JObject.Parse(s.Tags.RootElement.ToString());
                     foreach (var tag in taglist)
-                    foreach (var tagguid in tag.Value)
-                    {
-                        var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                            .Include("Tagtype").FirstOrDefaultAsync();
-                        newser.Tags.Add(new TagOut(pulledtag));
-                    }
+                        foreach (var tagguid in tag.Value)
+                        {
+                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                                .Include("Tagtype").FirstOrDefaultAsync();
+                            newser.Tags.Add(new TagOut(pulledtag));
+                        }
                 }
 
                 newser.Createdate = s.Createdate;
@@ -871,6 +932,7 @@ public class SeriesController : ControllerBase
             if (series == null) return NotFound();
 
             series.Isactive = false;
+            series.Deactivedate = DateTime.Now;
 
             _context.Series.Update(series);
             await _context.SaveChangesAsync();
@@ -890,7 +952,7 @@ public class SeriesController : ControllerBase
     private List<Guid> GetAllowedSeries(string authId, string accessToken)
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
-            .Select(it => new TagScanContainer(it.Guid, it.Tags)).ToList();
+            .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
         var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
             .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
@@ -907,7 +969,7 @@ public class SeriesController : ControllerBase
     private List<Guid?> GetAllowedUserTags(string authId, string accessToken)
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
-            .Select(it => new TagScanContainer(it.Guid, it.Tags)).ToList();
+            .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
         var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
             .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
