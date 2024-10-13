@@ -46,6 +46,8 @@ public partial class CharacterSheetApproved
 
     public string Taglists { get; set; }
 
+    public virtual ICollection<CharacterSheetApprovedTag> CharacterSheetApprovedTags { get; } = new List<CharacterSheetApprovedTag>();
+
     public virtual CharacterSheet Charactersheet { get; set; }
 
     public virtual User Createdbyuser { get; set; }

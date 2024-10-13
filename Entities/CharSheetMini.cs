@@ -37,7 +37,7 @@ namespace NEXUSDataLayerScaffold.Entities
                 foreach (var tag in result.MainTags)
                 {
                     var fullTag = _context.Tags
-                        .Where(t => t.Isactive == true && t.Guid == tag).FirstOrDefaultAsync();
+                        .Where(t => t.Isactive == true && t.Guid == tag).Include("Tagtype").FirstOrDefaultAsync();
                     if (fullTag != null)
                     {
                         this.MainTags.Add(new TagOut(fullTag.Result));
@@ -47,7 +47,7 @@ namespace NEXUSDataLayerScaffold.Entities
                 foreach (var tag in result.AbilityTags)
                 {
                     var fullTag = _context.Tags
-                        .Where(t => t.Isactive == true && t.Guid == tag).FirstOrDefaultAsync();
+                        .Where(t => t.Isactive == true && t.Guid == tag).Include("Tagtype").FirstOrDefaultAsync();
                     if (fullTag != null)
                     {
                         this.AbilityTags.Add(new TagOut(fullTag.Result));
@@ -70,7 +70,7 @@ namespace NEXUSDataLayerScaffold.Entities
                 foreach (var tag in result.MainTags)
                 {
                     var fullTag = _context.Tags
-                        .Where(t => t.Isactive == true && t.Guid == tag).FirstOrDefaultAsync();
+                        .Where(t => t.Isactive == true && t.Guid == tag).Include("Tagtype").FirstOrDefaultAsync();
                     if (fullTag != null)
                     {
                         this.MainTags.Add(new TagOut(fullTag.Result));
@@ -80,7 +80,7 @@ namespace NEXUSDataLayerScaffold.Entities
                 foreach (var tag in result.AbilityTags)
                 {
                     var fullTag = _context.Tags
-                        .Where(t => t.Isactive == true && t.Guid == tag).FirstOrDefaultAsync();
+                        .Where(t => t.Isactive == true && t.Guid == tag).Include("Tagtype").FirstOrDefaultAsync();
                     if (fullTag != null)
                     {
                         this.AbilityTags.Add(new TagOut(fullTag.Result));

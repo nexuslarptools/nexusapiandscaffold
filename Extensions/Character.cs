@@ -35,7 +35,7 @@ public class Character
         newCharSheet.Gmnotes = cSheet.Gmnotes;
         newCharSheet.Reason4edit = cSheet.Reason4edit;
         newCharSheet.Version = cSheet.Version;
-        newCharSheet.Tags = new List<Tag>();
+        newCharSheet.Tags = new List<TagOut>();
         newCharSheet.Readyforapproval = cSheet.Readyforapproval;
 
         if (cSheet.CreatedbyuserGuid != null)
@@ -140,7 +140,7 @@ public class Character
         newCharSheet.Gmnotes = cSheet.Gmnotes;
         newCharSheet.Reason4edit = cSheet.Reason4edit;
         newCharSheet.Version = cSheet.Version;
-        newCharSheet.Tags = new List<Tag>();
+        newCharSheet.Tags = new List<TagOut>();
 
 
         if (cSheet.CreatedbyuserGuid != null)
@@ -243,7 +243,7 @@ public class Character
         newCharSheet.Gmnotes = cSheet.Gmnotes;
         newCharSheet.Reason4edit = cSheet.Reason4edit;
         newCharSheet.Version = cSheet.Version;
-        newCharSheet.Tags = new List<Tag>();
+        newCharSheet.Tags = new List<TagOut>();
 
 
         return newCharSheet;

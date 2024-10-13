@@ -483,7 +483,7 @@ public class ItemSheetApprovedsController : ControllerBase
                         {
                             var fullTag = await _context.Tags
                                 .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                                .FirstOrDefaultAsync();
+                                .Include("Tagtype").FirstOrDefaultAsync();
                             newOutputSheet.Tags.Add(new TagOut(fullTag));
                         }
                     }
@@ -535,33 +535,42 @@ public class ItemSheetApprovedsController : ControllerBase
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
                 var allSheets = await _context.ItemSheetApproveds.Where(c => c.Isactive == true)
-    .Select(x => new ItemSheet
+    .Select(x => new ItemSheetApprovedDO
     {
-        Guid = x.Guid,
-        Seriesguid = x.Seriesguid,
-        Name = x.Name,
-        Createdate = x.Createdate,
-        CreatedbyuserGuid = x.CreatedbyuserGuid,
-        FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
-        Firstapprovaldate = x.Firstapprovaldate,
-        SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
-        Secondapprovaldate = x.Secondapprovaldate,
-        EditbyUserGuid = x.EditbyUserGuid,
-        Taglists = x.Taglists
-    })
-    .OrderBy(x => x.Name).ToListAsync();
+        Sheet = new ItemSheetApproved
+        {
+            Guid = x.Guid,
+            Seriesguid = x.Seriesguid,
+            Name = x.Name,
+            Createdate = x.Createdate,
+            CreatedbyuserGuid = x.CreatedbyuserGuid,
+            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+            Firstapprovaldate = x.Firstapprovaldate,
+            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+            Secondapprovaldate = x.Secondapprovaldate,
+            EditbyUserGuid = x.EditbyUserGuid,
+        },
+        TagList = x.ItemSheetApprovedTags.Where(ist => ist.Tag.Tagtype.Name == "Item").Select(ist => ist.Tag).ToList(),
+        Createdbyuser = x.Createdbyuser,
+        EditbyUser = x.EditbyUser,
+        Firstapprovalbyuser = x.Firstapprovalbyuser,
+        Secondapprovalbyuser = x.Secondapprovalbyuser,
+        Series = x.Series,
+        ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+          && isrm.ItemsheetId == x.Id).ToList()
+    }).ToListAsync();
 
                 if (!wizardauth)
                 {
-                    allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.Taglists != null
-                        && ash.Taglists.Contains(dat.ToString()))).ToList();
+                    allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat))).ToList();
 
-                  //  await _context.ItemSheetApproveds.Where(c => c.Isactive == true
-                  //    && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                  //  .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
-                  //  !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                  //  .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
-                  //   .OrderBy(x => x.Name).ToListAsync();
+
+                    //  await _context.ItemSheetApproveds.Where(c => c.Isactive == true
+                    //    && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                    //  .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
+                    //  !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                    //  .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
+                    //   .OrderBy(x => x.Name).ToListAsync();
                 }
 
                 foreach (var sheet in allSheets)
@@ -810,7 +819,7 @@ public class ItemSheetApprovedsController : ControllerBase
                     {
                         var fullTag = await _context.Tags
                             .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                            .FirstOrDefaultAsync();
+                            .Include("Tagtype").FirstOrDefaultAsync();
                         newOutputSheet.Tags.Add(new TagOut(fullTag));
                     }
                 }

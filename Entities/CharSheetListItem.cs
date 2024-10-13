@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using static Npgsql.PostgresTypes.PostgresCompositeType;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace NEXUSDataLayerScaffold.Entities
 {
@@ -42,7 +43,7 @@ namespace NEXUSDataLayerScaffold.Entities
                 {
                     var fullTag = _context.Tags
                         .Where(t => t.Isactive == true && t.Guid == tag)
-                        .FirstOrDefault();
+                        .Include("Tagtype").FirstOrDefault();
                     this.tags.Add(new TagOut(fullTag));
                 }
             }
@@ -61,7 +62,7 @@ namespace NEXUSDataLayerScaffold.Entities
                         {
                             var fullTag = _context.Tags
                                 .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                                .FirstOrDefault();
+                                .Include("Tagtype").FirstOrDefault();
                             this.tags.Add(new TagOut(fullTag));
                         }
                     }
@@ -83,6 +84,32 @@ namespace NEXUSDataLayerScaffold.Entities
             readyforapproval = false;
         }
 
+        public CharSheetListItem(CharacterSheetApprovedDO charSheet, NexusLarpLocalContext _context)
+        {
+            JsonElement tagslist = new JsonElement();
+            tags = new List<TagOut>();
+
+
+            foreach (var tag in charSheet.TagList)
+            {
+                if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d"))
+                    this.tags.Add(new TagOut(tag));
+            }
+
+            guid = charSheet.Sheet.Guid;
+            name = charSheet.Sheet.Name;
+            seriesguid = charSheet.Series.Guid;
+            title = charSheet.Series.Title;
+            createdbyuserGuid = charSheet.Createdbyuser.Guid;
+            createdByUser = charSheet.Createdbyuser.Preferredname;
+            firstapprovalbyuserGuid = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Guid;
+            firstApprovalUser = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Preferredname;
+            secondapprovalbyuserGuid = charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Guid; ;
+            secondApprovalUser = charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Preferredname;
+            editbyUser = charSheet.EditbyUser == null ? null : charSheet.EditbyUser.Preferredname;
+            hasreview = charSheet.CharacterSheetReviewMessages.Count > 0 ? true : false;
+        }
+
         public CharSheetListItem(CharacterSheet charSheet, NexusLarpLocalContext _context)
         {
             JsonElement tagslist = new JsonElement();
@@ -96,7 +123,7 @@ namespace NEXUSDataLayerScaffold.Entities
                 {
                     var fullTag = _context.Tags
                         .Where(t => t.Isactive == true && t.Guid == tag)
-                        .FirstOrDefault();
+                        .Include("Tagtype").FirstOrDefault();
                     this.tags.Add(new TagOut(fullTag));
                 }
             }
@@ -115,7 +142,7 @@ namespace NEXUSDataLayerScaffold.Entities
                         {
                             var fullTag = _context.Tags
                                 .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                                .FirstOrDefault();
+                                .Include("Tagtype").FirstOrDefault();
                             this.tags.Add(new TagOut(fullTag));
                         }
                     }
@@ -135,6 +162,34 @@ namespace NEXUSDataLayerScaffold.Entities
             editbyUser = IsNullOrEmpty(charSheet.EditbyUserGuid) ? null : _context.Users.Where(u => u.Guid == (Guid)charSheet.EditbyUserGuid).FirstOrDefault().Preferredname;
             hasreview = _context.CharacterSheetReviewMessages.Any(csrm => csrm.CharactersheetId == charSheet.Id);
             readyforapproval = charSheet.Readyforapproval;
+        }
+
+        public CharSheetListItem(CharacterSheetDO charSheet, NexusLarpLocalContext _context)
+        {
+            JsonElement tagslist = new JsonElement();
+            tags = new List<TagOut>();
+
+
+            foreach (var tag in charSheet.TagList)
+            {
+                if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d") )
+                this.tags.Add(new TagOut(tag));
+            }
+
+
+            guid = charSheet.Sheet.Guid;
+            name = charSheet.Sheet.Name;
+            seriesguid = charSheet.Series.Guid;
+            title = charSheet.Series.Title;
+            createdbyuserGuid = charSheet.Createdbyuser.Guid;
+            createdByUser = charSheet.Createdbyuser.Preferredname;
+            firstapprovalbyuserGuid = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Guid;
+            firstApprovalUser = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Preferredname;
+            secondapprovalbyuserGuid = charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Guid; ;
+            secondApprovalUser = charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Preferredname;
+            editbyUser = charSheet.EditbyUser == null ? null : charSheet.EditbyUser.Preferredname;
+            hasreview = charSheet.CharacterSheetReviewMessages.Count > 0 ? true : false;
+            readyforapproval = charSheet.Sheet.Readyforapproval;
         }
 
         public bool IsNullOrEmpty(Guid? input)

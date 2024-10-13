@@ -44,11 +44,21 @@ public partial class ItemSheetApproved
 
     public string Taglists { get; set; }
 
+    public bool? Isdoubleside { get; set; }
+
+    public JsonDocument Fields2ndside { get; set; }
+
+    public Guid? ItemtypeGuid { get; set; }
+
     public virtual User Createdbyuser { get; set; }
 
     public virtual User EditbyUser { get; set; }
 
     public virtual User Firstapprovalbyuser { get; set; }
+
+    public virtual ICollection<ItemSheetApprovedTag> ItemSheetApprovedTags { get; } = new List<ItemSheetApprovedTag>();
+
+    public virtual ItemType Itemtype { get; set; }
 
     public virtual User Secondapprovalbyuser { get; set; }
 
