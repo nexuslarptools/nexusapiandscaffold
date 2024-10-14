@@ -499,7 +499,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Readyforapproval = x.Readyforapproval,
                         },
-                        TagList = x.ItemSheetTags.Where(ist => ist.Tag.Tagtype.Name == "Item").Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,

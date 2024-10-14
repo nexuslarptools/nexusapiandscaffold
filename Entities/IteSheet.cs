@@ -66,7 +66,7 @@ public class IteSheet
             foreach (var tag in sheet.ItemSheetTags)
             {
                 var fullTag = _context.Tags
-                    .Where(t => t.Isactive == true && t.Guid == tag.TagGuid && t.Tagtype.Name == "Item")
+                    .Where(t => t.Isactive == true && t.Guid == tag.TagGuid)
                     .Include("Tagtype").FirstOrDefault();
                 if (fullTag != null)
                 {
