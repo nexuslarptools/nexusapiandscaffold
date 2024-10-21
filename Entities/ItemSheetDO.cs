@@ -14,5 +14,6 @@ namespace NEXUSDataLayerScaffold.Entities
         public User Secondapprovalbyuser { get; set; }
         public Series Series { get; set; }
         public List<ItemSheetReviewMessage> ListMessages { get; set; }
+        public int Versions { get; set; }
     }
 }

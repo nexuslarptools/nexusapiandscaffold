@@ -289,9 +289,7 @@ public class SeriesController : ControllerBase
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
             var allowedSeries = GetAllowedSeries(authId, accessToken);
@@ -553,7 +551,9 @@ public class SeriesController : ControllerBase
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
             var series = await _context.Series.Where(s => s.Guid == guid && allowedSeries.Contains(s.Guid))
-                .ToListAsync();
+                .Select(s => new {
+                series = s, 
+                tags = _context.Tags.Where(t => s.SeriesTags.Any(st=> st.TagGuid == t.Guid)).ToList()}).ToListAsync();
 
             if (series == null) return NotFound();
 
@@ -563,28 +563,19 @@ public class SeriesController : ControllerBase
             {
                 var newser = new Seri();
 
-                newser.Guid = s.Guid;
-                newser.Title = s.Title;
-                newser.Titlejpn = s.Titlejpn;
-                newser.Isactive = s.Isactive;
-                newser.Createdate = s.Createdate;
-                newser.Deactivedate = s.Deactivedate;
+                newser.Guid = s.series.Guid;
+                newser.Title = s.series.Title;
+                newser.Titlejpn = s.series.Titlejpn;
+                newser.Isactive = s.series.Isactive;
+                newser.Createdate = s.series.Createdate;
+                newser.Deactivedate = s.series.Deactivedate;
                 newser.Tags = new List<TagOut>();
+                newser.Createdate = s.series.Createdate;
 
-                if (s.Tags != null)
+                foreach(var tag in s.tags)
                 {
-                    var taglist = JObject.Parse(s.Tags.RootElement.ToString());
-                    foreach (var tag in taglist)
-                        foreach (var tagguid in tag.Value)
-                        {
-                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                                .Include("Tagtype").FirstOrDefaultAsync();
-                            newser.Tags.Add(new TagOut(pulledtag));
-                        }
+                    newser.Tags.Add(new TagOut(tag));
                 }
-
-                newser.Createdate = s.Createdate;
-
 
                 outputSeries.Add(newser);
             }
@@ -835,20 +826,38 @@ public class SeriesController : ControllerBase
             if (title.Titlejpn != series.Titlejpn) title.Titlejpn = series.Titlejpn;
             if (title.Isactive != series.Isactive) title.Titlejpn = series.Titlejpn;
 
+            var serietags = _context.SeriesTags.Where(st => st.SeriesGuid == guid).ToList();
+
             if (series.Tags != null)
             {
                 foreach (var tag in series.Tags)
+                {
                     if (!allowedTags.Contains(tag))
                         return Unauthorized();
-                var json = JsonSerializer.Serialize(series.Tags);
-                json = @"{""SeriesTags"":" + json + "}";
-                title.Tags = JsonDocument.Parse(json);
+
+                    if (!serietags.Any(st => st.TagGuid == tag))
+                    {
+                        _context.SeriesTags.Add(new SeriesTag()
+                        {
+                            TagGuid = tag,
+                            SeriesGuid = guid,
+                        });
+                    }
+
+                }
+                foreach(var seritag in serietags)
+                {
+                    if(!series.Tags.Contains(seritag.TagGuid))
+                    {
+                        _context.SeriesTags.Remove(seritag);
+                    }
+                }
             }
             else
             {
                 title.Tags = null;
+                _context.SeriesTags.RemoveRange(serietags);
             }
-
 
             _context.Entry(title).State = EntityState.Modified;
 
@@ -888,26 +897,93 @@ public class SeriesController : ControllerBase
 
             var newSeries = new Series();
 
+            newSeries.Guid = Guid.NewGuid();
+
             if (input.Title != null) newSeries.Title = input.Title;
 
             if (input.Titlejpn != null) newSeries.Titlejpn = input.Titlejpn;
 
+            List<SeriesTag> tags = new List<SeriesTag>();
             if (input.Tags != null)
             {
                 foreach (var tag in input.Tags)
+                {
                     if (!allowedTags.Contains(tag))
                         return Unauthorized();
 
-                var json = JsonSerializer.Serialize(input.Tags);
-                json = @"{""SeriesTags"":" + json + "}";
-                newSeries.Tags = JsonDocument.Parse(json);
+                    tags.Add(new SeriesTag()
+                    {
+                        TagGuid = tag,
+                        SeriesGuid = newSeries.Guid,
+                    });
+                }
             }
 
 
             _context.Series.Add(newSeries);
             await _context.SaveChangesAsync();
+            _context.SeriesTags.AddRange(tags);
+            await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetSeries", new { id = newSeries.Guid }, newSeries);
+        }
+
+        return Unauthorized();
+    }
+
+    [HttpPut("reactivate/{guid}")]
+    [Authorize]
+    public async Task<ActionResult<Series>> ReactivateSeries(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var allowedTags = GetAllowedUserTags(authId, accessToken);
+
+            var series = await _context.Series.FindAsync(guid);
+            if (series == null) return NotFound();
+
+            series.Isactive = true;
+            series.Deactivedate = null;
+
+            _context.Series.Update(series);
+            await _context.SaveChangesAsync();
+
+            return series;
+        }
+
+        return Unauthorized();
+    }
+
+    [HttpPut("deactivate/{guid}")]
+    [Authorize]
+    public async Task<ActionResult<Series>> deactivateSeries(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var allowedTags = GetAllowedUserTags(authId, accessToken);
+
+            var series = await _context.Series.FindAsync(guid);
+            if (series == null) return NotFound();
+
+            series.Isactive = false;
+            series.Deactivedate = DateTime.Now;
+
+            _context.Series.Update(series);
+            await _context.SaveChangesAsync();
+
+            return series;
         }
 
         return Unauthorized();

@@ -195,7 +195,7 @@ public class Startup
 
         //connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
         // LOCAL DOCKER CONNSTTRING
-        //connstring = "Host=LARPpi;Port=32775;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!";
+        connstring = "Host=LARPpi;Port=32775;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!";
 
         //if (host != _config.GetValue<string>("ConnectionSrings:Host"))
         //    connstring += ";SslMode=allow;Trust Server Certificate=true;";
@@ -259,8 +259,12 @@ public class Startup
         app.UseRouting();
         //app.UseCertificateForwarding();
         //app.UseCookiePolicy();
+
+        //UNDO THIS!!
         app.UseAuthentication();
         app.UseAuthorization();
+
+
         // app.UseEndpoints(endpoints =>
         // {
         //     endpoints.MapControllers();

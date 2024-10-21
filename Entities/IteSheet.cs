@@ -48,6 +48,7 @@ public class IteSheet
     public bool Isfrontonly { get; set; }
     public bool Isbackonly { get; set; }
     public Backside Back { get; set; }
+    public int Versions { get; set; }
 
     public List<ReviewMessage> ReviewMessages { get; set; }
 
@@ -374,6 +375,7 @@ public class IteSheet
         Guid = sheet.Sheet.Guid;
         Name = sheet.Sheet.Name;
         Img1 = sheet.Sheet.Img1;
+        Isactive = sheet.Sheet.Isactive;
         Seriesguid = sheet.Sheet.Seriesguid;
         Createdate = sheet.Sheet.Createdate;
         CreatedbyuserGuid = sheet.Sheet.CreatedbyuserGuid;
@@ -404,10 +406,14 @@ public class IteSheet
             }
         }
 
-        this.createdby = sheet.Createdbyuser.Preferredname;
-        if (sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
+        if (sheet.Createdbyuser != null)
         {
-            this.createdby = sheet.Createdbyuser.Firstname;
+            this.createdby = sheet.Createdbyuser.Preferredname;
+
+            if (sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
+            {
+                this.createdby = sheet.Createdbyuser.Firstname;
+            }
         }
 
         if (sheet.Firstapprovalbyuser != null)
@@ -428,10 +434,13 @@ public class IteSheet
             }
         }
 
-        this.EditbyUser = sheet.EditbyUser.Preferredname;
-        if (sheet.EditbyUser.Preferredname == null || sheet.EditbyUser.Preferredname == string.Empty)
+        if (sheet.EditbyUser != null)
         {
-            this.EditbyUser = sheet.EditbyUser.Firstname;
+            this.EditbyUser = sheet.EditbyUser.Preferredname;
+            if (sheet.EditbyUser.Preferredname == null || sheet.EditbyUser.Preferredname == string.Empty)
+            {
+                this.EditbyUser = sheet.EditbyUser.Firstname;
+            }
         }
 
         if (sheet.Series != null)

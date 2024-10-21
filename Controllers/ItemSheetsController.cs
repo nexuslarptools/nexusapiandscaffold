@@ -536,6 +536,156 @@ public class ItemSheetsController : ControllerBase
         return Unauthorized();
     }
 
+    [HttpGet("FullListWithTagsAndDeactive")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetFullItemListWithTagsAndDeactive()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            try
+            {
+                var outPutList = new List<IteSheet>();
+
+                var groupSheets = _context.ItemSheets.GroupBy(ish => ish.Guid)
+                    .Select(ish => new { 
+                    Guid = ish.Key,
+                    Createdate = ish.Max(row => row.Createdate),
+                    Versions = ish.Count()
+                    }).ToList();
+
+                List<int> reflist = new List<int>();
+                foreach(var sheet in groupSheets)
+                {
+                    reflist.Add(_context.ItemSheets.Where(ish => sheet.Guid == ish.Guid 
+                    && sheet.Createdate == ish.Createdate).FirstOrDefault().Id);
+                }
+
+                var allSheets = await _context.ItemSheets.Where(ish => reflist.Contains(ish.Id))
+                    .Select(x => new ItemSheetDO
+                    {
+                        Sheet = new ItemSheet
+                        {
+                            Id = x.Id,
+                            Guid = x.Guid,
+                            Seriesguid = x.Seriesguid,
+                            Name = x.Name,
+                            Isactive =x.Isactive,
+                            Createdate = x.Createdate,
+                            CreatedbyuserGuid = x.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                            Firstapprovaldate = x.Firstapprovaldate,
+                            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                            Secondapprovaldate = x.Secondapprovaldate,
+                            EditbyUserGuid = x.EditbyUserGuid,
+                            Readyforapproval = x.Readyforapproval,
+                        },
+                        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
+                        Createdbyuser = x.Createdbyuser,
+                        EditbyUser = x.EditbyUser,
+                        Firstapprovalbyuser = x.Firstapprovalbyuser,
+                        Secondapprovalbyuser = x.Secondapprovalbyuser,
+                        Series = x.Series,
+                        ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+                          && isrm.ItemsheetId == x.Id).ToList(),
+                    }).ToListAsync();
+
+ 
+
+                foreach (var sheet in allSheets)
+                {
+                    var newOutputSheet = new IteSheet(sheet, _context);
+                    newOutputSheet.Versions = groupSheets.Where(gs => gs.Guid == newOutputSheet.Guid).FirstOrDefault().Versions;
+                    outPutList.Add(newOutputSheet);
+                }
+
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = outPutList.Count;
+
+                return Ok(output);
+
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        return Unauthorized();
+    }
+
+    [HttpGet("FullListWithTagsAndDeactive/{guid}")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetFullItemListWithTagsAndDeactiveByGuid(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            try
+            {
+                var outPutList = new List<IteSheet>();
+
+
+                var allSheets = await _context.ItemSheets.Where(c => c.Guid == guid)
+    .Select(x => new ItemSheetDO
+    {
+        Sheet = new ItemSheet
+        {
+            Id = x.Id,
+            Guid = x.Guid,
+            Seriesguid = x.Seriesguid,
+            Name = x.Name,
+            Isactive = x.Isactive,
+            Createdate = x.Createdate,
+            CreatedbyuserGuid = x.CreatedbyuserGuid,
+            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+            Firstapprovaldate = x.Firstapprovaldate,
+            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+            Secondapprovaldate = x.Secondapprovaldate,
+            EditbyUserGuid = x.EditbyUserGuid,
+            Readyforapproval = x.Readyforapproval,
+        },
+        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
+        Createdbyuser = x.Createdbyuser,
+        EditbyUser = x.EditbyUser,
+        Firstapprovalbyuser = x.Firstapprovalbyuser,
+        Secondapprovalbyuser = x.Secondapprovalbyuser,
+        Series = x.Series,
+        ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+          && isrm.ItemsheetId == x.Id).ToList()
+    }).ToListAsync();
+
+
+                foreach (var sheet in allSheets)
+                {
+                    var newOutputSheet = new IteSheet(sheet, _context);
+                    outPutList.Add(newOutputSheet);
+                }
+
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Createdate).ToList();
+                output.fulltotal = outPutList.Count;
+
+                return Ok(output);
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        return Unauthorized();
+    }
+
     [HttpGet("FullListAllItems")]
     [Authorize]
     public async Task<ActionResult<FullItemsList>> FullListAllItems()
