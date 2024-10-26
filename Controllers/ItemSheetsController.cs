@@ -536,6 +536,148 @@ public class ItemSheetsController : ControllerBase
         return Unauthorized();
     }
 
+
+    [HttpGet("FullListWithTagsAndDeactive")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> FullListWithTagsAndDeactive()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            try
+            {
+                var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                var outPutList = new List<IteSheet>();
+
+                var SheetIds = _context.ItemSheets.GroupBy(x => x.Guid)
+                    .Select(x => new {
+                        guid = x.Key, 
+                        createdate = x.Max(row => row.Createdate)});
+
+                var allSheetIDs = _context.ItemSheets
+                    .Join(SheetIds, 
+                    i => new {guid = i.Guid, createdate =i.Createdate},
+                    s => new { s.guid, s.createdate}, (i, s) => i).Select(i => i.Id).ToList();
+
+                var allApprovedGuids = _context.ItemSheetApproveds.Where(ia => ia.Isactive == true)
+                    .Select(ia => ia.Guid).ToList();
+
+                var allSheets = await _context.ItemSheets.Where(i => allSheetIDs.Contains(i.Id)
+                && !allApprovedGuids.Contains(i.Guid))
+                    .Select(x => new ItemSheetDO
+                    {
+                        Sheet = new ItemSheet
+                        {
+                            Id = x.Id,
+                            Guid = x.Guid,
+                            Seriesguid = x.Seriesguid,
+                            Name = x.Name,
+                            Createdate = x.Createdate,
+                            CreatedbyuserGuid = x.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                            Firstapprovaldate = x.Firstapprovaldate,
+                            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                            Secondapprovaldate = x.Secondapprovaldate,
+                            EditbyUserGuid = x.EditbyUserGuid,
+                            Readyforapproval = x.Readyforapproval,
+                        },
+                        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
+                        Createdbyuser = x.Createdbyuser,
+                        EditbyUser = x.EditbyUser,
+                        Firstapprovalbyuser = x.Firstapprovalbyuser,
+                        Secondapprovalbyuser = x.Secondapprovalbyuser,
+                        Series = x.Series,
+                        ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+                          && isrm.ItemsheetId == x.Id).ToList()
+                    }).ToListAsync();
+
+                foreach (var sheet in allSheets)
+                {
+                    var newOutputSheet = new IteSheet(sheet, _context);
+                    outPutList.Add(newOutputSheet);
+                }
+
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.fulltotal = outPutList.Count;
+
+                return Ok(output);
+
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        return Unauthorized();
+    }
+
+    [HttpGet("VersionListWithTagsAndDeactive/{guid}")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> FullListWithTagsAndDeactive(Guid guid)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            try
+            {
+                var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                var outPutList = new List<IteSheet>();
+
+                var allSheets = await _context.ItemSheets
+                    .Where(i => i.Guid == guid)
+                    .Select(x => new ItemSheetDO
+                    {
+                        Sheet = new ItemSheet
+                        {
+                            Id = x.Id,
+                            Guid = x.Guid,
+                            Seriesguid = x.Seriesguid,
+                            Name = x.Name,
+                            Createdate = x.Createdate,
+                            CreatedbyuserGuid = x.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                            Firstapprovaldate = x.Firstapprovaldate,
+                            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                            Secondapprovaldate = x.Secondapprovaldate,
+                            EditbyUserGuid = x.EditbyUserGuid,
+                            Isactive = x.Isactive,
+                        },
+                        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
+                        Createdbyuser = x.Createdbyuser,
+                        EditbyUser = x.EditbyUser,
+                        Firstapprovalbyuser = x.Firstapprovalbyuser,
+                        Secondapprovalbyuser = x.Secondapprovalbyuser,
+                        Series = x.Series,
+                        ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+                          && isrm.ItemsheetId == x.Id).ToList()
+                    }).ToListAsync();
+
+                foreach (var sheet in allSheets)
+                {
+                    var newOutputSheet = new IteSheet(sheet, _context);
+                    outPutList.Add(newOutputSheet);
+                }
+
+                var output = new IteListOut();
+                output.IteList = outPutList.OrderBy(x => x.Createdate).OrderBy(x => x.Id).ToList();
+                output.fulltotal = outPutList.Count;
+
+                return Ok(output);
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        return Unauthorized();
+    }
+
+
     [HttpGet("FullListAllItems")]
     [Authorize]
     public async Task<ActionResult<FullItemsList>> FullListAllItems()

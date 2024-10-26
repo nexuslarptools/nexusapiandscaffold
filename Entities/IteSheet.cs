@@ -98,6 +98,7 @@ public class IteSheet
 
         Id = sheet.Id;
         Guid = sheet.Guid;
+        Isactive = sheet.Isactive;
         Name = sheet.Name;
         Img1 = sheet.Img1;
         Seriesguid = sheet.Seriesguid;
@@ -251,6 +252,7 @@ public class IteSheet
 
         Id = sheet.Id;
         Guid = sheet.Guid;
+        Isactive = sheet.Isactive;
         Name = sheet.Name;
         Img1 = sheet.Img1;
         Seriesguid = sheet.Seriesguid;
@@ -371,6 +373,7 @@ public class IteSheet
         }
 
         Id = sheet.Sheet.Id;
+        Isactive = sheet.Sheet.Isactive;
         Guid = sheet.Sheet.Guid;
         Name = sheet.Sheet.Name;
         Img1 = sheet.Sheet.Img1;
@@ -404,10 +407,10 @@ public class IteSheet
             }
         }
 
-        this.createdby = sheet.Createdbyuser.Preferredname;
-        if (sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
+        this.createdby = sheet.Createdbyuser?.Preferredname;
+        if (sheet.Createdbyuser == null || sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
         {
-            this.createdby = sheet.Createdbyuser.Firstname;
+            this.createdby = sheet.Createdbyuser?.Firstname;
         }
 
         if (sheet.Firstapprovalbyuser != null)
@@ -428,10 +431,10 @@ public class IteSheet
             }
         }
 
-        this.EditbyUser = sheet.EditbyUser.Preferredname;
-        if (sheet.EditbyUser.Preferredname == null || sheet.EditbyUser.Preferredname == string.Empty)
+        this.EditbyUser = sheet.EditbyUser?.Preferredname;
+        if (sheet.EditbyUser == null || sheet.EditbyUser.Preferredname == null || sheet.EditbyUser.Preferredname == string.Empty)
         {
-            this.EditbyUser = sheet.EditbyUser.Firstname;
+            this.EditbyUser = sheet.EditbyUser?.Firstname;
         }
 
         if (sheet.Series != null)
@@ -475,6 +478,7 @@ public class IteSheet
 
         Id = sheet.Sheet.Id;
         Guid = sheet.Sheet.Guid;
+        Isactive = sheet.Sheet.Isactive;
         Name = sheet.Sheet.Name;
         Img1 = sheet.Sheet.Img1;
         Seriesguid = sheet.Sheet.Seriesguid;
