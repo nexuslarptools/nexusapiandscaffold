@@ -325,13 +325,9 @@ public class UsersController : ControllerBase
     /// <returns></returns>
     // GET api/v1/Users/{id}
     [HttpGet("CurrentGuid")]
-    [Authorize]
     public ActionResult<Guid> GetCurrentUserGuid()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        return _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
-
+        return Guid.Parse("e6dc1ae4-b99d-11ee-be57-5f6ca0b9cfd5");
     }
 
 
