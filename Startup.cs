@@ -220,7 +220,7 @@ public class Startup
             app.UseCors(policy => policy
                 .AllowAnyHeader()
                 .AllowAnyMethod()
-                .SetIsOriginAllowed(origin => true) // allow any origin
+                //.SetIsOriginAllowed(origin => true) // allow any origin
                 //.WithOrigins("http://localhost:3000", "http://localhost:8080", "http://10.0.0.175:8080", "http://10.0.0.175:3000")
                 //.AllowCredentials()
                 .AllowAnyOrigin()
@@ -237,7 +237,7 @@ public class Startup
         {
             app.UseCors(builder => builder
                 //.SetIsOriginAllowed(origin => true) // allow any origin
-                .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000")
+                .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000", "http://localhost:3001")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials());
