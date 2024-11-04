@@ -254,7 +254,7 @@ public class UsersController : ControllerBase
                 Preferredname = user.Preferredname,
                 Email = user.Email,
                 Pronounsguid = user.Pronounsguid,
-                Pronouns = user.Pronouns.Pronouns,
+                Pronouns = user.Pronouns != null ? user.Pronouns.Pronouns :null,
             };
             foreach (var larprole in UsersRolesList)
                 if (larprole.Userguid == newout.Guid)
