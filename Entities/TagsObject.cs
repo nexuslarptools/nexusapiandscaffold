@@ -1,69 +1,60 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using NEXUSDataLayerScaffold.Models;
 
-namespace NEXUSDataLayerScaffold.Entities
+namespace NEXUSDataLayerScaffold.Entities;
+
+public class TagsObject
 {
-    public class TagsObject
+    public TagsObject()
     {
-        public List<Guid> MainTags { get; set; }
-        public List<Guid> AbilityTags { get; set; }
+        MainTags = new List<Guid>();
+        AbilityTags = new List<Guid>();
+    }
 
-        public TagsObject()
-        {
-            MainTags = new List<Guid>();
-            AbilityTags = new List<Guid>();
-        }
+    public List<Guid> MainTags { get; set; }
+    public List<Guid> AbilityTags { get; set; }
 
 
-        public List<ItemSheetTag> OutputItemSheetTags(int sheetID)
-        {
-            List<ItemSheetTag> newItemSheetTags = new List<ItemSheetTag>();
+    public List<ItemSheetTag> OutputItemSheetTags(int sheetID)
+    {
+        var newItemSheetTags = new List<ItemSheetTag>();
 
-            foreach (var tagValue in this.MainTags)
+        foreach (var tagValue in MainTags)
+            newItemSheetTags.Add(new ItemSheetTag
             {
-                newItemSheetTags.Add(new ItemSheetTag
-                {
-                    ItemsheetId = sheetID,
-                    TagGuid = tagValue
-                });
-            }
+                ItemsheetId = sheetID,
+                TagGuid = tagValue
+            });
 
-            foreach (var tagValue in this.AbilityTags)
+        foreach (var tagValue in AbilityTags)
+            newItemSheetTags.Add(new ItemSheetTag
             {
-                newItemSheetTags.Add(new ItemSheetTag
-                {
-                    ItemsheetId = sheetID,
-                    TagGuid = tagValue
-                });
-            }
+                ItemsheetId = sheetID,
+                TagGuid = tagValue
+            });
 
-            return newItemSheetTags;
-        }
+        return newItemSheetTags;
+    }
 
-        public List<ItemSheetApprovedTag> OutputItemSheetApprovedTags(int sheetID)
-        {
-            List<ItemSheetApprovedTag> newItemSheetTags = new List<ItemSheetApprovedTag>();
+    public List<ItemSheetApprovedTag> OutputItemSheetApprovedTags(int sheetID)
+    {
+        var newItemSheetTags = new List<ItemSheetApprovedTag>();
 
-            foreach (var tagValue in this.MainTags)
+        foreach (var tagValue in MainTags)
+            newItemSheetTags.Add(new ItemSheetApprovedTag
             {
-                newItemSheetTags.Add(new ItemSheetApprovedTag
-                {
-                    ItemsheetapprovedId = sheetID,
-                    TagGuid = tagValue
-                });
-            }
+                ItemsheetapprovedId = sheetID,
+                TagGuid = tagValue
+            });
 
-            foreach (var tagValue in this.AbilityTags)
+        foreach (var tagValue in AbilityTags)
+            newItemSheetTags.Add(new ItemSheetApprovedTag
             {
-                newItemSheetTags.Add(new ItemSheetApprovedTag
-                {
-                    ItemsheetapprovedId = sheetID,
-                    TagGuid = tagValue
-                });
-            }
+                ItemsheetapprovedId = sheetID,
+                TagGuid = tagValue
+            });
 
-            return newItemSheetTags;
-        }
+        return newItemSheetTags;
     }
 }

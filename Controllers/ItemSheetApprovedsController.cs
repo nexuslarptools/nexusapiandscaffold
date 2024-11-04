@@ -7,10 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
-using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
@@ -150,11 +148,13 @@ public class ItemSheetApprovedsController : ControllerBase
             {
                 if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
                 {
-                    var unappitemSheet = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid)
-                .FirstOrDefaultAsync();
+                    var unappitemSheet = await _context.ItemSheets
+                        .Where(ish => ish.Isactive == true && ish.Guid == guid)
+                        .FirstOrDefaultAsync();
                     var legalunappsheets = _context.ItemSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
-                    var allowedunappLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+                        .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
+                    var allowedunappLARPS = _context.UserLarproles
+                        .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
                         .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
                     var allowedunappTags = _context.Larptags.Where(lt =>
@@ -162,7 +162,8 @@ public class ItemSheetApprovedsController : ControllerBase
                         && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
                     if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                        allowedunappTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+                        allowedunappTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid)
+                            .ToList();
 
                     var allowedunappSheets = TagScanner.ScanTags(legalunappsheets, allowedunappTags);
 
@@ -189,18 +190,19 @@ public class ItemSheetApprovedsController : ControllerBase
                     if (outputunappItem.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/Approved/" + outputunappItem.Img1))
                             outputunappItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/"
-                          + outputunappItem.Img1);
+                                + outputunappItem.Img1);
 
                     if (outputunappItem.Seriesguid != null)
                     {
                         var connectedSeries =
-                            await _context.Series.Where(s => s.Guid == outputunappItem.Seriesguid).FirstOrDefaultAsync();
+                            await _context.Series.Where(s => s.Guid == outputunappItem.Seriesguid)
+                                .FirstOrDefaultAsync();
                         if (connectedSeries != null) outputunappItem.Series = connectedSeries.Title;
                     }
 
                     return Ok(outputunappItem);
-
                 }
+
                 return NotFound();
             }
 
@@ -305,15 +307,13 @@ public class ItemSheetApprovedsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             try
             {
-                var itemsList = await _context.ItemSheetApproveds.Where(ish => ish.Isactive == true && ish.Guid == guid).ToListAsync();
+                var itemsList = await _context.ItemSheetApproveds.Where(ish => ish.Isactive == true && ish.Guid == guid)
+                    .ToListAsync();
 
-                if (itemsList.Count == 0)
-                {
-                    return BadRequest("Item Not Found");
-                }
+                if (itemsList.Count == 0) return BadRequest("Item Not Found");
 
-                ListCharacterSheets output = new ListCharacterSheets();
-                ListItemsAndCharacters fullOutput = new ListItemsAndCharacters();
+                var output = new ListCharacterSheets();
+                var fullOutput = new ListItemsAndCharacters();
 
                 var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).ToList();
 
@@ -324,15 +324,12 @@ public class ItemSheetApprovedsController : ControllerBase
 
                     if (startitemsList.ValueKind.ToString() != "Undefined")
                     {
-                        var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Starting_Items").EnumerateArray();
+                        var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Starting_Items")
+                            .EnumerateArray();
 
                         foreach (var tag in TestJsonFeilds)
-                        {
                             if (tag.ToString() == guid.ToString())
-                            {
                                 output.AddUnapproved(characterSheet);
-                            }
-                        }
                     }
 
                     characterSheet.Fields.RootElement.TryGetProperty("Sheet_Item", out startitemsList);
@@ -341,10 +338,7 @@ public class ItemSheetApprovedsController : ControllerBase
                     {
                         var TestJsonFeild = characterSheet.Fields.RootElement.GetProperty("Sheet_Item");
 
-                        if (TestJsonFeild.ToString() == guid.ToString())
-                        {
-                            output.AddUnapproved(characterSheet);
-                        }
+                        if (TestJsonFeild.ToString() == guid.ToString()) output.AddUnapproved(characterSheet);
                     }
                 }
 
@@ -357,15 +351,12 @@ public class ItemSheetApprovedsController : ControllerBase
 
                     if (startitemsList.ValueKind.ToString() != "Undefined")
                     {
-                        var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Starting_Items").EnumerateArray();
+                        var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Starting_Items")
+                            .EnumerateArray();
 
                         foreach (var tag in TestJsonFeilds)
-                        {
                             if (tag.ToString() == guid.ToString())
-                            {
                                 output.AddApproved(characterSheet);
-                            }
-                        }
                     }
 
                     characterSheet.Fields.RootElement.TryGetProperty("Sheet_Item", out startitemsList);
@@ -374,10 +365,7 @@ public class ItemSheetApprovedsController : ControllerBase
                     {
                         var TestJsonFeild = characterSheet.Fields.RootElement.GetProperty("Sheet_Item");
 
-                        if (TestJsonFeild.ToString() == guid.ToString())
-                        {
-                            output.AddApproved(characterSheet);
-                        }
+                        if (TestJsonFeild.ToString() == guid.ToString()) output.AddApproved(characterSheet);
                     }
                 }
 
@@ -523,62 +511,56 @@ public class ItemSheetApprovedsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             try
             {
-                var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
 
                 var allowedLARPS = _context.UserLarproles
-                   .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
-                   .ToList();
+                    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .ToList();
 
                 var disAllowedTags = _context.Larptags.Where(lt =>
                     !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
                 var allSheets = await _context.ItemSheetApproveds.Where(c => c.Isactive == true)
-    .Select(x => new ItemSheetApprovedDO
-    {
-        Sheet = new ItemSheetApproved
-        {
-            Guid = x.Guid,
-            Seriesguid = x.Seriesguid,
-            Name = x.Name,
-            Createdate = x.Createdate,
-            CreatedbyuserGuid = x.CreatedbyuserGuid,
-            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
-            Firstapprovaldate = x.Firstapprovaldate,
-            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
-            Secondapprovaldate = x.Secondapprovaldate,
-            EditbyUserGuid = x.EditbyUserGuid,
-        },
-        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).ToList(),
-        Createdbyuser = x.Createdbyuser,
-        EditbyUser = x.EditbyUser,
-        Firstapprovalbyuser = x.Firstapprovalbyuser,
-        Secondapprovalbyuser = x.Secondapprovalbyuser,
-        Series = x.Series,
-        ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
-          && isrm.ItemsheetId == x.Id).ToList()
-    }).ToListAsync();
+                    .Select(x => new ItemSheetApprovedDO
+                    {
+                        Sheet = new ItemSheetApproved
+                        {
+                            Guid = x.Guid,
+                            Seriesguid = x.Seriesguid,
+                            Name = x.Name,
+                            Createdate = x.Createdate,
+                            CreatedbyuserGuid = x.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                            Firstapprovaldate = x.Firstapprovaldate,
+                            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                            Secondapprovaldate = x.Secondapprovaldate,
+                            EditbyUserGuid = x.EditbyUserGuid
+                        },
+                        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).ToList(),
+                        Createdbyuser = x.Createdbyuser,
+                        EditbyUser = x.EditbyUser,
+                        Firstapprovalbyuser = x.Firstapprovalbyuser,
+                        Secondapprovalbyuser = x.Secondapprovalbyuser,
+                        Series = x.Series,
+                        ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+                            && isrm.ItemsheetId == x.Id).ToList()
+                    }).ToListAsync();
 
                 if (!wizardauth)
-                {
-                    allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat))).ToList();
-
-
-                    //  await _context.ItemSheetApproveds.Where(c => c.Isactive == true
-                    //    && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                    //  .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
-                    //  !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
-                    //  .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
-                    //   .OrderBy(x => x.Name).ToListAsync();
-                }
-
+                    allSheets = allSheets
+                        .Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat))).ToList();
+                //  await _context.ItemSheetApproveds.Where(c => c.Isactive == true
+                //    && (!JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                //  .MainTags.Any(mt => disAllowedTags.Contains(mt)) &&
+                //  !JsonConvert.DeserializeObject<TagsObject>(c.Taglists)
+                //  .AbilityTags.Any(mt => disAllowedTags.Contains(mt))))
+                //   .OrderBy(x => x.Name).ToListAsync();
                 foreach (var sheet in allSheets)
                 {
-
                     var newOutputSheet = new IteSheet(sheet, _context);
                     outPutList.Add(newOutputSheet);
-
                 }
 
                 var output = new IteListOut();
@@ -587,8 +569,6 @@ public class ItemSheetApprovedsController : ControllerBase
 
                 timer.Stop();
                 return Ok(output);
-
-
             }
             catch (Exception e)
             {
@@ -608,23 +588,26 @@ public class ItemSheetApprovedsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             try
             {
-                var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
 
                 var SheetIds = _context.ItemSheetApproveds.GroupBy(x => x.Guid)
-                    .Select(x => new {
+                    .Select(x => new
+                    {
                         guid = x.Key,
                         createdate = x.Max(row => row.Createdate)
                     });
 
                 var allSheetIDs = _context.ItemSheetApproveds
                     .Join(SheetIds,
-                    i => new { guid = i.Guid, createdate = i.Createdate },
-                    s => new { s.guid, s.createdate }, (i, s) => i)
+                        i => new { guid = i.Guid, createdate = i.Createdate },
+                        s => new { s.guid, s.createdate }, (i, s) => i)
                     .GroupBy(x => x.Guid)
-                    .Select(i => new { 
-                        Id = i.Max(row => row.Id), 
-                        Guid = i.Key})
+                    .Select(i => new
+                    {
+                        Id = i.Max(row => row.Id),
+                        Guid = i.Key
+                    })
                     .Select(asii => asii.Id)
                     .ToList();
 
@@ -644,7 +627,7 @@ public class ItemSheetApprovedsController : ControllerBase
                             Firstapprovaldate = x.Firstapprovaldate,
                             SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
                             Secondapprovaldate = x.Secondapprovaldate,
-                            EditbyUserGuid = x.EditbyUserGuid,
+                            EditbyUserGuid = x.EditbyUserGuid
                         },
                         TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).ToList(),
                         Createdbyuser = x.Createdbyuser,
@@ -653,7 +636,7 @@ public class ItemSheetApprovedsController : ControllerBase
                         Secondapprovalbyuser = x.Secondapprovalbyuser,
                         Series = x.Series,
                         ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                          && isrm.ItemsheetId == x.Id).ToList()
+                            && isrm.ItemsheetId == x.Id).ToList()
                     }).ToListAsync();
 
                 foreach (var sheet in allSheets)
@@ -667,7 +650,6 @@ public class ItemSheetApprovedsController : ControllerBase
                 output.fulltotal = outPutList.Count;
 
                 return Ok(output);
-
             }
             catch (Exception e)
             {
@@ -687,7 +669,7 @@ public class ItemSheetApprovedsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             try
             {
-                var wizardauth = (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
 
                 var allSheets = await _context.ItemSheetApproveds
@@ -707,7 +689,7 @@ public class ItemSheetApprovedsController : ControllerBase
                             SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
                             Secondapprovaldate = x.Secondapprovaldate,
                             EditbyUserGuid = x.EditbyUserGuid,
-                            Isactive = x.Isactive,
+                            Isactive = x.Isactive
                         },
                         TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).ToList(),
                         Createdbyuser = x.Createdbyuser,
@@ -716,7 +698,7 @@ public class ItemSheetApprovedsController : ControllerBase
                         Secondapprovalbyuser = x.Secondapprovalbyuser,
                         Series = x.Series,
                         ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                          && isrm.ItemsheetId == x.Id).ToList()
+                            && isrm.ItemsheetId == x.Id).ToList()
                     }).ToListAsync();
 
                 foreach (var sheet in allSheets)
@@ -730,7 +712,6 @@ public class ItemSheetApprovedsController : ControllerBase
                 output.fulltotal = outPutList.Count;
 
                 return Ok(output);
-
             }
             catch (Exception e)
             {
@@ -834,28 +815,28 @@ public class ItemSheetApprovedsController : ControllerBase
                                 // Iterate through the special skills array of the input json
                                 foreach (JObject tagSkills in tag.Value)
                                     // iterate through all of the special skills on the item sheet
-                                    foreach (var itemSkills in TestJsonFeilds)
-                                    {
-                                        var foundskills = new List<bool>();
+                                foreach (var itemSkills in TestJsonFeilds)
+                                {
+                                    var foundskills = new List<bool>();
 
-                                        //iterate through all feilds of the input json
-                                        foreach (var skillTag in tagSkills)
-                                            if (skillTag.Key == "Tags")
-                                            {
-                                                var TagArray = JArray.Parse(itemSkills[skillTag.Key].ToString());
-                                                var tags2 = TagArray.Select(s => Guid.Parse(s.ToString())).ToList();
-                                                var tags1 = skillTag.Value.ToObject<List<Guid>>();
-                                                var alltagsfound = tags1.Intersect(tags2).Count();
-                                                if (alltagsfound == skillTag.Value.ToArray().Length) foundskills.Add(true);
-                                            }
-                                            else if (itemSkills[skillTag.Key].ToString().ToLower()
-                                                     .Contains(skillTag.Value.ToString().ToLower()))
-                                            {
-                                                foundskills.Add(true);
-                                            }
+                                    //iterate through all feilds of the input json
+                                    foreach (var skillTag in tagSkills)
+                                        if (skillTag.Key == "Tags")
+                                        {
+                                            var TagArray = JArray.Parse(itemSkills[skillTag.Key].ToString());
+                                            var tags2 = TagArray.Select(s => Guid.Parse(s.ToString())).ToList();
+                                            var tags1 = skillTag.Value.ToObject<List<Guid>>();
+                                            var alltagsfound = tags1.Intersect(tags2).Count();
+                                            if (alltagsfound == skillTag.Value.ToArray().Length) foundskills.Add(true);
+                                        }
+                                        else if (itemSkills[skillTag.Key].ToString().ToLower()
+                                                 .Contains(skillTag.Value.ToString().ToLower()))
+                                        {
+                                            foundskills.Add(true);
+                                        }
 
-                                        if (foundskills.Count == tagSkills.Count) skillsfound.Add(true);
-                                    }
+                                    if (foundskills.Count == tagSkills.Count) skillsfound.Add(true);
+                                }
 
                                 if (skillsfound.Count != tag.Value.ToList().Count) isfound = false;
                             }
@@ -983,7 +964,7 @@ public class ItemSheetApprovedsController : ControllerBase
 
 
     /// <summary>
-    /// Kick an approved sheet down to unapproved again. WIZARD ONLY
+    ///     Kick an approved sheet down to unapproved again. WIZARD ONLY
     /// </summary>
     /// <param name="guid"></param>
     /// <returns></returns>
@@ -1001,18 +982,16 @@ public class ItemSheetApprovedsController : ControllerBase
             var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
 
             var approvedSheets = _context.ItemSheetApproveds.Where(csa => csa.Isactive == true
-                && csa.Guid == guid).ToList();
+                                                                          && csa.Guid == guid).ToList();
 
-            if (approvedSheets.Count == 0)
-            {
-                return NotFound();
-            }
+            if (approvedSheets.Count == 0) return NotFound();
 
-            var selectedApprovedSheet = approvedSheets.Where(apps => apps.Id == approvedSheets.Max(aps => aps.Id)).FirstOrDefault();
+            var selectedApprovedSheet = approvedSheets.Where(apps => apps.Id == approvedSheets.Max(aps => aps.Id))
+                .FirstOrDefault();
 
             var selectedUnapprovedSheets = _context.ItemSheets.Where(cs => cs.Guid == guid).ToList();
 
-            ItemSheet newUnaprovedsheet = new ItemSheet()
+            var newUnaprovedsheet = new ItemSheet
             {
                 Guid = selectedApprovedSheet.Guid,
                 Seriesguid = (Guid)selectedApprovedSheet.Seriesguid,
@@ -1027,33 +1006,22 @@ public class ItemSheetApprovedsController : ControllerBase
                 Taglists = selectedApprovedSheet.Taglists
             };
 
-            foreach (var sheet in approvedSheets)
-            {
-                sheet.Isactive = false;
-            }
+            foreach (var sheet in approvedSheets) sheet.Isactive = false;
 
-            foreach (var sheet in selectedUnapprovedSheets)
-            {
-                sheet.Isactive = false;
-            }
+            foreach (var sheet in selectedUnapprovedSheets) sheet.Isactive = false;
 
             _context.ItemSheets.Add(newUnaprovedsheet);
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception Ex)
-            {
-                throw;
-            }
+            await _context.SaveChangesAsync();
 
             var selectedUnapprovedSheet = _context.ItemSheets.Where(cs => cs.Guid == guid
-              && cs.Isactive == true && cs.Id == _context.ItemSheets.Where(ccs => ccs.Isactive == true)
-              .Max(aps => aps.Id)).FirstOrDefault();
+                                                                          && cs.Isactive == true && cs.Id == _context
+                                                                              .ItemSheets.Where(ccs =>
+                                                                                  ccs.Isactive == true)
+                                                                              .Max(aps => aps.Id)).FirstOrDefault();
 
 
-            ItemSheetReviewMessage newMessage = new ItemSheetReviewMessage()
+            var newMessage = new ItemSheetReviewMessage
             {
                 Isactive = true,
                 CreatedbyuserGuid = result,
@@ -1064,14 +1032,7 @@ public class ItemSheetApprovedsController : ControllerBase
 
             _context.ItemSheetReviewMessages.Add(newMessage);
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception Ex)
-            {
-                throw;
-            }
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -1124,6 +1085,7 @@ public class ItemSheetApprovedsController : ControllerBase
                 item.Isactive = false;
                 _context.ItemSheetApproveds.Update(item);
             }
+
             _context.SaveChanges();
 
             return itemSheetApproved.FirstOrDefault();

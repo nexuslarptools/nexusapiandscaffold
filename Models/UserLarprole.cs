@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class UserLarprole
+public class UserLarprole
 {
     public int Id { get; set; }
 

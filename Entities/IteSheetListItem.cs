@@ -1,6 +1,5 @@
-﻿namespace NEXUSDataLayerScaffold.Entities
+﻿namespace NEXUSDataLayerScaffold.Entities;
+
+public class IteSheetListItem
 {
-    public class IteSheetListItem
-    {
-    }
 }

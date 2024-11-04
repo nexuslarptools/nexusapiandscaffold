@@ -11,7 +11,8 @@ public class UserOut
         EffectiveRole = new RoleOut();
     }
 
-    public UserOut(Guid guid, string firstname, string lastname, string preferedName, string email, Guid? pronounsguid, string pronouns,
+    public UserOut(Guid guid, string firstname, string lastname, string preferedName, string email, Guid? pronounsguid,
+        string pronouns,
         string discordName
         , RoleOut userRoles)
     {

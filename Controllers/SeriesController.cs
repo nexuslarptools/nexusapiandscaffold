@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -9,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
-using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
@@ -48,12 +46,13 @@ public class SeriesController : ControllerBase
         {
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
-            var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
+            var ser = await _context.Series
+                .Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
                 .Select(s => new
                 {
                     Series = s,
                     Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
-                    && csa.Seriesguid == s.Guid).ToList()
+                                                                           && csa.Seriesguid == s.Guid).ToList()
                 })
                 .ToListAsync();
 
@@ -78,10 +77,9 @@ public class SeriesController : ControllerBase
                 {
                     var taglist = JObject.Parse(s.Series.Tags.RootElement.ToString());
                     foreach (var tag in taglist["SeriesTags"])
-                    {
                         newser.Tags.Add(new TagOut(allTagsList.Where(atl => atl.Guid == (Guid)tag).FirstOrDefault()));
-                    }
                 }
+
                 outputSeries.Add(newser);
             }
 
@@ -107,13 +105,15 @@ public class SeriesController : ControllerBase
         {
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
-            var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
+            var ser = await _context.Series
+                .Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
                 .OrderBy(o => o.Title)
                 .Select(s => new
                 {
                     Series = s,
                     Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
-                    && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList()
+                                                                           && csa.Seriesguid == s.Guid)
+                        .OrderBy(csa => csa.Name).ToList()
                 })
                 .ToListAsync();
 
@@ -136,10 +136,7 @@ public class SeriesController : ControllerBase
                 newser.SheetTotal = s.Sheets.Count();
                 newser.CharSheets = new List<CharSheetMini>();
 
-                foreach (var s2 in s.Sheets)
-                {
-                    newser.CharSheets.Add(new CharSheetMini(s2, _context));
-                }
+                foreach (var s2 in s.Sheets) newser.CharSheets.Add(new CharSheetMini(s2, _context));
 
                 newser.Tags = new List<TagOut>();
 
@@ -147,10 +144,9 @@ public class SeriesController : ControllerBase
                 {
                     var taglist = JObject.Parse(s.Series.Tags.RootElement.ToString());
                     foreach (var tag in taglist["SeriesTags"])
-                    {
                         newser.Tags.Add(new TagOut(allTagsList.Where(atl => atl.Guid == (Guid)tag).FirstOrDefault()));
-                    }
                 }
+
                 outputSeries.Add(newser);
             }
 
@@ -252,12 +248,12 @@ public class SeriesController : ControllerBase
                 {
                     var taglist = JObject.Parse(s.Tags.RootElement.ToString());
                     foreach (var tag in taglist)
-                        foreach (var tagguid in tag.Value)
-                        {
-                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                                .Include("Tagtype").FirstOrDefaultAsync();
-                            newOutput.Tags.Add(new TagOut(pulledtag));
-                        }
+                    foreach (var tagguid in tag.Value)
+                    {
+                        var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                            .Include("Tagtype").FirstOrDefaultAsync();
+                        newOutput.Tags.Add(new TagOut(pulledtag));
+                    }
 
 
                     //newser.Tags
@@ -296,16 +292,18 @@ public class SeriesController : ControllerBase
         {
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
-            var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
-              .OrderBy(o => o.Title)
-              .Select(s => new
-              {
-                  Series = s,
-                  Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
-                  && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList(),
-                  TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
-              })
-                 .ToListAsync();
+            var ser = await _context.Series
+                .Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
+                .OrderBy(o => o.Title)
+                .Select(s => new
+                {
+                    Series = s,
+                    Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
+                                                                           && csa.Seriesguid == s.Guid)
+                        .OrderBy(csa => csa.Name).ToList(),
+                    TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
+                })
+                .ToListAsync();
             var serOutPut = new List<Seri>();
 
             foreach (var s in ser)
@@ -320,12 +318,8 @@ public class SeriesController : ControllerBase
                 };
 
                 if (s.TagsList.Count > 0)
-                {
                     foreach (var tag in s.TagsList)
-                    {
                         newOutput.Tags.Add(new TagOut(tag));
-                    }
-                }
 
                 serOutPut.Add(newOutput);
             }
@@ -357,15 +351,14 @@ public class SeriesController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
-
             var ser = await _context.Series.Where(s => s.Title != "")
-              .OrderBy(o => o.Title)
-              .Select(s => new
-              {
-                  Series = s,
-                  TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
-              })
-                 .ToListAsync();
+                .OrderBy(o => o.Title)
+                .Select(s => new
+                {
+                    Series = s,
+                    TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
+                })
+                .ToListAsync();
             var serOutPut = new List<Seri>();
 
             foreach (var s in ser)
@@ -382,12 +375,8 @@ public class SeriesController : ControllerBase
                 };
 
                 if (s.TagsList.Count > 0)
-                {
                     foreach (var tag in s.TagsList)
-                    {
                         newOutput.Tags.Add(new TagOut(tag));
-                    }
-                }
 
                 serOutPut.Add(newOutput);
             }
@@ -513,12 +502,12 @@ public class SeriesController : ControllerBase
                 {
                     var taglist = JObject.Parse(s.Tags.RootElement.ToString());
                     foreach (var tag in taglist)
-                        foreach (var tagguid in tag.Value)
-                        {
-                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                                .Include("Tagtype").FirstOrDefaultAsync();
-                            newOutput.Tags.Add(new TagOut(pulledtag));
-                        }
+                    foreach (var tagguid in tag.Value)
+                    {
+                        var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                            .Include("Tagtype").FirstOrDefaultAsync();
+                        newOutput.Tags.Add(new TagOut(pulledtag));
+                    }
 
 
                     //newser.Tags
@@ -575,12 +564,12 @@ public class SeriesController : ControllerBase
                 {
                     var taglist = JObject.Parse(s.Tags.RootElement.ToString());
                     foreach (var tag in taglist)
-                        foreach (var tagguid in tag.Value)
-                        {
-                            var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
-                                .Include("Tagtype").FirstOrDefaultAsync();
-                            newser.Tags.Add(new TagOut(pulledtag));
-                        }
+                    foreach (var tagguid in tag.Value)
+                    {
+                        var pulledtag = await _context.Tags.Where(s => s.Guid == Guid.Parse(tagguid.ToString()))
+                            .Include("Tagtype").FirstOrDefaultAsync();
+                        newser.Tags.Add(new TagOut(pulledtag));
+                    }
                 }
 
                 newser.Createdate = s.Createdate;
@@ -767,38 +756,27 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             try
             {
-                ListItemsAndCharacters output = new ListItemsAndCharacters();
+                var output = new ListItemsAndCharacters();
 
                 var seriesList = await _context.Series.Where(s => s.Isactive == true && s.Guid == guid).ToListAsync();
 
-                if (seriesList.Count == 0)
-                {
-                    return BadRequest("Item Not Found");
-                }
+                if (seriesList.Count == 0) return BadRequest("Item Not Found");
 
-                var itemsListApproved = await _context.ItemSheetApproveds.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
-                foreach (var item in itemsListApproved)
-                {
-                    output.ItemLists.AddApproved(item);
-                }
+                var itemsListApproved = await _context.ItemSheetApproveds
+                    .Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
+                foreach (var item in itemsListApproved) output.ItemLists.AddApproved(item);
 
-                var itemsList = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
-                foreach (var item in itemsList)
-                {
-                    output.ItemLists.AddUnapproved(item);
-                }
+                var itemsList = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Series.Guid == guid)
+                    .ToListAsync();
+                foreach (var item in itemsList) output.ItemLists.AddUnapproved(item);
 
-                var characterListApproved = await _context.CharacterSheetApproveds.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
-                foreach (var character in characterListApproved)
-                {
-                    output.CharacterLists.AddApproved(character);
-                }
+                var characterListApproved = await _context.CharacterSheetApproveds
+                    .Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
+                foreach (var character in characterListApproved) output.CharacterLists.AddApproved(character);
 
-                var characterList = await _context.CharacterSheets.Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
-                foreach (var character in characterList)
-                {
-                    output.CharacterLists.AddUnapproved(character);
-                }
+                var characterList = await _context.CharacterSheets
+                    .Where(ish => ish.Isactive == true && ish.Series.Guid == guid).ToListAsync();
+                foreach (var character in characterList) output.CharacterLists.AddUnapproved(character);
 
                 return output;
             }

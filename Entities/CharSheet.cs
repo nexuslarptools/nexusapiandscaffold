@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
@@ -12,6 +11,256 @@ namespace NEXUSDataLayerScaffold.Entities;
 
 public class CharSheet
 {
+    public CharSheet()
+    {
+    }
+
+    public CharSheet(CharacterSheetApproved input, NexusLarpLocalContext _context)
+    {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
+
+        Guid = input.Guid;
+        Seriesguid = input.Seriesguid;
+        Name = input.Name;
+        Img1 = input.Img1;
+        Img2 = input.Img2;
+        Fields = FeildsWInit;
+        Isactive = input.Isactive;
+        Createdate = input.Createdate;
+        CreatedbyUserGuid = input.CreatedbyuserGuid;
+        EditbyUserGuid = input.EditbyUserGuid;
+        FirstapprovalbyUserGuid = input.FirstapprovalbyuserGuid;
+        Firstapprovaldate = input.Firstapprovaldate;
+        SecondapprovalbyUserGuid = input.SecondapprovalbyuserGuid;
+        Secondapprovaldate = input.Secondapprovaldate;
+        Gmnotes = input.Gmnotes;
+        Reason4edit = input.Reason4edit;
+        Version = input.Version;
+        Readyforapproval = false;
+
+        var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
+            .FirstOrDefault();
+
+        SeriesTitle = assocSeries.Title;
+
+
+        var sheet_item_guid = Fields["Sheet_Item"].ToString();
+
+        if (sheet_item_guid != null)
+        {
+            if (_context.ItemSheetApproveds
+                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+                    .FirstOrDefault() != null)
+                Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
+                    _context);
+
+            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+                         .FirstOrDefault() !=
+                     null)
+                Sheet_Item = Item.CreateItem(_context.ItemSheets
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
+                    _context);
+        }
+
+        var Start_Items = new List<IteSheet>();
+
+        var StartIguids = Fields["Starting_Items"].ToList();
+
+        foreach (var iGuid in StartIguids)
+            if (_context.ItemSheetApproveds
+                    .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                    .FirstOrDefault() != null)
+            {
+                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
+                                                                           issh.Guid.ToString() == iGuid.ToString())
+                    .FirstOrDefault();
+
+
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
+            }
+            else if (_context.ItemSheets
+                         .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                         .FirstOrDefault() != null)
+            {
+                //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
+                //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
+                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
+                                                                   issh.Guid.ToString() == iGuid.ToString())
+                    .FirstOrDefault();
+
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
+            }
+
+        if (Start_Items != null) Starting_Items = Start_Items;
+
+        if (CreatedbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == CreatedbyUserGuid)
+                .FirstOrDefault();
+
+            createdby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        if (FirstapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == FirstapprovalbyUserGuid)
+                .FirstOrDefault();
+            Firstapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        if (SecondapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == SecondapprovalbyUserGuid)
+                .FirstOrDefault();
+            Secondapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        if (EditbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == EditbyUserGuid)
+                .FirstOrDefault();
+            Editby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        ReviewMessages = new List<ReviewMessage>();
+
+        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
+                                                                               && isrm.CharactersheetId == input.Id)
+            .ToList();
+
+        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+    }
+
+    public CharSheet(CharacterSheet input, NexusLarpLocalContext _context)
+    {
+        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
+
+        Guid = input.Guid;
+        Seriesguid = input.Seriesguid;
+        Name = input.Name;
+        Img1 = input.Img1;
+        Img2 = input.Img2;
+        Fields = FeildsWInit;
+        Isactive = input.Isactive;
+        Createdate = input.Createdate;
+        CreatedbyUserGuid = input.CreatedbyuserGuid;
+        EditbyUserGuid = input.EditbyUserGuid;
+        FirstapprovalbyUserGuid = input.FirstapprovalbyuserGuid;
+        Firstapprovaldate = input.Firstapprovaldate;
+        SecondapprovalbyUserGuid = input.SecondapprovalbyuserGuid;
+        Secondapprovaldate = input.Secondapprovaldate;
+        Gmnotes = input.Gmnotes;
+        Reason4edit = input.Reason4edit;
+        Version = input.Version;
+        Readyforapproval = input.Readyforapproval;
+
+        var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
+            .FirstOrDefault();
+
+        SeriesTitle = assocSeries.Title;
+
+        var sheet_item_guid = Fields["Sheet_Item"].ToString();
+
+        if (sheet_item_guid != null)
+        {
+            if (_context.ItemSheetApproveds
+                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+                    .FirstOrDefault() != null)
+                Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
+                    _context);
+
+            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+                         .FirstOrDefault() !=
+                     null)
+                Sheet_Item = Item.CreateItem(_context.ItemSheets
+                        .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
+                    _context);
+        }
+
+        var Start_Items = new List<IteSheet>();
+
+        var StartIguids = Fields["Starting_Items"].ToList();
+
+        foreach (var iGuid in StartIguids)
+            if (_context.ItemSheetApproveds
+                    .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                    .FirstOrDefault() != null)
+            {
+                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
+                                                                           issh.Guid.ToString() == iGuid.ToString())
+                    .FirstOrDefault();
+
+
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
+            }
+            else if (_context.ItemSheets
+                         .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                         .FirstOrDefault() != null)
+            {
+                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
+                                                                   issh.Guid.ToString() == iGuid.ToString())
+                    .FirstOrDefault();
+
+                Start_Items.Add(Item.CreateItem(starting_I, _context));
+            }
+
+        if (Start_Items != null) Starting_Items = Start_Items;
+
+        if (CreatedbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == CreatedbyUserGuid)
+                .FirstOrDefault();
+
+            createdby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        if (FirstapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == FirstapprovalbyUserGuid)
+                .FirstOrDefault();
+            Firstapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        if (SecondapprovalbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == SecondapprovalbyUserGuid)
+                .FirstOrDefault();
+            Secondapprovalby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        if (EditbyUserGuid != null)
+        {
+            var lookupuser = _context.Users.Where(u => u.Guid == EditbyUserGuid)
+                .FirstOrDefault();
+            Editby = lookupuser.Preferredname;
+            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
+                Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
+        }
+
+        ReviewMessages = new List<ReviewMessage>();
+
+        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
+                                                                               && isrm.CharactersheetId == input.Id)
+            .ToList();
+
+        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+    }
 
     public Guid Guid { get; set; }
     public Guid? Seriesguid { get; set; }
@@ -43,294 +292,29 @@ public class CharSheet
     public List<ReviewMessage> ReviewMessages { get; set; }
     public bool Readyforapproval { get; set; }
 
-    public CharSheet()
+    public CharacterSheet OutputToCharacterSheet()
     {
-    }
-
-    public CharSheet(CharacterSheetApproved input, NexusLarpLocalContext _context)
-    {
-        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
-
-        Guid = input.Guid;
-        Seriesguid = input.Seriesguid;
-        Name = input.Name;
-        Img1 = input.Img1;
-        Img2 = input.Img2;
-        this.Fields = FeildsWInit;
-        Isactive = input.Isactive;
-        Createdate = input.Createdate;
-        CreatedbyUserGuid = input.CreatedbyuserGuid;
-        EditbyUserGuid = input.EditbyUserGuid;
-        FirstapprovalbyUserGuid = input.FirstapprovalbyuserGuid;
-        Firstapprovaldate = input.Firstapprovaldate;
-        SecondapprovalbyUserGuid = input.SecondapprovalbyuserGuid;
-        Secondapprovaldate = input.Secondapprovaldate;
-        Gmnotes = input.Gmnotes;
-        Reason4edit = input.Reason4edit;
-        Version = input.Version;
-        Readyforapproval = false;
-
-        var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
-    .FirstOrDefault();
-
-        this.SeriesTitle = assocSeries.Title;
-
-
-        var sheet_item_guid = this.Fields["Sheet_Item"].ToString();
-
-        if (sheet_item_guid != null)
+        var Charsheet = new CharacterSheet
         {
-            if (_context.ItemSheetApproveds
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
-                    .FirstOrDefault() != null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
-
-            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
-                         .FirstOrDefault() !=
-                     null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheets
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
-        }
-
-        var Start_Items = new List<IteSheet>();
-
-        var StartIguids = this.Fields["Starting_Items"].ToList();
-
-        foreach (var iGuid in StartIguids)
-            if (_context.ItemSheetApproveds
-                    .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
-                    .FirstOrDefault() != null)
-            {
-                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
-                    issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
-
-
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
-            }
-            else if (_context.ItemSheets
-                         .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
-                         .FirstOrDefault() != null)
-            {
-                //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
-                //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
-                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
-                                                                        issh.Guid.ToString() == iGuid.ToString())
-                    .FirstOrDefault();
-
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
-            }
-
-        if (Start_Items != null) this.Starting_Items = Start_Items;
-
-        if (this.CreatedbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.CreatedbyUserGuid)
-                .FirstOrDefault();
-
-            this.createdby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        if (this.FirstapprovalbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.FirstapprovalbyUserGuid)
-                .FirstOrDefault();
-            this.Firstapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        if (this.SecondapprovalbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.SecondapprovalbyUserGuid)
-                .FirstOrDefault();
-            this.Secondapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        if (this.EditbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.EditbyUserGuid)
-                .FirstOrDefault();
-            this.Editby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        ReviewMessages = new List<ReviewMessage>();
-
-        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-          && isrm.CharactersheetId == input.Id).ToList();
-
-        foreach (var message in ListMessages)
-        {
-            ReviewMessages.Add(new ReviewMessage(message, _context));
-        }
-    }
-
-    public CharSheet(CharacterSheet input, NexusLarpLocalContext _context)
-    {
-        var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
-
-        Guid = input.Guid;
-        Seriesguid = input.Seriesguid;
-        Name = input.Name;
-        Img1 = input.Img1;
-        Img2 = input.Img2;
-        this.Fields = FeildsWInit;
-        Isactive = input.Isactive;
-        Createdate = input.Createdate;
-        CreatedbyUserGuid = input.CreatedbyuserGuid;
-        EditbyUserGuid = input.EditbyUserGuid;
-        FirstapprovalbyUserGuid = input.FirstapprovalbyuserGuid;
-        Firstapprovaldate = input.Firstapprovaldate;
-        SecondapprovalbyUserGuid = input.SecondapprovalbyuserGuid;
-        Secondapprovaldate = input.Secondapprovaldate;
-        Gmnotes = input.Gmnotes;
-        Reason4edit = input.Reason4edit;
-        Version = input.Version;
-        Readyforapproval = input.Readyforapproval;
-
-        var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
-          .FirstOrDefault();
-
-        this.SeriesTitle = assocSeries.Title;
-
-        var sheet_item_guid = this.Fields["Sheet_Item"].ToString();
-
-        if (sheet_item_guid != null)
-        {
-            if (_context.ItemSheetApproveds
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
-                    .FirstOrDefault() != null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
-
-            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
-                         .FirstOrDefault() !=
-                     null)
-                this.Sheet_Item = Item.CreateItem(_context.ItemSheets
-                    .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(), _context);
-        }
-
-        var Start_Items = new List<IteSheet>();
-
-        var StartIguids = this.Fields["Starting_Items"].ToList();
-
-        foreach (var iGuid in StartIguids)
-            if (_context.ItemSheetApproveds
-                    .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
-                    .FirstOrDefault() != null)
-            {
-                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
-                    issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
-
-
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
-            }
-            else if (_context.ItemSheets
-                         .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
-                         .FirstOrDefault() != null)
-            {
-                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
-                                     issh.Guid.ToString() == iGuid.ToString()).FirstOrDefault();
-
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
-            }
-
-        if (Start_Items != null) this.Starting_Items = Start_Items;
-
-        if (this.CreatedbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.CreatedbyUserGuid)
-                .FirstOrDefault();
-
-            this.createdby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        if (this.FirstapprovalbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.FirstapprovalbyUserGuid)
-                .FirstOrDefault();
-            this.Firstapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        if (this.SecondapprovalbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.SecondapprovalbyUserGuid)
-                .FirstOrDefault();
-            this.Secondapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        if (this.EditbyUserGuid != null)
-        {
-            var lookupuser = _context.Users.Where(u => u.Guid == this.EditbyUserGuid)
-                .FirstOrDefault();
-            this.Editby = lookupuser.Preferredname;
-            if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
-                this.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
-        }
-
-        ReviewMessages = new List<ReviewMessage>();
-
-        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-          && isrm.CharactersheetId == input.Id).ToList();
-
-        foreach (var message in ListMessages)
-        {
-            ReviewMessages.Add(new ReviewMessage(message, _context));
-        }
-
-    }
-
-    public CharacterSheet OutputToCharacterSheet() 
-    {
-        CharacterSheet Charsheet = new CharacterSheet() {
             Guid = Guid,
-            Seriesguid = (Guid)this.Seriesguid,
-            Name = this.Name,
-            Img1 = this.Img1,
-            Img2 = this.Img2,
-            Fields = JsonDocument.Parse(this.Fields.ToString()),
-            Isactive = this.Isactive,
-            Createdate = this.Createdate,
-            EditbyUserGuid = this.EditbyUserGuid,
-            CreatedbyuserGuid = this.CreatedbyUserGuid,
-            FirstapprovalbyuserGuid = this.FirstapprovalbyUserGuid,
-            Firstapprovaldate = this.Firstapprovaldate,
-            SecondapprovalbyuserGuid = this.SecondapprovalbyUserGuid,
-            Secondapprovaldate = this.Secondapprovaldate,
-            Gmnotes = this.Gmnotes,
-            Reason4edit = this.Reason4edit,
-            Readyforapproval = this.Readyforapproval
+            Seriesguid = (Guid)Seriesguid,
+            Name = Name,
+            Img1 = Img1,
+            Img2 = Img2,
+            Fields = JsonDocument.Parse(Fields.ToString()),
+            Isactive = Isactive,
+            Createdate = Createdate,
+            EditbyUserGuid = EditbyUserGuid,
+            CreatedbyuserGuid = CreatedbyUserGuid,
+            FirstapprovalbyuserGuid = FirstapprovalbyUserGuid,
+            Firstapprovaldate = Firstapprovaldate,
+            SecondapprovalbyuserGuid = SecondapprovalbyUserGuid,
+            Secondapprovaldate = Secondapprovaldate,
+            Gmnotes = Gmnotes,
+            Reason4edit = Reason4edit,
+            Readyforapproval = Readyforapproval
         };
 
         return Charsheet;
     }
-
 }

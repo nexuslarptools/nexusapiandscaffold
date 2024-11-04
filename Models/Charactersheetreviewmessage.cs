@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class CharacterSheetReviewMessage
+public class CharacterSheetReviewMessage
 {
     public int Id { get; set; }
 

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class LarpplayerTagAllowed
+public class LarpplayerTagAllowed
 {
     public Guid Guid { get; set; }
 

@@ -1,10 +1,9 @@
 ﻿using System;
 
-namespace NEXUSDataLayerScaffold.Entities
+namespace NEXUSDataLayerScaffold.Entities;
+
+public class CharInput
 {
-    public class CharInput
-    {
-        public Guid Guid { get; set; }
-        public bool IsApproved { get; set; }
-    }
+    public Guid Guid { get; set; }
+    public bool IsApproved { get; set; }
 }

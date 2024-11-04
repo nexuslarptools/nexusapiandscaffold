@@ -65,6 +65,7 @@ public class UsersLogic
                     var huh = e;
                 }
             }
+
             return false;
         }
 
@@ -140,9 +141,7 @@ public class UsersLogic
             var JsonHoldingCell = JsonDocument.Parse(responseData);
 
             if (JsonHoldingCell.RootElement.GetProperty("email_verified").ToString().ToLower() != "true")
-            {
                 return returnuser;
-            }
 
             returnuser.name = JsonHoldingCell.RootElement.GetProperty("name").ToString();
             returnuser.authid = JsonHoldingCell.RootElement.GetProperty("sub").ToString();

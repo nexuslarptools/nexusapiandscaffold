@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class Larprun
+public class Larprun
 {
     public Guid Guid { get; set; }
 

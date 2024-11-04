@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Logic;
@@ -44,15 +43,10 @@ public class Character
                 .FirstOrDefault();
 
             newCharSheet.createdby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.createdby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.createdby += " " + lookupuser.Lastname[0];
 
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newCharSheet.FirstapprovalbyUserGuid != null)
@@ -60,14 +54,9 @@ public class Character
             var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Firstapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newCharSheet.SecondapprovalbyUserGuid != null)
@@ -75,14 +64,9 @@ public class Character
             var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Secondapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newCharSheet.EditbyUserGuid != null)
@@ -90,25 +74,18 @@ public class Character
             var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Editby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.Editby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.Editby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         var ReviewMessages = new List<ReviewMessage>();
 
         var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-          && isrm.CharactersheetId == cSheet.Id).ToList();
+                                                                               && isrm.CharactersheetId == cSheet.Id)
+            .ToList();
 
-        foreach (var message in ListMessages)
-        {
-            ReviewMessages.Add(new ReviewMessage(message, _context));
-        }
+        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
 
         newCharSheet.ReviewMessages = ReviewMessages;
 
@@ -149,14 +126,9 @@ public class Character
                 .FirstOrDefault();
 
             newCharSheet.createdby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.createdby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.createdby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newCharSheet.FirstapprovalbyUserGuid != null)
@@ -164,14 +136,9 @@ public class Character
             var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Firstapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newCharSheet.SecondapprovalbyUserGuid != null)
@@ -179,14 +146,9 @@ public class Character
             var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Secondapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newCharSheet.EditbyUserGuid != null)
@@ -194,25 +156,18 @@ public class Character
             var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Editby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newCharSheet.Editby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newCharSheet.Editby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newCharSheet.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         var ReviewMessages = new List<ReviewMessage>();
 
         var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-          && isrm.CharactersheetId == cSheet.CharactersheetId).ToList();
+                                                                               && isrm.CharactersheetId ==
+                                                                               cSheet.CharactersheetId).ToList();
 
-        foreach (var message in ListMessages)
-        {
-            ReviewMessages.Add(new ReviewMessage(message, _context));
-        }
+        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
 
         newCharSheet.ReviewMessages = ReviewMessages;
 
@@ -220,8 +175,7 @@ public class Character
     }
 
     public static CharSheet CreateCharSheet(CharacterSheetVersion cSheet)
-    { 
-
+    {
         var newCharSheet = new CharSheet();
 
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(cSheet.Fields.RootElement.ToString()));

@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class CharacterSheetVersion
+public class CharacterSheetVersion
 {
     public int Id { get; set; }
 

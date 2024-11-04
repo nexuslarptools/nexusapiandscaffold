@@ -41,15 +41,14 @@ public class LarpsController : ControllerBase
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
 
         var larpList = await _context.Larps.Where(l => l.Isactive == true
-          && l.UserLarproles.Any(ulr => ulr.Isactive == true && ulr.Role.Ord > 1 
-          && ulr.User.Authid == authId))
-          .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
+                                                       && l.UserLarproles.Any(ulr => ulr.Isactive == true &&
+                                                           ulr.Role.Ord > 1
+                                                           && ulr.User.Authid == authId))
+            .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-        {
             larpList = await _context.Larps.Where(l => l.Isactive == true)
-            .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
-        }
+                .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
 
         return larpList.OrderBy(ll => ll.Name).ToList();
     }
@@ -93,7 +92,8 @@ public class LarpsController : ControllerBase
                 Shortname = larp.Shortname,
                 Users = await _context.Users
                     .Where(u => u.UserLarproles.Any(ulr => ulr.Larpguid == larp.Guid && ulr.Isactive == true))
-                    .Select(u => new UserOut(u.Guid, u.Firstname, u.Lastname, u.Preferredname, u.Email, u.Pronounsguid, u.Pronouns.Pronouns,
+                    .Select(u => new UserOut(u.Guid, u.Firstname, u.Lastname, u.Preferredname, u.Email, u.Pronounsguid,
+                        u.Pronouns.Pronouns,
                         u.Discordname, new RoleOut()
                     )).ToListAsync()
             };

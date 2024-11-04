@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class ItemSheet
+public class ItemSheet
 {
     public int Id { get; set; }
 

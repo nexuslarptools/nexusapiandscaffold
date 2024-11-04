@@ -40,10 +40,12 @@ public class RolesController : ControllerBase
             return await _context.Roles.Select(r => new RoleOut((int)r.Ord, r.Rolename)).ToListAsync();
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
-            return await _context.Roles.Where(ro => ro.Rolename != "HeadGM" && ro.Rolename != "Wizard").Select(r => new RoleOut((int)r.Ord, r.Rolename)).ToListAsync();
+            return await _context.Roles.Where(ro => ro.Rolename != "HeadGM" && ro.Rolename != "Wizard")
+                .Select(r => new RoleOut((int)r.Ord, r.Rolename)).ToListAsync();
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-            return await _context.Roles.Where(ro => ro.Rolename == "Reader").Select(r => new RoleOut((int)r.Ord, r.Rolename)).ToListAsync();
+            return await _context.Roles.Where(ro => ro.Rolename == "Reader")
+                .Select(r => new RoleOut((int)r.Ord, r.Rolename)).ToListAsync();
 
 
         return Unauthorized();
