@@ -82,7 +82,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     Series = x.Series,
     CharacterSheetReviewMessages = _context.CharacterSheetReviewMessages.Where(csr => csr.CharactersheetId == x.Id).ToList()
 })
-                .OrderBy(x => StringLogic.IgnorePunct(x.Sheet.Name)).ToListAsync();
+                .OrderBy(x =>x.Sheet.Name).ToListAsync();
 
             if (!wizardauth)
             {

@@ -297,12 +297,12 @@ public class SeriesController : ControllerBase
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
-              .OrderBy(o => StringLogic.IgnorePunct(o.Title))
+              .OrderBy(o => o.Title)
               .Select(s => new
               {
                   Series = s,
                   Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
-                  && csa.Seriesguid == s.Guid).OrderBy(csa => StringLogic.IgnorePunct(csa.Name)).ToList(),
+                  && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList(),
                   TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
               })
                  .ToListAsync();
