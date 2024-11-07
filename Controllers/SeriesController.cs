@@ -178,16 +178,16 @@ public class SeriesController : ControllerBase
 
             var none = await _context.Series.Where(s => s.Isactive == true && s.Title == string.Empty)
                 .Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
-                .OrderBy(x => StringLogic.IgnorePunct(x.Title)).FirstOrDefaultAsync();
+                .OrderBy(x => x.Title).FirstOrDefaultAsync();
 
             var ser = await _context.Series
                 .Where(s => s.Isactive == true && s.Title != string.Empty && allowedSeries.Contains(s.Guid))
                 .Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
-                .OrderBy(x => StringLogic.IgnorePunct(x.Title)).ToListAsync();
+                .OrderBy(x => x.Title).ToListAsync();
 
             ser.Insert(0, none);
 
-            return Ok(ser);
+            return Ok(ser.OrderBy(x => StringLogic.IgnorePunct(x.Title)));
         }
 
         return Unauthorized();
