@@ -47,21 +47,6 @@ public class Startup
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         });
-        services.AddOpenTelemetry().WithTracing(configure =>
-            {
-                configure.UseGrafana().AddConsoleExporter();
-            })
-            .WithMetrics(configure =>
-            {
-                configure.UseGrafana().AddConsoleExporter();
-            });
-
-        services.AddLogging(configure =>
-            configure.AddOpenTelemetry(options =>
-                {
-                    options.UseGrafana().AddConsoleExporter();
-                })
-            );
 
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
