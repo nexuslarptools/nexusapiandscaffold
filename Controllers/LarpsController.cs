@@ -30,7 +30,7 @@ public class LarpsController : ControllerBase
         var larpList = await _context.Larps.Where(l => l.Isactive == true)
             .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
 
-        return larpList.OrderBy(ll => ll.Name).ToList();
+        return larpList.OrderBy(ll => StringLogic.IgnorePunct(ll.Name)).ToList();
     }
 
     [HttpGet("Accessible")]
@@ -50,7 +50,7 @@ public class LarpsController : ControllerBase
             larpList = await _context.Larps.Where(l => l.Isactive == true)
                 .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
 
-        return larpList.OrderBy(ll => ll.Name).ToList();
+        return larpList.OrderBy(ll => StringLogic.IgnorePunct(ll.Name)).ToList();
     }
 
     [HttpGet("GMAccess")]
@@ -117,7 +117,7 @@ public class LarpsController : ControllerBase
         }
 
 
-        return larpoutput.OrderBy(lop => lop.Name).ToList();
+        return larpoutput.OrderBy(lop => StringLogic.IgnorePunct(lop.Name)).ToList();
     }
 
 

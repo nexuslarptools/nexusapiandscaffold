@@ -97,7 +97,7 @@ public class CharacterSheetsController : ControllerBase
 
             if (outp == null) return NotFound();
 
-            return Ok(outp.OrderBy(o => o.name).OrderBy(o => o.title));
+            return Ok(outp.OrderBy(o => StringLogic.IgnorePunct(o.name)).OrderBy(o => StringLogic.IgnorePunct(o.title)));
         }
 
         return Unauthorized();
@@ -155,7 +155,7 @@ public class CharacterSheetsController : ControllerBase
                     CreatedBy = c.Createdbyuser.Preferredname,
                     Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist)
                 })
-                .OrderBy(x => x.Title).ThenBy(x => x.Name).ToListAsync();
+                .OrderBy(x => StringLogic.IgnorePunct(x.Title)).ThenBy(x => StringLogic.IgnorePunct(x.Name)).ToListAsync();
 
             return Ok(ret);
         }
@@ -557,7 +557,7 @@ public class CharacterSheetsController : ControllerBase
                     Firstapprovalby = c.Firstapprovalbyuser.Preferredname,
                     Tags = TagScanner.ReturnDictElementOrNull(c.Guid, tagDictionary, fulltaglist)
                 })
-                .OrderBy(x => x.Name).ToListAsync();
+                .OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToListAsync();
 
             if (characterSheet == null) return NotFound();
 

@@ -82,7 +82,7 @@ public class ItemSheetsController : ControllerBase
                         : sh.EditbyUser.Preferredname,
                     CreatedBy = sh.Createdbyuser.Preferredname
                 })
-                .OrderBy(x => x.Name)
+                .OrderBy(x => StringLogic.IgnorePunct(x.Name))
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                 .Take(pagingParameterModel.pageSize).ToListAsync();
 
@@ -365,9 +365,8 @@ public class ItemSheetsController : ControllerBase
 
                 var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-                var allSheets = await _context.ItemSheets
-                    .Where(c => c.Isactive == true && allowedShets.Contains(c.Guid))
-                    .OrderBy(x => x.Name)
+                var allSheets = await _context.ItemSheets.Where(c => c.Isactive == true && allowedShets.Contains(c.Guid))
+                    .OrderBy(x => StringLogic.IgnorePunct(x.Name))
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                     .Take(pagingParameterModel.pageSize).ToListAsync();
 
@@ -435,7 +434,7 @@ public class ItemSheetsController : ControllerBase
                 }
 
                 var output = new IteListOut();
-                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.IteList = outPutList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
                 output.fulltotal = (allowedShets.Count + pagingParameterModel.pageSize - 1) /
                                    pagingParameterModel.pageSize;
 
@@ -511,7 +510,7 @@ public class ItemSheetsController : ControllerBase
                 }
 
                 var output = new IteListOut();
-                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.IteList = outPutList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
                 output.fulltotal = outPutList.Count;
 
                 return Ok(output);
@@ -589,7 +588,7 @@ public class ItemSheetsController : ControllerBase
                 }
 
                 var output = new IteListOut();
-                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.IteList = outPutList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
                 output.fulltotal = outPutList.Count;
 
                 return Ok(output);
@@ -701,12 +700,12 @@ public class ItemSheetsController : ControllerBase
 
                 output.ItemsList = await _context.ItemSheets
                     .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid))
-                    .OrderBy(x => x.Name)
+                    .OrderBy(x => StringLogic.IgnorePunct(x.Name))
                     .Select(i => new ItemsEntry(i.Guid, i.Name)).ToListAsync();
 
                 output.ApprovedItemsList = await _context.ItemSheetApproveds.Where(c =>
                         c.Isactive == true && allowedApprovedSheets.Contains(c.Guid))
-                    .OrderBy(x => x.Name)
+                    .OrderBy(x => StringLogic.IgnorePunct(x.Name))
                     .Select(i => new ItemsEntry(i.Guid, i.Name)).ToListAsync();
             }
             catch (Exception e)
@@ -789,7 +788,7 @@ public class ItemSheetsController : ControllerBase
                     ch.Seriesguid,
                     SeriesTitle = _context.Series.Where(s => s.Isactive == true && s.Guid == ch.Seriesguid)
                         .FirstOrDefault().Title
-                }).OrderBy(x => x.Name)
+                                                             }).OrderBy(x => StringLogic.IgnorePunct(x.Name))
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                 .Take(pagingParameterModel.pageSize).ToListAsync();
 
@@ -858,8 +857,7 @@ public class ItemSheetsController : ControllerBase
                 {
                     var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
                     initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
-                                                      ii.SecondapprovalbyuserGuid != curUserGuid).OrderBy(x => x.Name)
-                        .ToList();
+                                                      ii.SecondapprovalbyuserGuid != curUserGuid).OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
                 }
 
                 var taggedItems = new List<ItemSheet>();
@@ -969,7 +967,7 @@ public class ItemSheetsController : ControllerBase
                          s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
                         && (pagingParameterModel.seriesguid == Guid.Empty ||
                             s.Seriesguid == pagingParameterModel.seriesguid))
-                    .OrderBy(x => x.Name).Select(ti => ti.Guid).ToList();
+                    .OrderBy(x => StringLogic.IgnorePunct(x.Name)).Select(ti => ti.Guid).ToList();
 
 
                 var itemslist = taggedItems.Where(s =>
@@ -977,7 +975,7 @@ public class ItemSheetsController : ControllerBase
                          s.Name.ToLower().Contains(pagingParameterModel.name.ToLower()))
                         && (pagingParameterModel.seriesguid == Guid.Empty ||
                             s.Seriesguid == pagingParameterModel.seriesguid))
-                    .OrderBy(x => x.Name)
+                    .OrderBy(x => StringLogic.IgnorePunct(x.Name))
                     .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                     .Take(pagingParameterModel.pageSize).ToList();
 
@@ -1051,7 +1049,7 @@ public class ItemSheetsController : ControllerBase
                 }
 
                 var output = new IteListOut();
-                output.IteList = outPutList.OrderBy(x => x.Name).ToList();
+                output.IteList = outPutList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
                 output.fulltotal = (filteredGuids.Count + pagingParameterModel.pageSize - 1) /
                                    pagingParameterModel.pageSize;
 
