@@ -86,7 +86,7 @@ public class SeriesController : ControllerBase
             }
 
 
-            return Ok(outputSeries.OrderBy(o => o.Title));
+            return Ok(outputSeries.OrderBy(o => StringLogic.IgnorePunct(o.Title)));
         }
 
         return Unauthorized();
@@ -108,12 +108,12 @@ public class SeriesController : ControllerBase
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
-                .OrderBy(o => o.Title)
+                .OrderBy(o => StringLogic.IgnorePunct(o.Title))
                 .Select(s => new
                 {
                     Series = s,
                     Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
-                    && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList()
+                    && csa.Seriesguid == s.Guid).OrderBy(csa => StringLogic.IgnorePunct(csa.Name)).ToList()
                 })
                 .ToListAsync();
 
@@ -184,12 +184,12 @@ public class SeriesController : ControllerBase
 
             var none = await _context.Series.Where(s => s.Isactive == true && s.Title == string.Empty)
                 .Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
-                .OrderBy(x => x.Title).FirstOrDefaultAsync();
+                .OrderBy(x => StringLogic.IgnorePunct(x.Title)).FirstOrDefaultAsync();
 
             var ser = await _context.Series
                 .Where(s => s.Isactive == true && s.Title != string.Empty && allowedSeries.Contains(s.Guid))
                 .Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
-                .OrderBy(x => x.Title).ToListAsync();
+                .OrderBy(x => StringLogic.IgnorePunct(x.Title)).ToListAsync();
 
             ser.Insert(0, none);
 
@@ -231,7 +231,7 @@ public class SeriesController : ControllerBase
                         sc.Title,
                         sc.Titlejpn,
                         sc.Tags
-                    }).OrderBy(x => x.Title)
+                    }).OrderBy(x => StringLogic.IgnorePunct(x.Title))
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                 .Take(pagingParameterModel.pageSize).ToListAsync();
 
@@ -267,7 +267,7 @@ public class SeriesController : ControllerBase
             }
 
             var output = new SeriListOut();
-            output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
+            output.SeriList = serOutPut.OrderBy(x => StringLogic.IgnorePunct(x.Title)).ToList();
             output.fulltotal = (allowedSeries.Count + pagingParameterModel.pageSize - 2) /
                                pagingParameterModel.pageSize;
 
@@ -297,12 +297,12 @@ public class SeriesController : ControllerBase
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
-              .OrderBy(o => o.Title)
+              .OrderBy(o => StringLogic.IgnorePunct(o.Title))
               .Select(s => new
               {
                   Series = s,
                   Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
-                  && csa.Seriesguid == s.Guid).OrderBy(csa => csa.Name).ToList(),
+                  && csa.Seriesguid == s.Guid).OrderBy(csa => StringLogic.IgnorePunct(csa.Name)).ToList(),
                   TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
               })
                  .ToListAsync();
@@ -331,7 +331,7 @@ public class SeriesController : ControllerBase
             }
 
             var output = new SeriListOut();
-            output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
+            output.SeriList = serOutPut.OrderBy(x => StringLogic.IgnorePunct(x.Title)).ToList();
             output.fulltotal = allowedSeries.Count;
 
             return Ok(output);
@@ -359,7 +359,7 @@ public class SeriesController : ControllerBase
         {
 
             var ser = await _context.Series.Where(s => s.Title != "")
-              .OrderBy(o => o.Title)
+              .OrderBy(o => StringLogic.IgnorePunct(o.Title))
               .Select(s => new
               {
                   Series = s,
@@ -393,7 +393,7 @@ public class SeriesController : ControllerBase
             }
 
             var output = new SeriListOut();
-            output.SeriList = serOutPut.OrderBy(x => x.Title).ToList();
+            output.SeriList = serOutPut.OrderBy(x => StringLogic.IgnorePunct(x.Title)).ToList();
 
             return Ok(output);
         }
@@ -433,7 +433,7 @@ public class SeriesController : ControllerBase
                                                        s.Tags.RootElement.GetProperty("Tags").GetString()
                                                            .Contains(pagingParameterModel.guid.ToString())).Select(sc =>
                     new { sc.Guid, sc.Title, sc.Titlejpn })
-                .OrderBy(x => x.Title)
+                .OrderBy(x => StringLogic.IgnorePunct(x.Title))
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                 .Take(pagingParameterModel.pageSize).ToListAsync();
 
@@ -489,7 +489,7 @@ public class SeriesController : ControllerBase
                                                      .Contains(pagingParameterModel.titleinput.ToLower()))
                                                  && (pagingParameterModel.jpntitleinput == null || s.Titlejpn.ToLower()
                                                      .Contains(pagingParameterModel.jpntitleinput.ToLower())))
-                .OrderBy(x => x.Title)
+                .OrderBy(x => StringLogic.IgnorePunct(x.Title))
                 .Skip((pagingParameterModel.pageNumber - 1) * pagingParameterModel.pageSize)
                 .Take(pagingParameterModel.pageSize).ToList();
 

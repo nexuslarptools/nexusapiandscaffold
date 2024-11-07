@@ -85,7 +85,7 @@ public class TagsController : ControllerBase
                     }
 
 
-                outp.TagsList = tagList.OrderBy(x => x.Name).ToList();
+                outp.TagsList = tagList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
 
                 output.Add(outp);
             }
@@ -139,7 +139,7 @@ public class TagsController : ControllerBase
                             .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToList();
                     }
 
-                outp.TagsList = tagList.OrderBy(x => x.Name).ToList();
+                outp.TagsList = tagList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
 
                 output.Add(outp);
             }
@@ -496,7 +496,7 @@ public class TagsController : ControllerBase
                 if (usrtag == tagL.Guid)
                     tagL.IsLocked = true;
 
-            outp.TagsList = tagList.OrderBy(x => x.Name).ToList();
+            outp.TagsList = tagList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
             return Ok(outp);
         }
 
@@ -531,7 +531,7 @@ public class TagsController : ControllerBase
                 if (typeGu.Name == "Item" || typeGu.Name == "LARPRun")
                 {
 
-                    var itemList = _context.ItemSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var itemList = _context.ItemSheets.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var itemSheet in itemList)
                     {
@@ -552,7 +552,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvitemList = _context.ItemSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvitemList = _context.ItemSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var itemSheet in approvitemList)
                     {
@@ -577,7 +577,7 @@ public class TagsController : ControllerBase
                 if (typeGu.Name == "Character" || typeGu.Name == "LARPRun")
                 {
 
-                    var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var characterSheet in charList)
                     {
@@ -598,7 +598,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvcharList = _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvcharList = _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var characterSheet in approvcharList)
                     {
@@ -623,7 +623,7 @@ public class TagsController : ControllerBase
                 if (typeGu.Name == "Ability" || typeGu.Name == "LARPRun")
                 {
 
-                    var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var charList = _context.CharacterSheets.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var characterSheet in charList)
                     {
@@ -655,7 +655,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvcharList = _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvcharList = _context.CharacterSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var characterSheet in approvcharList)
                     {
@@ -688,7 +688,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var itemList = _context.ItemSheets.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var itemList = _context.ItemSheets.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var itemSheet in itemList)
                     {
@@ -721,7 +721,7 @@ public class TagsController : ControllerBase
                         }
                     }
 
-                    var approvitemList = _context.ItemSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => i.Name).ToList();
+                    var approvitemList = _context.ItemSheetApproveds.Where(cs => cs.Isactive == true).OrderBy(i => StringLogic.IgnorePunct(i.Name)).ToList();
 
                     foreach (var itemSheet in approvitemList)
                     {
@@ -758,7 +758,7 @@ public class TagsController : ControllerBase
 
                 if (typeGu.Name == "Series" || typeGu.Name == "LARPRun")
                 {
-                    var seriesList = _context.Series.Where(cs => cs.Isactive == true).ToList().OrderBy(cs => cs.Title);
+                    var seriesList = _context.Series.Where(cs => cs.Isactive == true).ToList().OrderBy(cs => StringLogic.IgnorePunct(cs.Title));
 
                     foreach (var series in seriesList)
                     {
