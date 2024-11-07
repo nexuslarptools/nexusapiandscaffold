@@ -829,6 +829,7 @@ public class SeriesController : ControllerBase
 
             if (guid != series.Guid) return BadRequest();
             var title = await _context.Series.Where(s => s.Guid == guid).FirstOrDefaultAsync();
+            var seriesTags = await _context.SeriesTags.Where(st => st.SeriesGuid == guid).ToListAsync();
 
 
             if (title.Title != series.Title) title.Title = series.Title;
@@ -838,8 +839,30 @@ public class SeriesController : ControllerBase
             if (series.Tags != null)
             {
                 foreach (var tag in series.Tags)
+                {
                     if (!allowedTags.Contains(tag))
                         return Unauthorized();
+
+                    if (!seriesTags.Any(st => st.TagGuid == tag))
+                    {
+                        SeriesTag newTag = new SeriesTag()
+                        {
+                            SeriesGuid = guid,
+                            TagGuid = tag
+                        };
+
+                        _context.SeriesTags.Add(newTag);
+                    }
+                }
+
+                foreach(var sTag in seriesTags)
+                {
+                    if(!series.Tags.Contains(sTag.TagGuid))
+                    {
+                        _context.SeriesTags.Remove(sTag);
+                    }
+                }
+
                 var json = JsonSerializer.Serialize(series.Tags);
                 json = @"{""SeriesTags"":" + json + "}";
                 title.Tags = JsonDocument.Parse(json);
@@ -886,17 +909,28 @@ public class SeriesController : ControllerBase
         {
             var allowedTags = GetAllowedUserTags(authId, accessToken);
 
-            var newSeries = new Series();
-
-            if (input.Title != null) newSeries.Title = input.Title;
-
-            if (input.Titlejpn != null) newSeries.Titlejpn = input.Titlejpn;
+            var newSeries = new Series()
+            {
+                Guid=Guid.NewGuid(),
+                Title = input.Title ?? null,
+                Titlejpn = input.Titlejpn ?? null,
+            };
 
             if (input.Tags != null)
             {
                 foreach (var tag in input.Tags)
+                {
                     if (!allowedTags.Contains(tag))
                         return Unauthorized();
+
+                    SeriesTag newTag = new SeriesTag()
+                    {
+                        SeriesGuid = newSeries.Guid,
+                        TagGuid = tag
+                    };
+
+                    _context.SeriesTags.Add(newTag);
+                }
 
                 var json = JsonSerializer.Serialize(input.Tags);
                 json = @"{""SeriesTags"":" + json + "}";
