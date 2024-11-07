@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using Grafana.OpenTelemetry;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -9,12 +10,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace NEXUSDataLayerScaffold;
 
@@ -42,6 +47,22 @@ public class Startup
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         });
+        services.AddOpenTelemetry().WithTracing(configure =>
+            {
+                configure.UseGrafana().AddConsoleExporter();
+            })
+            .WithMetrics(configure =>
+            {
+                configure.UseGrafana().AddConsoleExporter();
+            });
+
+        services.AddLogging(configure =>
+            configure.AddOpenTelemetry(options =>
+                {
+                    options.UseGrafana().AddConsoleExporter();
+                })
+            );
+
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
@@ -245,6 +266,7 @@ public class Startup
 
         // Enable middleware to serve generated Swagger as a JSON endpoint.
         app.UseSwagger();
+
 
         // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
         // specifying the Swagger JSON endpoint.
