@@ -39,13 +39,13 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Series>>> GetSeries()
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
-
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
+
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
