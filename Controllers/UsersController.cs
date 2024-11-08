@@ -237,8 +237,8 @@ public class UsersController : ControllerBase
             UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context) ||
             currUseGuid == id)
         {
-            var user = _context.Users.Where(u => u.Guid == id).Include("Pronouns").FirstOrDefault();
-            if (user == null) return NoContent();
+            var user = _context.Users.Where(u => u.Guid == id).FirstOrDefault();
+            if (user == null) { return NoContent(); }
 
             var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
             var RolesList = _context.Roles.ToList();
@@ -252,9 +252,13 @@ public class UsersController : ControllerBase
                 Preferredname = user.Preferredname,
                 Email = user.Email,
                 Pronounsguid = user.Pronounsguid,
-                Pronouns = user.Pronouns.Pronouns
+                Pronouns = user.Pronounsguid != null ?
+                   _context.Pronouns.Where(p => p.Guid == user.Pronounsguid).FirstOrDefault().Pronouns :
+                   null,
             };
+
             foreach (var larprole in UsersRolesList)
+            {
                 if (larprole.Userguid == newout.Guid)
                 {
                     if (!newout.LarpRoles.Any(lr => lr.LarpGuid == larprole.Larpguid))
@@ -277,8 +281,7 @@ public class UsersController : ControllerBase
 
                     currLARP.Roles.Add(newRoleOut);
                 }
-
-
+            }
             return Ok(newout);
         }
 
