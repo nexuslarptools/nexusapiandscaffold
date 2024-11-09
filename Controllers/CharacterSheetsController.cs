@@ -283,6 +283,11 @@ public class CharacterSheetsController : ControllerBase
 
             var Start_Items = new List<IteSheet>();
 
+            if (outputSheet.Sheet_Item.Islarge)
+            {
+                Start_Items.Add(outputSheet.Sheet_Item);
+            }
+
             var StartIguids = outputSheet.Fields["Starting_Items"].ToList();
 
             foreach (var iGuid in StartIguids)
@@ -321,7 +326,6 @@ public class CharacterSheetsController : ControllerBase
                 }
 
             if (Start_Items != null) outputSheet.Starting_Items = Start_Items;
-
 
             return Ok(outputSheet);
         }
@@ -449,6 +453,11 @@ public class CharacterSheetsController : ControllerBase
                 }
 
                 var Start_Items = new List<IteSheet>();
+
+                if (outputSheet.Sheet_Item.Islarge)
+                {
+                    Start_Items.Add(outputSheet.Sheet_Item);
+                }
 
                 var StartIguids = outputSheet.Fields["Starting_Items"].ToList();
 
@@ -1037,6 +1046,11 @@ public class CharacterSheetsController : ControllerBase
             }
 
             var Start_Items = new List<IteSheet>();
+
+            if (outputSheet.Sheet_Item.Islarge)
+            {
+                Start_Items.Add(outputSheet.Sheet_Item);
+            }
 
             var StartIguids = outputSheet.Fields["Starting_Items"].ToList();
 

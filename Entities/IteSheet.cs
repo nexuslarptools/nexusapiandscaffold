@@ -15,6 +15,12 @@ public class IteSheet
 {
     private NexusLarpLocalContext context;
     private object sheet;
+    private List<string> _largeItems = new List<string>(new string[] {
+         "mecha",
+        "companion",
+        "pokemon",
+        "vehicle" 
+    });
 
 
     public IteSheet()
@@ -137,6 +143,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public IteSheet(ItemSheetApproved sheet, NexusLarpLocalContext _context)
@@ -272,6 +280,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public IteSheet(ItemSheetDO sheet, NexusLarpLocalContext _context)
@@ -352,6 +362,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public IteSheet(ItemSheetApprovedDO sheet, NexusLarpLocalContext _context)
@@ -433,6 +445,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public int Id { get; set; }
@@ -463,6 +477,7 @@ public class IteSheet
     public string EditbyUser { get; set; }
     public bool readyforapproval { get; set; }
     public bool hasreview { get; set; }
+    public bool Islarge { get; set; }
     public bool Isdoubleside { get; set; }
     public bool Isfrontonly { get; set; }
     public bool Isbackonly { get; set; }
@@ -521,5 +536,14 @@ public class IteSheet
         public string Name { get; set; }
         public string Type { get; set; }
         public JObject Fields { get; set; }
+    }
+
+    public void SetIsLarge()
+    {
+        this.Islarge = false;
+        if (_largeItems.Contains(this.Type.ToLower()))
+        {
+            this.Islarge = true;
+        }
     }
 }
