@@ -76,7 +76,7 @@ public class IteSheet
         Version = sheet.Version;
         readyforapproval = sheet.Readyforapproval;
         Gmnotes = sheet.Gmnotes;
-        Isdoubleside = (bool)sheet.Isdoubleside;
+        Isdoubleside = sheet.Isdoubleside == null ? false: (bool)sheet.Isdoubleside;
         Back = new Backside(sheet);
 
         if (Type != null) Back.Type = Type;
@@ -214,7 +214,7 @@ public class IteSheet
         Version = sheet.Version;
         readyforapproval = false;
         Gmnotes = sheet.Gmnotes;
-        Isdoubleside = (bool)sheet.Isdoubleside;
+        Isdoubleside = sheet.Isdoubleside == null ? false : (bool)sheet.Isdoubleside;
         Back = new Backside(sheet);
 
         if (Type != null) Back.Type = Type;

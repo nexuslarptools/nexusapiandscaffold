@@ -27,7 +27,7 @@ public class Item
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
         newiemSheet.Tags = new List<TagOut>();
-        newiemSheet.Isdoubleside = iSheet.Isdoubleside == null ? false : true;
+        newiemSheet.Isdoubleside = iSheet.Isdoubleside == null ? false : (bool)iSheet.Isdoubleside;
 
 
         var folderName = Path.Combine("images", "items", "UnApproved");
@@ -111,7 +111,7 @@ public class Item
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
-        newiemSheet.Isdoubleside = iSheet.Isdoubleside == null ? false : true;
+        newiemSheet.Isdoubleside = iSheet.Isdoubleside == null ? false : (bool)iSheet.Isdoubleside;
         newiemSheet.Tags = new List<TagOut>();
 
         var folderName = Path.Combine("images", "items", "Approved");
