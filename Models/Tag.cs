@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class Tag
+public class Tag
 {
     public Guid Guid { get; set; }
 
@@ -19,7 +19,8 @@ public partial class Tag
 
     public virtual User ApprovedbyUser { get; set; }
 
-    public virtual ICollection<CharacterSheetApprovedTag> CharacterSheetApprovedTags { get; } = new List<CharacterSheetApprovedTag>();
+    public virtual ICollection<CharacterSheetApprovedTag> CharacterSheetApprovedTags { get; } =
+        new List<CharacterSheetApprovedTag>();
 
     public virtual ICollection<CharacterSheetTag> CharacterSheetTags { get; } = new List<CharacterSheetTag>();
 
@@ -29,7 +30,8 @@ public partial class Tag
 
     public virtual ICollection<LarpplayerTagAllowed> LarpplayerTagAlloweds { get; } = new List<LarpplayerTagAllowed>();
 
-    public virtual ICollection<LarpplayerTagDisllowed> LarpplayerTagDislloweds { get; } = new List<LarpplayerTagDisllowed>();
+    public virtual ICollection<LarpplayerTagDisllowed> LarpplayerTagDislloweds { get; } =
+        new List<LarpplayerTagDisllowed>();
 
     public virtual ICollection<Larptag> Larptags { get; } = new List<Larptag>();
 

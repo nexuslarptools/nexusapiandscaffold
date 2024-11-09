@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class ItemType
+public class ItemType
 {
     public Guid Guid { get; set; }
 

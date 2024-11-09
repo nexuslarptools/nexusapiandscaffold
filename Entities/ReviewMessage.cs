@@ -1,86 +1,81 @@
-﻿using Microsoft.EntityFrameworkCore;
-using NEXUSDataLayerScaffold.Models;
-using System;
+﻿using System;
 using System.Linq;
+using NEXUSDataLayerScaffold.Models;
 
-namespace NEXUSDataLayerScaffold.Entities
+namespace NEXUSDataLayerScaffold.Entities;
+
+public class ReviewMessage
 {
-    public class ReviewMessage
+    public ReviewMessage()
     {
-        public int Id { get; set; }
-        public string Message { get; set; }
-        public DateTime Createdate { get; set; }
-        public Guid? CreatedbyuserGuid { get; set; }
-        public string createdby { get; set; }
-        public bool IsActive { get; set; }
+    }
 
-        public ReviewMessage() { }
-        public ReviewMessage(CharacterSheetReviewMessage reviewMessage, NexusLarpLocalContext _context) 
+    public ReviewMessage(CharacterSheetReviewMessage reviewMessage, NexusLarpLocalContext _context)
+    {
+        Id = reviewMessage.Id;
+        Message = reviewMessage.Message;
+        Createdate = reviewMessage.Createdate;
+        CreatedbyuserGuid = reviewMessage.CreatedbyuserGuid;
+        IsActive = (bool)reviewMessage.Isactive;
+
+        if (CreatedbyuserGuid != null)
         {
-            this.Id = reviewMessage.Id;
-            this.Message = reviewMessage.Message;
-            this.Createdate = reviewMessage.Createdate;
-            this.CreatedbyuserGuid = reviewMessage.CreatedbyuserGuid;
-            this.IsActive = (bool)reviewMessage.Isactive;
-
-            if (this.CreatedbyuserGuid != null)
-            {
-                var creUser = _context.Users.Where(u => u.Guid == this.CreatedbyuserGuid)
-                    .FirstOrDefault();
-                this.createdby = creUser.Preferredname;
-                if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
-                {
-                    this.createdby = creUser.Firstname;
-                }
-            }
+            var creUser = _context.Users.Where(u => u.Guid == CreatedbyuserGuid)
+                .FirstOrDefault();
+            createdby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty) createdby = creUser.Firstname;
         }
+    }
 
-        public ReviewMessage(ItemSheetReviewMessage reviewMessage, NexusLarpLocalContext _context)
+    public ReviewMessage(ItemSheetReviewMessage reviewMessage, NexusLarpLocalContext _context)
+    {
+        Id = reviewMessage.Id;
+        Message = reviewMessage.Message;
+        Createdate = reviewMessage.Createdate;
+        CreatedbyuserGuid = reviewMessage.CreatedbyuserGuid;
+        IsActive = (bool)reviewMessage.Isactive;
+
+        if (CreatedbyuserGuid != null)
         {
-            this.Id = reviewMessage.Id;
-            this.Message = reviewMessage.Message;
-            this.Createdate = reviewMessage.Createdate;
-            this.CreatedbyuserGuid = reviewMessage.CreatedbyuserGuid;
-            this.IsActive = (bool)reviewMessage.Isactive;
-
-            if (this.CreatedbyuserGuid != null)
-            {
-                var creUser = _context.Users.Where(u => u.Guid == this.CreatedbyuserGuid)
-                    .FirstOrDefault();
-                this.createdby = creUser.Preferredname;
-                if (creUser.Preferredname == null || creUser.Preferredname == string.Empty)
-                {
-                    this.createdby = creUser.Firstname;
-                }
-            }
+            var creUser = _context.Users.Where(u => u.Guid == CreatedbyuserGuid)
+                .FirstOrDefault();
+            createdby = creUser.Preferredname;
+            if (creUser.Preferredname == null || creUser.Preferredname == string.Empty) createdby = creUser.Firstname;
         }
+    }
 
-        public CharacterSheetReviewMessage ConvertToCharacterSheetMessage()
+    public int Id { get; set; }
+    public string Message { get; set; }
+    public DateTime Createdate { get; set; }
+    public Guid? CreatedbyuserGuid { get; set; }
+    public string createdby { get; set; }
+    public bool IsActive { get; set; }
+
+    public CharacterSheetReviewMessage ConvertToCharacterSheetMessage()
+    {
+        var Output = new CharacterSheetReviewMessage
         {
-            var Output = new CharacterSheetReviewMessage()
-            {
-                Id =this.Id,
-                Message = this.Message,
-                Createdate = this.Createdate,
-                CreatedbyuserGuid = this.CreatedbyuserGuid,
-                Isactive = this.IsActive,
-            };
+            Id = Id,
+            Message = Message,
+            Createdate = Createdate,
+            CreatedbyuserGuid = CreatedbyuserGuid,
+            Isactive = IsActive
+        };
 
-            return Output;
-        }
+        return Output;
+    }
 
-        public ItemSheetReviewMessage ConvertToItemSheetMessage()
+    public ItemSheetReviewMessage ConvertToItemSheetMessage()
+    {
+        var Output = new ItemSheetReviewMessage
         {
-            var Output = new ItemSheetReviewMessage()
-            {
-                Id = this.Id,
-                Message = this.Message,
-                Createdate = this.Createdate,
-                CreatedbyuserGuid = this.CreatedbyuserGuid,
-                Isactive = this.IsActive,
-            };
+            Id = Id,
+            Message = Message,
+            Createdate = Createdate,
+            CreatedbyuserGuid = CreatedbyuserGuid,
+            Isactive = IsActive
+        };
 
-            return Output;
-        }
+        return Output;
     }
 }

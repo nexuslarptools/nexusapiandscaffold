@@ -1,14 +1,16 @@
-﻿using System.Text.Json;
-using System;
+﻿using System;
+using System.Text.Json;
 
-namespace NEXUSDataLayerScaffold.Entities {
-    public class TagOutputContainer {
-        public TagOutputContainer(Guid guid, JsonElement tagsField) {
-            Guid = guid;
-            TagsField = tagsField;
-        }
+namespace NEXUSDataLayerScaffold.Entities;
 
-        public Guid Guid { get; set; }
-        public JsonElement TagsField { get; set; }
+public class TagOutputContainer
+{
+    public TagOutputContainer(Guid guid, JsonElement tagsField)
+    {
+        Guid = guid;
+        TagsField = tagsField;
     }
+
+    public Guid Guid { get; set; }
+    public JsonElement TagsField { get; set; }
 }

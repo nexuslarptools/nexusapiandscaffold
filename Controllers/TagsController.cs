@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
-using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
@@ -308,7 +305,6 @@ public class TagsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> RedoTags()
     {
-
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
@@ -318,33 +314,20 @@ public class TagsController : ControllerBase
 
             foreach (var item in itemSheets)
             {
-                TagsObject newTagsObject = new TagsObject();
+                var newTagsObject = new TagsObject();
                 if (item.Fields != null)
                 {
                     if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
-                    {
                         foreach (var tag in itemTags.EnumerateArray())
-                        {
                             newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
-                        }
-                    }
                     if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
-                    {
                         foreach (var skill in skills.EnumerateArray())
-                        {
                             if (skill.TryGetProperty("Tags", out var skilltags))
-                            {
                                 foreach (var skilltag in skilltags.EnumerateArray())
-                                {
                                     newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
-                                }
-                            }
-                        }
-                    }
 
-                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    var JSONTags = JsonConvert.SerializeObject(newTagsObject);
                     item.Taglists = JSONTags;
-
                 }
             }
 
@@ -353,33 +336,20 @@ public class TagsController : ControllerBase
 
             foreach (var item in itemSheetsA)
             {
-                TagsObject newTagsObject = new TagsObject();
+                var newTagsObject = new TagsObject();
                 if (item.Fields != null)
                 {
                     if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
-                    {
                         foreach (var tag in itemTags.EnumerateArray())
-                        {
                             newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
-                        }
-                    }
                     if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
-                    {
                         foreach (var skill in skills.EnumerateArray())
-                        {
                             if (skill.TryGetProperty("Tags", out var skilltags))
-                            {
                                 foreach (var skilltag in skilltags.EnumerateArray())
-                                {
                                     newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
-                                }
-                            }
-                        }
-                    }
 
-                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    var JSONTags = JsonConvert.SerializeObject(newTagsObject);
                     item.Taglists = JSONTags;
-
                 }
             }
 
@@ -387,33 +357,20 @@ public class TagsController : ControllerBase
 
             foreach (var item in charSheets)
             {
-                TagsObject newTagsObject = new TagsObject();
+                var newTagsObject = new TagsObject();
                 if (item.Fields != null)
                 {
                     if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
-                    {
                         foreach (var tag in itemTags.EnumerateArray())
-                        {
                             newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
-                        }
-                    }
                     if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
-                    {
                         foreach (var skill in skills.EnumerateArray())
-                        {
                             if (skill.TryGetProperty("Tags", out var skilltags))
-                            {
                                 foreach (var skilltag in skilltags.EnumerateArray())
-                                {
                                     newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
-                                }
-                            }
-                        }
-                    }
 
-                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    var JSONTags = JsonConvert.SerializeObject(newTagsObject);
                     item.Taglists = JSONTags;
-
                 }
             }
 
@@ -421,33 +378,20 @@ public class TagsController : ControllerBase
 
             foreach (var item in charSheetA)
             {
-                TagsObject newTagsObject = new TagsObject();
+                var newTagsObject = new TagsObject();
                 if (item.Fields != null)
                 {
                     if (item.Fields.RootElement.TryGetProperty("Tags", out var itemTags))
-                    {
                         foreach (var tag in itemTags.EnumerateArray())
-                        {
                             newTagsObject.MainTags.Add(Guid.Parse(tag.ToString()));
-                        }
-                    }
                     if (item.Fields.RootElement.TryGetProperty("Special_Skills", out var skills))
-                    {
                         foreach (var skill in skills.EnumerateArray())
-                        {
                             if (skill.TryGetProperty("Tags", out var skilltags))
-                            {
                                 foreach (var skilltag in skilltags.EnumerateArray())
-                                {
                                     newTagsObject.AbilityTags.Add(Guid.Parse(skilltag.ToString()));
-                                }
-                            }
-                        }
-                    }
 
-                    string JSONTags = JsonConvert.SerializeObject(newTagsObject);
+                    var JSONTags = JsonConvert.SerializeObject(newTagsObject);
                     item.Taglists = JSONTags;
-
                 }
             }
 
@@ -459,11 +403,11 @@ public class TagsController : ControllerBase
         return Unauthorized();
     }
 
-        /// <summary>
-        ///     Returns all Tag Types and Guids
-        /// </summary>
-        /// <returns></returns>
-        // GET: api/v1/Tags/
+    /// <summary>
+    ///     Returns all Tag Types and Guids
+    /// </summary>
+    /// <returns></returns>
+    // GET: api/v1/Tags/
     [HttpGet("AllTagsByTypeName/{TypeName}")]
     [Authorize]
     public async Task<ActionResult<TagsOutput>> GetTagTypesWithTags(string TypeName)
@@ -517,14 +461,11 @@ public class TagsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             try
             {
-                ListAllTagOptions output = new ListAllTagOptions();
+                var output = new ListAllTagOptions();
 
                 var tag = await _context.Tags.Where(s => s.Isactive == true && s.Guid == guid).FirstOrDefaultAsync();
 
-                if (tag == null)
-                {
-                    return BadRequest("Tag Not Found");
-                }
+                if (tag == null) return BadRequest("Tag Not Found");
 
                 var typeGu = await _context.TagTypes.Where(s => s.Guid == tag.Tagtypeguid).FirstOrDefaultAsync();
 
@@ -543,12 +484,8 @@ public class TagsController : ControllerBase
                             var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
 
                             foreach (var listtag in TestJsonFeilds)
-                            {
                                 if (listtag.ToString() == guid.ToString())
-                                {
                                     output.ItemLists.AddUnapproved(itemSheet);
-                                }
-                            }
                         }
                     }
 
@@ -564,12 +501,8 @@ public class TagsController : ControllerBase
                             var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
 
                             foreach (var listtag in TestJsonFeilds)
-                            {
                                 if (listtag.ToString() == guid.ToString())
-                                {
                                     output.ItemLists.AddApproved(itemSheet);
-                                }
-                            }
                         }
                     }
                 }
@@ -589,12 +522,8 @@ public class TagsController : ControllerBase
                             var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
 
                             foreach (var listtag in TestJsonFeilds)
-                            {
                                 if (listtag.ToString() == guid.ToString())
-                                {
                                     output.CharacterLists.AddUnapproved(characterSheet);
-                                }
-                            }
                         }
                     }
 
@@ -610,12 +539,8 @@ public class TagsController : ControllerBase
                             var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
 
                             foreach (var listtag in TestJsonFeilds)
-                            {
                                 if (listtag.ToString() == guid.ToString())
-                                {
                                     output.CharacterLists.AddApproved(characterSheet);
-                                }
-                            }
                         }
                     }
                 }
@@ -644,12 +569,9 @@ public class TagsController : ControllerBase
                                     var listSkillTags = skilltaglist.EnumerateArray();
 
                                     foreach (var skilltag in listSkillTags)
-                                    {
-                                        if (skilltag.ToString() == guid.ToString() && !output.CharacterLists.UnapprovedContainsGuid(guid))
-                                        {
+                                        if (skilltag.ToString() == guid.ToString() &&
+                                            !output.CharacterLists.UnapprovedContainsGuid(guid))
                                             output.CharacterLists.AddUnapproved(characterSheet);
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -664,11 +586,11 @@ public class TagsController : ControllerBase
 
                         if (startitemsList.ValueKind.ToString() != "Undefined")
                         {
-                            var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
+                            var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Special_Skills")
+                                .EnumerateArray();
 
                             foreach (var skill in TestJsonFeilds)
                             {
-
                                 var skilltaglist = new JsonElement();
                                 skill.TryGetProperty("Tags", out skilltaglist);
 
@@ -677,12 +599,9 @@ public class TagsController : ControllerBase
                                     var listSkillTags = skilltaglist.EnumerateArray();
 
                                     foreach (var skilltag in listSkillTags)
-                                    {
-                                        if (skilltag.ToString() == guid.ToString() && !output.CharacterLists.ApprovedContainsGuid(guid))
-                                        {
+                                        if (skilltag.ToString() == guid.ToString() &&
+                                            !output.CharacterLists.ApprovedContainsGuid(guid))
                                             output.CharacterLists.AddApproved(characterSheet);
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -697,11 +616,11 @@ public class TagsController : ControllerBase
 
                         if (startitemsList.ValueKind.ToString() != "Undefined")
                         {
-                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
+                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Special_Skills")
+                                .EnumerateArray();
 
                             foreach (var skill in TestJsonFeilds)
                             {
-
                                 var skilltaglist = new JsonElement();
                                 skill.TryGetProperty("Tags", out skilltaglist);
 
@@ -710,12 +629,9 @@ public class TagsController : ControllerBase
                                     var listSkillTags = skilltaglist.EnumerateArray();
 
                                     foreach (var skilltag in listSkillTags)
-                                    {
-                                        if (skilltag.ToString() == guid.ToString() && !output.ItemLists.UnapprovedContainsGuid(guid))
-                                        {
+                                        if (skilltag.ToString() == guid.ToString() &&
+                                            !output.ItemLists.UnapprovedContainsGuid(guid))
                                             output.ItemLists.AddUnapproved(itemSheet);
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -730,11 +646,11 @@ public class TagsController : ControllerBase
 
                         if (startitemsList.ValueKind.ToString() != "Undefined")
                         {
-                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Special_Skills").EnumerateArray();
+                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Special_Skills")
+                                .EnumerateArray();
 
                             foreach (var skill in TestJsonFeilds)
                             {
-
                                 var skilltaglist = new JsonElement();
                                 skill.TryGetProperty("Tags", out skilltaglist);
 
@@ -743,12 +659,9 @@ public class TagsController : ControllerBase
                                     var listSkillTags = skilltaglist.EnumerateArray();
 
                                     foreach (var skilltag in listSkillTags)
-                                    {
-                                        if (skilltag.ToString() == guid.ToString() && !output.ItemLists.ApprovedContainsGuid(guid))
-                                        {
+                                        if (skilltag.ToString() == guid.ToString() &&
+                                            !output.ItemLists.ApprovedContainsGuid(guid))
                                             output.ItemLists.AddApproved(itemSheet);
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -773,12 +686,8 @@ public class TagsController : ControllerBase
                                 var TestJsonFeilds = series.Tags.RootElement.GetProperty("SeriesTags").EnumerateArray();
 
                                 foreach (var listtag in TestJsonFeilds)
-                                {
                                     if (listtag.ToString() == guid.ToString())
-                                    {
                                         output.SeriesList.Add(series);
-                                    }
-                                }
                             }
                         }
                     }

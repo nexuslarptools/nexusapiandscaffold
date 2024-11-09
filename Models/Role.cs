@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class Role
+public class Role
 {
     public int Id { get; set; }
 

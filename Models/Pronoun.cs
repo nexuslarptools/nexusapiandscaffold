@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class Pronoun
+public class Pronoun
 {
     public Guid Guid { get; set; }
 

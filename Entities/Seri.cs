@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Entities;
 

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace NEXUSDataLayerScaffold.Models;
 
@@ -1028,8 +1026,10 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(2000)
                 .HasColumnName("charactersheet_customchoice3_series");
             entity.Property(e => e.CharactersheetRegistered).HasColumnName("charactersheet_registered");
-            entity.Property(e => e.CharactersheetRegisteredApprovedbyUser).HasColumnName("charactersheet_registered_approvedby_user");
-            entity.Property(e => e.CharactersheetRegisteredApprovedsheet).HasColumnName("charactersheet_registered_approvedsheet");
+            entity.Property(e => e.CharactersheetRegisteredApprovedbyUser)
+                .HasColumnName("charactersheet_registered_approvedby_user");
+            entity.Property(e => e.CharactersheetRegisteredApprovedsheet)
+                .HasColumnName("charactersheet_registered_approvedsheet");
             entity.Property(e => e.Createdate)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone")
@@ -1041,7 +1041,8 @@ public partial class NexusLarpLocalContext : DbContext
             entity.Property(e => e.LarprunGuid).HasColumnName("larprun_guid");
             entity.Property(e => e.UserGuid).HasColumnName("user_guid");
 
-            entity.HasOne(d => d.CharactersheetRegisteredApprovedbyUserNavigation).WithMany(p => p.LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations)
+            entity.HasOne(d => d.CharactersheetRegisteredApprovedbyUserNavigation)
+                .WithMany(p => p.LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations)
                 .HasForeignKey(d => d.CharactersheetRegisteredApprovedbyUser)
                 .HasConstraintName("LARPRunPreReg_charactersheet_registered_approvedby_user_fkey");
 

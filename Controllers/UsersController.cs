@@ -85,10 +85,8 @@ public class UsersController : ControllerBase
                     Pronounsguid = user.Pronounsguid
                 };
                 if (user.Pronounsguid != null)
-                {
                     newout.Pronouns = pronounsList.Where(pn => pn.Guid == user.Pronounsguid)
                         .FirstOrDefault().Pronouns;
-                }
                 foreach (var larprole in UsersRolesList)
                     if (larprole.Userguid == newout.Guid)
                     {
@@ -239,7 +237,7 @@ public class UsersController : ControllerBase
             UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context) ||
             currUseGuid == id)
         {
-            var user = _context.Users.Where(u => u.Guid == id).Include("Pronouns").FirstOrDefault();
+            var user = _context.Users.Where(u => u.Guid == id).FirstOrDefault();
             if (user == null) { return NoContent(); }
 
             var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
@@ -254,9 +252,13 @@ public class UsersController : ControllerBase
                 Preferredname = user.Preferredname,
                 Email = user.Email,
                 Pronounsguid = user.Pronounsguid,
-                Pronouns = user.Pronouns != null ? user.Pronouns.Pronouns :null,
+                Pronouns = user.Pronounsguid != null ?
+                   _context.Pronouns.Where(p => p.Guid == user.Pronounsguid).FirstOrDefault().Pronouns :
+                   null,
             };
+
             foreach (var larprole in UsersRolesList)
+            {
                 if (larprole.Userguid == newout.Guid)
                 {
                     if (!newout.LarpRoles.Any(lr => lr.LarpGuid == larprole.Larpguid))
@@ -279,8 +281,7 @@ public class UsersController : ControllerBase
 
                     currLARP.Roles.Add(newRoleOut);
                 }
-
-
+            }
             return Ok(newout);
         }
 
@@ -288,7 +289,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Gets a single user's information
+    ///     Gets a single user's information
     /// </summary>
     /// <returns></returns>
     // GET api/v1/Users/{id}
@@ -320,7 +321,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
-    /// Gets a single user's information
+    ///     Gets a single user's information
     /// </summary>
     /// <returns></returns>
     // GET api/v1/Users/{id}
@@ -331,7 +332,6 @@ public class UsersController : ControllerBase
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         return _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
-
     }
 
 
@@ -355,9 +355,7 @@ public class UsersController : ControllerBase
 
         var curUser = _context.Users.Where(u => u.Authid == authId).FirstOrDefault();
         if (user.Guid != user.Guid && !UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
-        {
             return Unauthorized();
-        }
 
         if (oldUserinfo == null) return NotFound();
 

@@ -1,10 +1,8 @@
-﻿using NEXUSDataLayerScaffold.Extensions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace NEXUSDataLayerScaffold.Entities
+namespace NEXUSDataLayerScaffold.Entities;
+
+public class SeriWithCharSheets : Seri
 {
-    public class SeriWithCharSheets : Seri
-    {
-        public List<CharSheetMini> CharSheets { get; set; }
-    }
+    public List<CharSheetMini> CharSheets { get; set; }
 }

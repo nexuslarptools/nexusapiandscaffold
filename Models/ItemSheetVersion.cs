@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class ItemSheetVersion
+public class ItemSheetVersion
 {
     public int Id { get; set; }
 

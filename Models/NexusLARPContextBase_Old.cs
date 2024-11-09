@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace NEXUSDataLayerScaffold.Models;
 
@@ -64,10 +62,6 @@ public partial class NexusLARPContextBase : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserLarprole> UserLarproles { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -852,8 +846,10 @@ public partial class NexusLARPContextBase : DbContext
                 .HasMaxLength(2000)
                 .HasColumnName("charactersheet_customchoice3_series");
             entity.Property(e => e.CharactersheetRegistered).HasColumnName("charactersheet_registered");
-            entity.Property(e => e.CharactersheetRegisteredApprovedbyUser).HasColumnName("charactersheet_registered_approvedby_user");
-            entity.Property(e => e.CharactersheetRegisteredApprovedsheet).HasColumnName("charactersheet_registered_approvedsheet");
+            entity.Property(e => e.CharactersheetRegisteredApprovedbyUser)
+                .HasColumnName("charactersheet_registered_approvedby_user");
+            entity.Property(e => e.CharactersheetRegisteredApprovedsheet)
+                .HasColumnName("charactersheet_registered_approvedsheet");
             entity.Property(e => e.Createdate)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone")
@@ -865,7 +861,8 @@ public partial class NexusLARPContextBase : DbContext
             entity.Property(e => e.LarprunGuid).HasColumnName("larprun_guid");
             entity.Property(e => e.UserGuid).HasColumnName("user_guid");
 
-            entity.HasOne(d => d.CharactersheetRegisteredApprovedbyUserNavigation).WithMany(p => p.LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations)
+            entity.HasOne(d => d.CharactersheetRegisteredApprovedbyUserNavigation)
+                .WithMany(p => p.LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations)
                 .HasForeignKey(d => d.CharactersheetRegisteredApprovedbyUser)
                 .HasConstraintName("LARPRunPreReg_charactersheet_registered_approvedby_user_fkey");
 

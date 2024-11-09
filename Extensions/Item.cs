@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Logic;
@@ -32,14 +31,11 @@ public class Item
         var folderName = Path.Combine("images", "items", "UnApproved");
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-            
 
-        if (iSheet.Img1 != null) {
-            if (System.IO.File.Exists(pathToSave + iSheet.Img1)) {
+        if (iSheet.Img1 != null)
+            if (File.Exists(pathToSave + iSheet.Img1))
                 newiemSheet.imagedata =
-                    System.IO.File.ReadAllBytes(pathToSave + iSheet.Img1);
-            }
-        }
+                    File.ReadAllBytes(pathToSave + iSheet.Img1);
 
         if (iSheet.CreatedbyuserGuid != null)
         {
@@ -48,14 +44,10 @@ public class Item
 
             newiemSheet.createdby = lookupuser.Preferredname;
             if (lookupuser.Lastname != null && lookupuser.Lastname.Length > 0)
-            {
                 newiemSheet.createdby += " " + lookupuser.Lastname[0];
-            }
 
-            if ((lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty) && lookupuser.Firstname != null)
-            {
-                newiemSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
+            if ((lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty) &&
+                lookupuser.Firstname != null) newiemSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
         }
 
         if (newiemSheet.FirstapprovalbyuserGuid != null)
@@ -63,14 +55,9 @@ public class Item
             var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.FirstapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Firstapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newiemSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newiemSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newiemSheet.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newiemSheet.SecondapprovalbyuserGuid != null)
@@ -78,14 +65,9 @@ public class Item
             var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.SecondapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Secondapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newiemSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newiemSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newiemSheet.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newiemSheet.EditbyUserGuid != null)
@@ -93,21 +75,16 @@ public class Item
             var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newiemSheet.EditbyUser = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newiemSheet.EditbyUser += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newiemSheet.EditbyUser += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newiemSheet.EditbyUser = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         return newiemSheet;
     }
 
-    public static IteSheet CreateItem(ItemSheetApproved iSheet, NexusLarpLocalContext _context) {
-
+    public static IteSheet CreateItem(ItemSheetApproved iSheet, NexusLarpLocalContext _context)
+    {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(iSheet.Fields.RootElement.ToString()));
 
         var newiemSheet = new IteSheet();
@@ -128,12 +105,10 @@ public class Item
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
 
-        if (iSheet.Img1 != null) {
-            if (System.IO.File.Exists(pathToSave + "\\" + iSheet.Img1)) {
+        if (iSheet.Img1 != null)
+            if (File.Exists(pathToSave + "\\" + iSheet.Img1))
                 newiemSheet.imagedata =
-                    System.IO.File.ReadAllBytes(pathToSave + "\\" + iSheet.Img1);
-            }
-        }
+                    File.ReadAllBytes(pathToSave + "\\" + iSheet.Img1);
 
 
         if (iSheet.CreatedbyuserGuid != null)
@@ -142,15 +117,10 @@ public class Item
                 .FirstOrDefault();
 
             newiemSheet.createdby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newiemSheet.createdby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newiemSheet.createdby += " " + lookupuser.Lastname[0];
 
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newiemSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newiemSheet.FirstapprovalbyuserGuid != null)
@@ -158,14 +128,9 @@ public class Item
             var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.FirstapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Firstapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newiemSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newiemSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newiemSheet.Firstapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newiemSheet.SecondapprovalbyuserGuid != null)
@@ -173,14 +138,9 @@ public class Item
             var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.SecondapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Secondapprovalby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newiemSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newiemSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newiemSheet.Secondapprovalby = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         if (newiemSheet.EditbyUserGuid != null)
@@ -188,14 +148,9 @@ public class Item
             var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newiemSheet.EditbyUser = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0)
-            {
-                newiemSheet.EditbyUser += " " + lookupuser.Lastname[0];
-            }
+            if (lookupuser.Lastname.Length > 0) newiemSheet.EditbyUser += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
-            {
                 newiemSheet.EditbyUser = lookupuser.Firstname + " " + lookupuser.Lastname;
-            }
         }
 
         return newiemSheet;

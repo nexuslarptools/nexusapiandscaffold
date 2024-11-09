@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public partial class SheetUsersContact
+public class SheetUsersContact
 {
     public Guid Guid { get; set; }
 

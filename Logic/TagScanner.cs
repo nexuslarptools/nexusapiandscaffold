@@ -19,10 +19,12 @@ public class TagScanner
             var okay = true;
             var tagslist = new JsonElement();
 
-            if (sheet.TagsField != null) {
+            if (sheet.TagsField != null)
+            {
                 sheet.TagsField.RootElement.TryGetProperty("Tags", out tagslist);
 
-                if (tagslist.ValueKind.ToString() != "Undefined") {
+                if (tagslist.ValueKind.ToString() != "Undefined")
+                {
                     var TestJsonFeilds = sheet.TagsField.RootElement.GetProperty("Tags").EnumerateArray();
 
                     foreach (var tag in TestJsonFeilds)
@@ -30,8 +32,10 @@ public class TagScanner
                             okay = false;
                 }
             }
+
             if (okay) outputter.Add(sheet.Guid);
         }
+
         return outputter;
     }
 
@@ -64,37 +68,36 @@ public class TagScanner
         return outputter;
     }
 
-    public static Dictionary<Guid, JsonElement> getAllTagsLists(List<TagScanContainer> allSheets) 
+    public static Dictionary<Guid, JsonElement> getAllTagsLists(List<TagScanContainer> allSheets)
     {
-        Dictionary<Guid, JsonElement> output = new Dictionary<Guid, JsonElement>();
+        var output = new Dictionary<Guid, JsonElement>();
 
-        foreach (var sheet in allSheets) {
+        foreach (var sheet in allSheets)
+        {
             var tagslist = new JsonElement();
 
-            if (sheet.TagsField != null) {
+            if (sheet.TagsField != null)
+            {
                 sheet.TagsField.RootElement.TryGetProperty("Tags", out tagslist);
 
-                if (tagslist.ValueKind.ToString() != "Undefined") {
-
-                    output.Add(sheet.Guid, tagslist);
-
-                }
+                if (tagslist.ValueKind.ToString() != "Undefined") output.Add(sheet.Guid, tagslist);
             }
         }
-        return output;
 
+        return output;
     }
 
-    public static List<Tag> ReturnDictElementOrNull(Guid value, Dictionary<Guid, JsonElement> tagDictionary, List<Tag> fulltaglist) {
-
-        if (tagDictionary.TryGetValue(value, out JsonElement tagList)) {
-
+    public static List<Tag> ReturnDictElementOrNull(Guid value, Dictionary<Guid, JsonElement> tagDictionary,
+        List<Tag> fulltaglist)
+    {
+        if (tagDictionary.TryGetValue(value, out var tagList))
+        {
             var jsontags = JArray.Parse(tagList.ToString());
-            List<Tag> tagsout = new List<Tag>();
-            foreach (var tag in jsontags) {
+            var tagsout = new List<Tag>();
+            foreach (var tag in jsontags)
+            {
                 var tagVal = fulltaglist.Where(t => t.Guid == (Guid)tag).FirstOrDefault();
                 tagsout.Add(tagVal);
-
             }
 
             return tagsout;

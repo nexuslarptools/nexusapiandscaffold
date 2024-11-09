@@ -21,12 +21,16 @@ ARG TARGETARCH
 RUN dotnet publish "NEXUSDataLayerScaffold.csproj" -c Release -a $TARGETARCH -o /app/publish
 
 FROM base AS final
-ARG OTEL_VERSION=1.4.0
+ARG OTEL_VERSION=1.8.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v${OTEL_VERSION}/otel-dotnet-auto-install.sh otel-dotnet-auto-install.sh
 RUN apt-get update && apt-get install -y curl unzip &&     OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto" sh otel-dotnet-auto-install.sh &&     chmod +x /otel-dotnet-auto/instrument.sh
 
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED="true"
+ENV OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED="true"
+ENV OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED="true"
+ENV OTEL_SERVICE_NAME="nexusapi"
 ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
 ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll"]
 #ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
