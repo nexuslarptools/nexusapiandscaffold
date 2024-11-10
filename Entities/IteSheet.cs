@@ -78,6 +78,7 @@ public class IteSheet
         Gmnotes = sheet.Gmnotes;
         Isdoubleside = sheet.Isdoubleside == null ? false: (bool)sheet.Isdoubleside;
         Back = new Backside(sheet);
+        Issheetitem = false;
 
         if (Type != null) Back.Type = Type;
 
@@ -216,6 +217,7 @@ public class IteSheet
         Gmnotes = sheet.Gmnotes;
         Isdoubleside = sheet.Isdoubleside == null ? false : (bool)sheet.Isdoubleside;
         Back = new Backside(sheet);
+        Issheetitem = false;
 
         if (Type != null) Back.Type = Type;
 
@@ -316,6 +318,7 @@ public class IteSheet
         EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
         Version = sheet.Sheet.Version;
         Back = new Backside(sheet.Sheet);
+        Issheetitem = false;
 
         if (Type != null) Back.Type = Type;
 
@@ -397,6 +400,7 @@ public class IteSheet
         SecondapprovalbyuserGuid = sheet.Sheet.SecondapprovalbyuserGuid;
         EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
         Version = sheet.Sheet.Version;
+        Issheetitem = false;
 
         Gmnotes = sheet.Sheet.Gmnotes;
         Back = new Backside(sheet.Sheet);
@@ -478,6 +482,7 @@ public class IteSheet
     public bool readyforapproval { get; set; }
     public bool hasreview { get; set; }
     public bool Islarge { get; set; }
+    public bool Issheetitem { get; set; }
     public bool Isdoubleside { get; set; }
     public bool Isfrontonly { get; set; }
     public bool Isbackonly { get; set; }
