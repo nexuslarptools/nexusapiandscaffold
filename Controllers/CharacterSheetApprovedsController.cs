@@ -252,6 +252,12 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             var Start_Items = new List<IteSheet>();
 
+            if (outputSheet.Sheet_Item != null && outputSheet.Sheet_Item.Islarge)
+            {
+                outputSheet.Sheet_Item.Issheetitem = true;
+                Start_Items.Add(outputSheet.Sheet_Item);
+            }
+
             var StartIguids = outputSheet.Fields["Starting_Items"].ToList();
 
             foreach (var iGuid in StartIguids)
@@ -806,6 +812,12 @@ public class CharacterSheetApprovedsController : ControllerBase
             }
 
             var Start_Items = new List<IteSheet>();
+
+            if (outputSheet.Sheet_Item != null && outputSheet.Sheet_Item.Islarge)
+            {
+                outputSheet.Sheet_Item.Issheetitem = true;
+                Start_Items.Add(outputSheet.Sheet_Item);
+            }
 
             var StartIguids = outputSheet.Fields["Starting_Items"].ToList();
 

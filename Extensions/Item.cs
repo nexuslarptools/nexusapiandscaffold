@@ -27,6 +27,8 @@ public class Item
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
         newiemSheet.Tags = new List<TagOut>();
+        newiemSheet.Isdoubleside = iSheet.Isdoubleside == null ? false : (bool)iSheet.Isdoubleside;
+
 
         var folderName = Path.Combine("images", "items", "UnApproved");
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
@@ -80,6 +82,16 @@ public class Item
                 newiemSheet.EditbyUser = lookupuser.Firstname + " " + lookupuser.Lastname;
         }
 
+        var thisType = _context.ItemTypes.Where(i => i.Guid == iSheet.ItemtypeGuid).FirstOrDefault();
+        
+        if(thisType != null)
+        {
+            newiemSheet.Type = thisType.Type;
+        }
+
+        newiemSheet.SetIsLarge();
+        newiemSheet.Back = new IteSheet.Backside(iSheet);
+
         return newiemSheet;
     }
 
@@ -99,6 +111,7 @@ public class Item
         newiemSheet.CreatedbyuserGuid = iSheet.CreatedbyuserGuid;
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
+        newiemSheet.Isdoubleside = iSheet.Isdoubleside == null ? false : (bool)iSheet.Isdoubleside;
         newiemSheet.Tags = new List<TagOut>();
 
         var folderName = Path.Combine("images", "items", "Approved");
@@ -153,6 +166,16 @@ public class Item
                 newiemSheet.EditbyUser = lookupuser.Firstname + " " + lookupuser.Lastname;
         }
 
+        var thisType = _context.ItemTypes.Where(i => i.Guid == iSheet.ItemtypeGuid).FirstOrDefault();
+
+        if (thisType != null)
+        {
+            newiemSheet.Type = thisType.Type;
+        }
+
+        newiemSheet.SetIsLarge();
+        newiemSheet.Back = new IteSheet.Backside(iSheet);
+
         return newiemSheet;
     }
 
@@ -173,6 +196,7 @@ public class Item
         newiemSheet.FirstapprovalbyuserGuid = iSheet.FirstapprovalbyuserGuid;
         newiemSheet.SecondapprovalbyuserGuid = iSheet.SecondapprovalbyuserGuid;
         newiemSheet.Tags = new List<TagOut>();
+        newiemSheet.SetIsLarge();
 
         return newiemSheet;
     }

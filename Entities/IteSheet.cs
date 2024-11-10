@@ -15,6 +15,12 @@ public class IteSheet
 {
     private NexusLarpLocalContext context;
     private object sheet;
+    private List<string> _largeItems = new List<string>(new string[] {
+         "mecha",
+        "companion",
+        "pokemon",
+        "vehicle" 
+    });
 
 
     public IteSheet()
@@ -70,8 +76,9 @@ public class IteSheet
         Version = sheet.Version;
         readyforapproval = sheet.Readyforapproval;
         Gmnotes = sheet.Gmnotes;
-        Isdoubleside = (bool)sheet.Isdoubleside;
+        Isdoubleside = sheet.Isdoubleside == null ? false: (bool)sheet.Isdoubleside;
         Back = new Backside(sheet);
+        Issheetitem = false;
 
         if (Type != null) Back.Type = Type;
 
@@ -137,6 +144,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public IteSheet(ItemSheetApproved sheet, NexusLarpLocalContext _context)
@@ -206,8 +215,9 @@ public class IteSheet
         Version = sheet.Version;
         readyforapproval = false;
         Gmnotes = sheet.Gmnotes;
-        Isdoubleside = (bool)sheet.Isdoubleside;
+        Isdoubleside = sheet.Isdoubleside == null ? false : (bool)sheet.Isdoubleside;
         Back = new Backside(sheet);
+        Issheetitem = false;
 
         if (Type != null) Back.Type = Type;
 
@@ -272,6 +282,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public IteSheet(ItemSheetDO sheet, NexusLarpLocalContext _context)
@@ -306,6 +318,7 @@ public class IteSheet
         EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
         Version = sheet.Sheet.Version;
         Back = new Backside(sheet.Sheet);
+        Issheetitem = false;
 
         if (Type != null) Back.Type = Type;
 
@@ -352,6 +365,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public IteSheet(ItemSheetApprovedDO sheet, NexusLarpLocalContext _context)
@@ -385,6 +400,7 @@ public class IteSheet
         SecondapprovalbyuserGuid = sheet.Sheet.SecondapprovalbyuserGuid;
         EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
         Version = sheet.Sheet.Version;
+        Issheetitem = false;
 
         Gmnotes = sheet.Sheet.Gmnotes;
         Back = new Backside(sheet.Sheet);
@@ -433,6 +449,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.SetIsLarge();
     }
 
     public int Id { get; set; }
@@ -463,6 +481,8 @@ public class IteSheet
     public string EditbyUser { get; set; }
     public bool readyforapproval { get; set; }
     public bool hasreview { get; set; }
+    public bool Islarge { get; set; }
+    public bool Issheetitem { get; set; }
     public bool Isdoubleside { get; set; }
     public bool Isfrontonly { get; set; }
     public bool Isbackonly { get; set; }
@@ -521,5 +541,14 @@ public class IteSheet
         public string Name { get; set; }
         public string Type { get; set; }
         public JObject Fields { get; set; }
+    }
+
+    public void SetIsLarge()
+    {
+        this.Islarge = false;
+        if (_largeItems.Contains(this.Type.ToLower()))
+        {
+            this.Islarge = true;
+        }
     }
 }

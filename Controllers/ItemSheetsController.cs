@@ -472,6 +472,8 @@ public class ItemSheetsController : ControllerBase
                     !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+
                 var allSheets = await _context.ItemSheets.Where(c => c.Isactive == true)
                     .Select(x => new ItemSheetDO
                     {
@@ -489,7 +491,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Readyforapproval = x.Readyforapproval
                         },
-                        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -552,6 +554,8 @@ public class ItemSheetsController : ControllerBase
                 var allApprovedGuids = _context.ItemSheetApproveds.Where(ia => ia.Isactive == true)
                     .Select(ia => ia.Guid).ToList();
 
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+
                 var allSheets = await _context.ItemSheets.Where(i => allSheetIDs.Contains(i.Id)
                                                                      && !allApprovedGuids.Contains(i.Guid))
                     .Select(x => new ItemSheetDO
@@ -571,7 +575,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Readyforapproval = x.Readyforapproval
                         },
-                        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -613,6 +617,8 @@ public class ItemSheetsController : ControllerBase
             {
                 var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+
 
                 var allSheets = await _context.ItemSheets
                     .Where(i => i.Guid == guid)
@@ -633,7 +639,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Isactive = x.Isactive
                         },
-                        TagList = x.ItemSheetTags.Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
