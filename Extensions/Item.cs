@@ -130,7 +130,7 @@ public class Item
                 .FirstOrDefault();
 
             newiemSheet.createdby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0) newiemSheet.createdby += " " + lookupuser.Lastname[0];
+            if (lookupuser.Lastname != null && lookupuser.Lastname.Length > 0) newiemSheet.createdby += " " + lookupuser.Lastname[0];
 
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
                 newiemSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;

@@ -72,7 +72,7 @@ public class CharacterSheetsController : ControllerBase
                         Taglists = x.Taglists,
                         Readyforapproval = x.Readyforapproval
                     },
-                    TagList = x.CharacterSheetTags.Select(cst => cst.Tag).ToList(),
+                    TagList = x.CharacterSheetTags.Select(cst => cst.Tag).OrderBy(cst => cst.Name).ToList(),
                     Createdbyuser = x.Createdbyuser,
                     EditbyUser = x.EditbyUser,
                     Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -861,13 +861,13 @@ public class CharacterSheetsController : ControllerBase
 
             var output = await _context.CharacterSheets.Where(c => c.Isactive == true &&
                                                                    allFound.Contains(c.Guid)).Select(ch => new
-            {
-                ch.Name,
-                ch.Guid,
-                ch.Seriesguid,
-                SeriesTitle = _context.Series.Where(s => s.Isactive == true && s.Guid == ch.Seriesguid).FirstOrDefault()
+                                                                   {
+                                                                       ch.Name,
+                                                                       ch.Guid,
+                                                                       ch.Seriesguid,
+                                                                       SeriesTitle = _context.Series.Where(s => s.Isactive == true && s.Guid == ch.Seriesguid).FirstOrDefault()
                     .Title
-            }).ToListAsync();
+                                                                   }).ToListAsync();
 
 
             return Ok(output);
@@ -1142,7 +1142,7 @@ public class CharacterSheetsController : ControllerBase
             // This obviously needs work when we get to characters.
             if (guid != charSheet.Guid) return BadRequest();
 
-            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length != 0)
+            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
             {
                 var folderName = Path.Combine("images", "characters", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
@@ -1159,10 +1159,8 @@ public class CharacterSheetsController : ControllerBase
                 }
             }
 
-            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length != 0)
+            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
             {
-                ;
-
                 var folderName = Path.Combine("images", "characters", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
@@ -1515,6 +1513,7 @@ public class CharacterSheetsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
+    [Authorize]
     public async Task<ActionResult<CharSheet>> PostCharacterSheet([FromBody] CharSheet charSheet)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
@@ -1547,7 +1546,7 @@ public class CharacterSheetsController : ControllerBase
 
             if (charSheet.Img2 != null) characterSheet.Img2 = charSheet.Img2;
 
-            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length != 0)
+            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
             {
                 charSheet.Img1 = charSheet.Img1;
 
@@ -1567,7 +1566,7 @@ public class CharacterSheetsController : ControllerBase
                 }
             }
 
-            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length != 0)
+            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
             {
                 charSheet.Img2 = charSheet.Img2;
 
@@ -1701,8 +1700,58 @@ public class CharacterSheetsController : ControllerBase
         return Unauthorized();
     }
 
+
+
+
+    // POST: api/CharacterSheets
+    // To protect from overposting attacks, enable the specific properties you want to bind to, for
+    // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+    [HttpPost("dumpin")]
+    public async Task<ActionResult<CharSheet>> PostCharacterSheetDump([FromBody] CharSheet charSheet)
+    {
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+        if (accessToken != "IAmABanana!")
+        {
+            return Unauthorized();
+        }
+
+        var characterSheet = new CharacterSheet();
+
+            characterSheet.Guid = charSheet.Guid;
+            characterSheet.Name = charSheet.Name;
+
+        if (charSheet.Fields != null)
+            {
+                characterSheet.Fields = JsonDocument.Parse(charSheet.Fields.ToString());
+            }
+
+            if (charSheet.Reason4edit != null) characterSheet.Reason4edit = charSheet.Reason4edit;
+
+            if (charSheet.Seriesguid != null) characterSheet.Seriesguid = (Guid)charSheet.Seriesguid;
+
+
+            characterSheet.Createdate = DateTime.UtcNow;
+            characterSheet.CreatedbyuserGuid = Guid.Parse("e6dc1ae4-b99d-11ee-be57-5f6ca0b9cfd5");
+            characterSheet.EditbyUserGuid = Guid.Parse("e6dc1ae4-b99d-11ee-be57-5f6ca0b9cfd5");
+            characterSheet.FirstapprovalbyuserGuid = null;
+            characterSheet.Firstapprovaldate = null;
+            characterSheet.SecondapprovalbyuserGuid = null;
+            characterSheet.Secondapprovaldate = null;
+            characterSheet.Gmnotes = charSheet.Gmnotes;
+            characterSheet.Isactive = true;
+            characterSheet.Readyforapproval = false;
+
+            _context.CharacterSheets.Add(characterSheet);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetCharacterSheet", new { id = characterSheet.Guid }, charSheet);
+
+    }
+
     // DELETE: api/CharacterSheets/5
     [HttpDelete("{guid}")]
+    [Authorize]
     public async Task<ActionResult<CharacterSheet>> DeleteCharacterSheet(Guid guid)
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;

@@ -538,7 +538,7 @@ public class ItemSheetApprovedsController : ControllerBase
                             Secondapprovaldate = x.Secondapprovaldate,
                             EditbyUserGuid = x.EditbyUserGuid
                         },
-                        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -629,7 +629,7 @@ public class ItemSheetApprovedsController : ControllerBase
                             Secondapprovaldate = x.Secondapprovaldate,
                             EditbyUserGuid = x.EditbyUserGuid
                         },
-                        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -691,7 +691,7 @@ public class ItemSheetApprovedsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Isactive = x.Isactive
                         },
-                        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,

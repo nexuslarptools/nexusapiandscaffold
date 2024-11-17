@@ -491,7 +491,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Readyforapproval = x.Readyforapproval
                         },
-                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -575,7 +575,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Readyforapproval = x.Readyforapproval
                         },
-                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -639,7 +639,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Isactive = x.Isactive
                         },
-                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -1335,15 +1335,19 @@ public class ItemSheetsController : ControllerBase
 
                             foreach (var tagValues in TestJsonFeilds)
                             {
-                                var fields = tagValues["Tags"];
-
-                                foreach (Guid tagValue in fields)
+                                if (tagValues.HasValues)
                                 {
-                                    if (!allowedTags.Contains(tagValue)) return Unauthorized();
-                                    if (!listTags.AbilityTags.Contains(tagValue))
-                                        listTags.AbilityTags.Add(tagValue);
+                                    var fields = tagValues["Tags"];
+
+                                    foreach (Guid tagValue in fields)
+                                    {
+                                        if (!allowedTags.Contains(tagValue)) return Unauthorized();
+                                        if (!listTags.AbilityTags.Contains(tagValue))
+                                            listTags.AbilityTags.Add(tagValue);
+                                    }
                                 }
                             }
+
                         }
                     }
 
@@ -1640,6 +1644,42 @@ public class ItemSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
             var itemSheets = await _context.ItemSheets.Where(i => i.Guid == id).ToListAsync();
+            if (itemSheets == null) return NotFound();
+
+            try
+            {
+                foreach (var item in itemSheets)
+                {
+                    item.Isactive = false;
+                    _context.ItemSheets.Update(item);
+                    _context.SaveChanges();
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+            return itemSheets.FirstOrDefault();
+        }
+
+        return Unauthorized();
+    }
+
+    // DELETE: api/ItemSheets/5
+    [HttpPut("Deactivate/{id}")]
+    [Authorize]
+    public async Task<ActionResult<ItemSheet>> DeacrtivateItemSheet(int id)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var itemSheets = await _context.ItemSheets.Where(i => i.Id == id).ToListAsync();
             if (itemSheets == null) return NotFound();
 
             try

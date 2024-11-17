@@ -546,7 +546,8 @@ public class IteSheet
     public void SetIsLarge()
     {
         this.Islarge = false;
-        if (_largeItems.Contains(this.Type.ToLower()))
+
+        if (this.Type != null && _largeItems.Contains(this.Type.ToLower()))
         {
             this.Islarge = true;
         }

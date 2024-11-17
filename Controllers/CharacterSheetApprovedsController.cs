@@ -70,7 +70,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         EditbyUserGuid = x.EditbyUserGuid,
         Taglists = x.Taglists
     },
-    TagList = x.CharacterSheetApprovedTags.Select(cst => cst.Tag).ToList(),
+    TagList = x.CharacterSheetApprovedTags.Select(cst => cst.Tag).OrderBy(cst => cst.Name).ToList(),
     Createdbyuser = x.Createdbyuser,
     EditbyUser = x.EditbyUser,
     Firstapprovalbyuser = x.Firstapprovalbyuser,
