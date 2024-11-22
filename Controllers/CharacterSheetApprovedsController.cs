@@ -299,6 +299,48 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             if (Start_Items != null) outputSheet.Starting_Items = Start_Items;
 
+            var Upgrade_Items = new List<IteSheet>();
+            if (outputSheet.Fields["Upgrade_Items"] != null)
+            {
+                var UpgradeIguids = outputSheet.Fields["Upgrade_Items"].ToList();
+
+                foreach (var iGuid in UpgradeIguids)
+                    if (_context.ItemSheetApproveds
+                            .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                            .FirstOrDefault() != null)
+                    {
+                        var I = Item.CreateItem(await _context.ItemSheetApproveds.Where(issh =>
+                            issh.Isactive == true &&
+                            issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), _context);
+
+                        // if (starting_I.Img1 != null)
+                        //    if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
+                        //        starting_I.imagedata =
+                        //            System.IO.File.ReadAllBytes(@"./images/items/Approved/" + starting_I.Img1);
+
+
+                        Upgrade_Items.Add(I);
+                    }
+                    else if (_context.ItemSheets
+                                 .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
+                                 .FirstOrDefault() != null)
+                    {
+                        //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
+                        //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
+                        var I = Item.CreateItem(await _context.ItemSheets.Where(issh => issh.Isactive == true &&
+                                issh.Guid.ToString() == iGuid.ToString())
+                            .FirstOrDefaultAsync(), _context);
+
+                        //  if (starting_I.Img1 != null)
+                        //     if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
+                        //         starting_I.imagedata =
+                        //            System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + starting_I.Img1);
+
+                        Upgrade_Items.Add(I);
+                    }
+
+                if (Upgrade_Items != null) outputSheet.Upgrade_Items = Upgrade_Items;
+            }
 
             return Ok(outputSheet);
         }
