@@ -410,7 +410,7 @@ public class SeriesController : ControllerBase
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var foundTag = await _context.Tags
-                .Where(t => t.Isactive == true && t.Tagtype.Name == "Series" && t.Guid == pagingParameterModel.guid)
+                .Where(t => t.Isactive == true && (t.Tagtype.Name == "Series") && t.Guid == pagingParameterModel.guid)
                 .FirstOrDefaultAsync();
 
             if (foundTag == null) return NotFound();

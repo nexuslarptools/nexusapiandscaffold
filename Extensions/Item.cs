@@ -34,11 +34,11 @@ public class Item
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
 
-        if (iSheet.Img1 != null)
+/*        if (iSheet.Img1 != null)
             if (File.Exists(pathToSave + iSheet.Img1))
                 newiemSheet.imagedata =
                     File.ReadAllBytes(pathToSave + iSheet.Img1);
-
+*/
         if (iSheet.CreatedbyuserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == iSheet.CreatedbyuserGuid)
@@ -118,12 +118,12 @@ public class Item
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
 
-        if (iSheet.Img1 != null)
+/*        if (iSheet.Img1 != null)
             if (File.Exists(pathToSave + "\\" + iSheet.Img1))
                 newiemSheet.imagedata =
                     File.ReadAllBytes(pathToSave + "\\" + iSheet.Img1);
 
-
+*/
         if (iSheet.CreatedbyuserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == iSheet.CreatedbyuserGuid)

@@ -111,9 +111,9 @@ public class ItemSheetApprovedsController : ControllerBase
                             }
                         }*/
 
-            if (outputItem.Img1 != null)
-                if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
-                    outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
+           // if (outputItem.Img1 != null)
+           //     if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
+            //        outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
 
             if (outputItem.Seriesguid != null)
             {
@@ -186,12 +186,12 @@ public class ItemSheetApprovedsController : ControllerBase
                                         outputItem.Tags.Add(new TagOut(fullTag));
                                     }
                                 }*/
-
+/*
                     if (outputunappItem.Img1 != null)
                         if (System.IO.File.Exists(@"./images/items/Approved/" + outputunappItem.Img1))
                             outputunappItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/"
                                 + outputunappItem.Img1);
-
+*/
                     if (outputunappItem.Seriesguid != null)
                     {
                         var connectedSeries =
@@ -240,10 +240,10 @@ public class ItemSheetApprovedsController : ControllerBase
                             }
                         }*/
 
-            if (outputItem.Img1 != null)
+/*            if (outputItem.Img1 != null)
                 if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
                     outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
-
+*/
             if (outputItem.Seriesguid != null)
             {
                 var connectedSeries =
@@ -433,10 +433,10 @@ public class ItemSheetApprovedsController : ControllerBase
                         Version = sheet.Version,
                         Tags = new List<TagOut>()
                     };
-                    if (newOutputSheet.Img1 != null)
-                        if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
-                            newOutputSheet.imagedata =
-                                System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
+                  //  if (newOutputSheet.Img1 != null)
+                  //      if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
+                  //         newOutputSheet.imagedata =
+                  //              System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
                     {
@@ -905,10 +905,10 @@ public class ItemSheetApprovedsController : ControllerBase
                     Tags = new List<TagOut>()
                 };
 
-                if (newOutputSheet.Img1 != null)
-                    if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
-                        newOutputSheet.imagedata =
-                            System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
+             //   if (newOutputSheet.Img1 != null)
+             //       if (System.IO.File.Exists(@"./images/items/Approved/" + newOutputSheet.Img1))
+             //           newOutputSheet.imagedata =
+             //               System.IO.File.ReadAllBytes(@"./images/items/Approved/" + sheet.Img1);
 
                 if (newOutputSheet.CreatedbyuserGuid != null)
                 {

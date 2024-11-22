@@ -83,10 +83,10 @@ public class IteSheet
         if (Type != null) Back.Type = Type;
 
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+        //if (Img1 != null)
+         //   if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+          //      imagedata =
+          //          File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
         if (CreatedbyuserGuid != null)
         {
@@ -221,10 +221,10 @@ public class IteSheet
 
         if (Type != null) Back.Type = Type;
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+        //if (Img1 != null)
+          //  if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+          //      imagedata =
+           //         File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
         if (CreatedbyuserGuid != null)
         {
@@ -326,10 +326,10 @@ public class IteSheet
 
         Gmnotes = sheet.Sheet.Gmnotes;
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
+        //if (Img1 != null)
+          //  if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
+           //     imagedata =
+           //         File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
 
         createdby = sheet.Createdbyuser?.Preferredname;
         if (sheet.Createdbyuser == null || sheet.Createdbyuser.Preferredname == null ||
@@ -407,10 +407,10 @@ public class IteSheet
 
         if (Type != null) Back.Type = Type;
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
+        //if (Img1 != null)
+          //  if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
+            //    imagedata =
+               //     File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
 
         createdby = sheet.Createdbyuser.Preferredname;
         if (sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
@@ -476,7 +476,7 @@ public class IteSheet
     public string Reason4edit { get; set; }
     public int? Version { get; set; }
     public List<TagOut> Tags { get; set; }
-    public byte[] imagedata { get; set; }
+    //public byte[] imagedata { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string EditbyUser { get; set; }
     public bool readyforapproval { get; set; }

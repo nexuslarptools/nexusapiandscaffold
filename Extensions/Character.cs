@@ -29,6 +29,7 @@ public class Character
         newCharSheet.CreatedbyUserGuid = cSheet.EditbyUserGuid;
         newCharSheet.FirstapprovalbyUserGuid = cSheet.FirstapprovalbyuserGuid;
         newCharSheet.Firstapprovaldate = cSheet.Firstapprovaldate;
+        newCharSheet.EditbyUserGuid = cSheet.EditbyUserGuid;
         newCharSheet.SecondapprovalbyUserGuid = cSheet.SecondapprovalbyuserGuid;
         newCharSheet.Secondapprovaldate = cSheet.Secondapprovaldate;
         newCharSheet.Gmnotes = cSheet.Gmnotes;
@@ -110,6 +111,7 @@ public class Character
         newCharSheet.Isactive = cSheet.Isactive;
         newCharSheet.Createdate = cSheet.Createdate;
         newCharSheet.CreatedbyUserGuid = cSheet.CreatedbyuserGuid;
+        newCharSheet.EditbyUserGuid = cSheet.EditbyUserGuid;
         newCharSheet.FirstapprovalbyUserGuid = cSheet.FirstapprovalbyuserGuid;
         newCharSheet.Firstapprovaldate = cSheet.Firstapprovaldate;
         newCharSheet.SecondapprovalbyUserGuid = cSheet.SecondapprovalbyuserGuid;

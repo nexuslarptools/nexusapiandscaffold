@@ -7,12 +7,16 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Minio.DataModel.Args;
+using Minio.DataModel;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
+using Minio;
+using Item = NEXUSDataLayerScaffold.Extensions.Item;
 
 namespace NEXUSDataLayerScaffold.Controllers;
 
@@ -21,10 +25,12 @@ namespace NEXUSDataLayerScaffold.Controllers;
 public class ItemSheetsController : ControllerBase
 {
     private readonly NexusLarpLocalContext _context;
+    private readonly IMinioClient _minio;
 
-    public ItemSheetsController(NexusLarpLocalContext context)
+    public ItemSheetsController(NexusLarpLocalContext context, IMinioClient minio)
     {
         _context = context;
+        _minio = minio;
     }
 
     // GET: api/ItemSheets
@@ -129,10 +135,10 @@ public class ItemSheetsController : ControllerBase
 
             var outputItem = new IteSheet(itemSheet, _context);
 
-            if (outputItem.Img1 != null)
+/*            if (outputItem.Img1 != null)
                 if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
                     outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
-
+*/
             if (outputItem.Seriesguid != null)
             {
                 var connectedSeries =
@@ -311,10 +317,10 @@ public class ItemSheetsController : ControllerBase
                     }
                 }
 
-                if (outputItem.Img1 != null)
-                    if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
-                        outputItem.imagedata =
-                            System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
+              //  if (outputItem.Img1 != null)
+               //     if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
+               //         outputItem.imagedata =
+               //             System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
 
                 if (outputItem.Seriesguid != null)
                 {
@@ -386,10 +392,10 @@ public class ItemSheetsController : ControllerBase
                          Version = sheet.Version,
                          Tags = new List<Tag>()
                      };*/
-                    if (newOutputSheet.Img1 != null)
-                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
-                            newOutputSheet.imagedata =
-                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                    //if (newOutputSheet.Img1 != null)
+                      //  if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
+                       //     newOutputSheet.imagedata =
+                       //         System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
                     {
@@ -472,7 +478,7 @@ public class ItemSheetsController : ControllerBase
                     !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item" || t.Tagtype.Name == "LARPRun").Select(t => t.Guid).ToList();
 
                 var allSheets = await _context.ItemSheets.Where(c => c.Isactive == true)
                     .Select(x => new ItemSheetDO
@@ -554,7 +560,7 @@ public class ItemSheetsController : ControllerBase
                 var allApprovedGuids = _context.ItemSheetApproveds.Where(ia => ia.Isactive == true)
                     .Select(ia => ia.Guid).ToList();
 
-                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item" || t.Tagtype.Name == "LARPRun").Select(t => t.Guid).ToList();
 
                 var allSheets = await _context.ItemSheets.Where(i => allSheetIDs.Contains(i.Id)
                                                                      && !allApprovedGuids.Contains(i.Guid))
@@ -617,7 +623,7 @@ public class ItemSheetsController : ControllerBase
             {
                 var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
-                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item" || t.Tagtype.Name == "LARPRun").Select(t => t.Guid).ToList();
 
 
                 var allSheets = await _context.ItemSheets
@@ -1005,10 +1011,10 @@ public class ItemSheetsController : ControllerBase
                         Version = sheet.Version,
                         Tags = new List<TagOut>()
                     };
-                    if (newOutputSheet.Img1 != null)
-                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                            newOutputSheet.imagedata =
-                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                    //if (newOutputSheet.Img1 != null)
+                        //if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+                           // newOutputSheet.imagedata =
+                              //  System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
                     {
@@ -1165,7 +1171,6 @@ public class ItemSheetsController : ControllerBase
                     ItemsheetId = itemSheet.Id,
                     Seriesguid = itemSheet.Seriesguid,
                     Name = itemSheet.Name,
-                    Img1 = itemSheet.Img1,
                     Fields = itemSheet.Fields,
                     Isactive = true,
                     Createdate = DateTime.Now,
@@ -1180,17 +1185,24 @@ public class ItemSheetsController : ControllerBase
                     EditbyUserGuid = itemSheet.EditbyUserGuid
                 };
 
+                    // Grab the latest version of the image in the store and point it to the new approved item. 
+                    StatObjectArgs statObjectArgs = new StatObjectArgs()
+                                                        .WithBucket("nexusdata")
+                                                        .WithObject("images/Items/" + itemSheet.Guid.ToString() + ".jpg");
+                    ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
+
+                    newapproval.Img1 = objectStat.VersionId;
+
                 _context.ItemSheetApproveds.Add(newapproval);
 
-                var CurrfolderName = Path.Combine("images", "items", "UnApproved");
-                var NewfolderName = Path.Combine("images", "items", "Approved");
-                var pathfrom = Path.Combine(Directory.GetCurrentDirectory(), CurrfolderName,
-                    itemSheet.Img1);
-                var pathto = Path.Combine(Directory.GetCurrentDirectory(), NewfolderName, itemSheet.Img1);
+                //var CurrfolderName = Path.Combine("images", "items", "UnApproved");
+                //var NewfolderName = Path.Combine("images", "items", "Approved");
+                //var pathfrom = Path.Combine(Directory.GetCurrentDirectory(), CurrfolderName,
+                    //itemSheet.Img1);
+                //var pathto = Path.Combine(Directory.GetCurrentDirectory(), NewfolderName, itemSheet.Img1);
 
-                if (System.IO.File.Exists(pathto)) System.IO.File.Delete(pathto);
-
-                System.IO.File.Move(pathfrom, pathto);
+                //if (System.IO.File.Exists(pathto)) System.IO.File.Delete(pathto);
+                //System.IO.File.Move(pathfrom, pathto);
             }
 
             await _context.SaveChangesAsync();
@@ -1281,24 +1293,24 @@ public class ItemSheetsController : ControllerBase
 
                 var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-                if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
-                {
-                    itemSheet.Img1 = item.Img1;
+               // if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
+              //  {
+              //      itemSheet.Img1 = item.Img1;
 
-                    var folderName = Path.Combine("images", "items", "UnApproved");
-                    pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+               //     var folderName = Path.Combine("images", "items", "UnApproved");
+               //     pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                    if (item.imagedata.Length > 0 && pathToSave != string.Empty)
-                    {
-                        if (!Directory.Exists(pathToSave + "/"))
-                        {
-                            var di = Directory.CreateDirectory(pathToSave + "/");
-                        }
+              //      if (item.imagedata.Length > 0 && pathToSave != string.Empty)
+              //      {
+              //          if (!Directory.Exists(pathToSave + "/"))
+              //          {
+              //              var di = Directory.CreateDirectory(pathToSave + "/");
+              //          }
 
-                        System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
-                        ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
-                    }
-                }
+              //          System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
+              //          ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
+              //      }
+              //  }
 
                 if (item.Fields != null)
                     foreach (var tag in item.Fields)
@@ -1486,14 +1498,14 @@ public class ItemSheetsController : ControllerBase
             itemSheet.Guid = item.Guid;
             if (item.Name != null) itemSheet.Name = item.Name;
 
-            if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
+           /* if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
             {
                 itemSheet.Img1 = item.Img1;
 
                 var folderName = Path.Combine("images", "items", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (item.imagedata.Length > 0)
+              *//*  if (item.imagedata.Length > 0)
                 {
                     if (!Directory.Exists(pathToSave + "/"))
                     {
@@ -1502,8 +1514,8 @@ public class ItemSheetsController : ControllerBase
 
                     System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
                     ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
-                }
-            }
+                }*//*
+            }*/
 
             if (item.Gmnotes != null) itemSheet.Gmnotes = item.Gmnotes;
 
@@ -1734,11 +1746,11 @@ public class ItemSheetsController : ControllerBase
                 outputItem.Tags.Add(new TagOut(fullTag));
             }
         }
-
+/*
         if (outputItem.Img1 != null)
             if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
                 outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
-
+*/
         if (outputItem.Seriesguid != null)
         {
             var connectedSeries =

@@ -79,7 +79,8 @@ public class CharSheetListItem
 
 
         foreach (var tag in charSheet.TagList)
-            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d"))
+            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d") ||
+                tag.Tagtypeguid == Guid.Parse("18ac6dfa-86e9-11ed-956c-a37a96501122"))
                 tags.Add(new TagOut(tag));
 
         guid = charSheet.Sheet.Guid;
@@ -166,7 +167,8 @@ public class CharSheetListItem
 
 
         foreach (var tag in charSheet.TagList)
-            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d"))
+            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d") ||
+                tag.Tagtypeguid == Guid.Parse("18ac6dfa-86e9-11ed-956c-a37a96501122"))
                 tags.Add(new TagOut(tag));
 
 

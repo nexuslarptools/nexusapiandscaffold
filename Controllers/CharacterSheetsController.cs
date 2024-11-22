@@ -2,16 +2,27 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
+using System.Security.AccessControl;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Azure.Core;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Minio;
+using Minio.DataModel;
+using Minio.DataModel.Args;
+using Minio.DataModel.Encryption;
+using Minio.Exceptions;
 using Newtonsoft.Json;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
+using NuGet.Protocol.Plugins;
+using Item = NEXUSDataLayerScaffold.Extensions.Item;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace NEXUSDataLayerScaffold.Controllers;
@@ -21,10 +32,12 @@ namespace NEXUSDataLayerScaffold.Controllers;
 public class CharacterSheetsController : ControllerBase
 {
     private readonly NexusLarpLocalContext _context;
+    private readonly IMinioClient _minio;
 
-    public CharacterSheetsController(NexusLarpLocalContext context)
+    public CharacterSheetsController(NexusLarpLocalContext context, IMinioClient minio)
     {
         _context = context;
+        _minio = minio;
     }
 
     /// <summary>
@@ -227,15 +240,15 @@ public class CharacterSheetsController : ControllerBase
                 }
             }
 
-            if (outputSheet.Img1 != null)
-                if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img1))
-                    outputSheet.imagedata1 =
-                        System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img1);
+            //if (outputSheet.Img1 != null)
+            //    if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img1))
+            //        outputSheet.imagedata1 =
+            //            System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img1);
 
-            if (outputSheet.Img2 != null)
-                if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img2))
-                    outputSheet.imagedata2 =
-                        System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img2);
+            //if (outputSheet.Img2 != null)
+            //    if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img2))
+            //        outputSheet.imagedata2 =
+            //            System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img2);
 
             outputSheet.SeriesTitle = await _context.Series
                 .Where(s => s.Guid == outputSheet.Seriesguid && s.Isactive == true)
@@ -257,11 +270,11 @@ public class CharacterSheetsController : ControllerBase
                         outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(), _context);
-                        if (outputSheet.Sheet_Item.Img1 != null)
-                            if (System.IO.File.Exists(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1))
-                                outputSheet.Sheet_Item.imagedata =
-                                    System.IO.File.ReadAllBytes(@"./images/items/Approved/" +
-                                                                outputSheet.Sheet_Item.Img1);
+                       // if (outputSheet.Sheet_Item.Img1 != null)
+                       //     if (System.IO.File.Exists(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1))
+                        //        outputSheet.Sheet_Item.imagedata =
+                         //           System.IO.File.ReadAllBytes(@"./images/items/Approved/" +
+                         //                                       outputSheet.Sheet_Item.Img1);
                     }
 
                     else if (_context.ItemSheets
@@ -272,11 +285,11 @@ public class CharacterSheetsController : ControllerBase
                         outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(), _context);
-                        if (outputSheet.Sheet_Item.Img1 != null)
-                            if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1))
-                                outputSheet.Sheet_Item.imagedata =
-                                    System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" +
-                                                                outputSheet.Sheet_Item.Img1);
+                      //  if (outputSheet.Sheet_Item.Img1 != null)
+                      //      if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1))
+                      //          outputSheet.Sheet_Item.imagedata =
+                      //              System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" +
+                      //                                          outputSheet.Sheet_Item.Img1);
                     }
                 }
             }
@@ -300,10 +313,10 @@ public class CharacterSheetsController : ControllerBase
                         issh.Isactive == true &&
                         issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), _context);
 
-                    if (starting_I.Img1 != null)
-                        if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
-                            starting_I.imagedata =
-                                System.IO.File.ReadAllBytes(@"./images/items/Approved/" + starting_I.Img1);
+                   // if (starting_I.Img1 != null)
+                    //    if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
+                    //        starting_I.imagedata =
+                    //            System.IO.File.ReadAllBytes(@"./images/items/Approved/" + starting_I.Img1);
 
 
                     Start_Items.Add(starting_I);
@@ -318,10 +331,10 @@ public class CharacterSheetsController : ControllerBase
                             issh.Guid.ToString() == iGuid.ToString())
                         .FirstOrDefaultAsync(), _context);
 
-                    if (starting_I.Img1 != null)
-                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
-                            starting_I.imagedata =
-                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + starting_I.Img1);
+                  //  if (starting_I.Img1 != null)
+                   //     if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
+                   //         starting_I.imagedata =
+                    //            System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + starting_I.Img1);
 
                     Start_Items.Add(starting_I);
                 }
@@ -403,15 +416,15 @@ public class CharacterSheetsController : ControllerBase
                     }
                 }
 
-                if (outputSheet.Img1 != null)
-                    if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img1))
-                        outputSheet.imagedata1 =
-                            System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img1);
+                //if (outputSheet.Img1 != null)
+                //    if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img1))
+                //        outputSheet.imagedata1 =
+                //            System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img1);
 
-                if (outputSheet.Img2 != null)
-                    if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img2))
-                        outputSheet.imagedata2 =
-                            System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img2);
+                //if (outputSheet.Img2 != null)
+                //    if (System.IO.File.Exists(@"./images/characters/UnApproved/" + outputSheet.Img2))
+                //        outputSheet.imagedata2 =
+                //            System.IO.File.ReadAllBytes(@"./images/characters/UnApproved/" + outputSheet.Img2);
 
                 outputSheet.SeriesTitle = await _context.Series
                     .Where(s => s.Guid == outputSheet.Seriesguid && s.Isactive == true)
@@ -430,11 +443,11 @@ public class CharacterSheetsController : ControllerBase
                         outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(), _context);
-                        if (outputSheet.Sheet_Item.Img1 != null)
+/*                        if (outputSheet.Sheet_Item.Img1 != null)
                             if (System.IO.File.Exists(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1))
                                 outputSheet.Sheet_Item.imagedata =
                                     System.IO.File.ReadAllBytes(@"./images/items/Approved/" +
-                                                                outputSheet.Sheet_Item.Img1);
+                                                                outputSheet.Sheet_Item.Img1);*/
                     }
 
                     else if (_context.ItemSheets
@@ -445,11 +458,11 @@ public class CharacterSheetsController : ControllerBase
                         outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(), _context);
-                        if (outputSheet.Sheet_Item.Img1 != null)
-                            if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1))
-                                outputSheet.Sheet_Item.imagedata =
-                                    System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" +
-                                                                outputSheet.Sheet_Item.Img1);
+                     //   if (outputSheet.Sheet_Item.Img1 != null)
+                      //      if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1))
+                       //         outputSheet.Sheet_Item.imagedata =
+                       //             System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" +
+                        //                                        outputSheet.Sheet_Item.Img1);
                     }
                 }
 
@@ -472,10 +485,10 @@ public class CharacterSheetsController : ControllerBase
                             issh.Isactive == true &&
                             issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), _context);
 
-                        if (starting_I.Img1 != null)
-                            if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
-                                starting_I.imagedata =
-                                    System.IO.File.ReadAllBytes(@"./images/items/Approved/" + starting_I.Img1);
+                     //   if (starting_I.Img1 != null)
+                     //       if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
+                      //          starting_I.imagedata =
+                      //              System.IO.File.ReadAllBytes(@"./images/items/Approved/" + starting_I.Img1);
 
 
                         Start_Items.Add(starting_I);
@@ -491,11 +504,11 @@ public class CharacterSheetsController : ControllerBase
                                 issh.Guid.ToString() == iGuid.ToString())
                             .FirstOrDefaultAsync(), _context);
 
-                        if (starting_I.Img1 != null)
+/*                        if (starting_I.Img1 != null)
                             if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
                                 starting_I.imagedata =
                                     System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + starting_I.Img1);
-
+*/
                         Start_Items.Add(starting_I);
                     }
 
@@ -1139,42 +1152,52 @@ public class CharacterSheetsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            // This obviously needs work when we get to characters.
+            // if wizard just overwrite that stuff above
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            {
+                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true)
+                    .Select(lt => lt.Tagguid).ToList();
+            }
+
+                // This obviously needs work when we get to characters.
             if (guid != charSheet.Guid) return BadRequest();
 
-            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
-            {
-                var folderName = Path.Combine("images", "characters", "UnApproved");
-                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+            //if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
+            //{
+            //    var folderName = Path.Combine("images", "characters", "UnApproved");
+            //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata1.Length > 0)
-                {
-                    if (!Directory.Exists(pathToSave + "/"))
-                    {
-                        var di = Directory.CreateDirectory(pathToSave + "/");
-                    }
+            //    if (charSheet.imagedata1.Length > 0)
+            //    {
+            //        if (!Directory.Exists(pathToSave + "/"))
+            //        {
+            //            var di = Directory.CreateDirectory(pathToSave + "/");
+            //        }
 
-                    System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
-                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
-                }
-            }
+            //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
+            //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
+            //    }
+            //}
 
-            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
-            {
-                var folderName = Path.Combine("images", "characters", "UnApproved");
-                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+            //if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
+            //{
+            //    var folderName = Path.Combine("images", "characters", "UnApproved");
+            //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata2.Length > 0)
-                {
-                    if (!Directory.Exists(pathToSave + "/"))
-                    {
-                        var di = Directory.CreateDirectory(pathToSave + "/");
-                    }
+            //    if (charSheet.imagedata2.Length > 0)
+            //    {
+            //        if (!Directory.Exists(pathToSave + "/"))
+            //        {
+            //            var di = Directory.CreateDirectory(pathToSave + "/");
+            //        }
 
-                    System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
-                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false);
-                }
-            }
+            //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
+            //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false);
+            //    }
+            //}
+
+            var oldsheet = _context.CharacterSheets.Where(cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefault();
+
 
             var characterSheet = charSheet.OutputToCharacterSheet();
 
@@ -1218,8 +1241,6 @@ public class CharacterSheetsController : ControllerBase
 
             characterSheet.Createdate = DateTime.UtcNow;
             characterSheet.EditbyUserGuid =
-                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
-            characterSheet.CreatedbyuserGuid =
                 _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
             characterSheet.FirstapprovalbyuserGuid = null;
             characterSheet.Firstapprovaldate = null;
@@ -1320,6 +1341,7 @@ public class CharacterSheetsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ApproveCharacterSheet(Guid guid)
     {
+
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
@@ -1328,6 +1350,7 @@ public class CharacterSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
+
             var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
@@ -1424,8 +1447,6 @@ public class CharacterSheetsController : ControllerBase
                     Guid = characterSheet.Guid,
                     Seriesguid = characterSheet.Seriesguid,
                     Name = characterSheet.Name,
-                    Img1 = characterSheet.Img1,
-                    Img2 = characterSheet.Img2,
                     Fields = characterSheet.Fields,
                     Isactive = true,
                     Createdate = characterSheet.Createdate,
@@ -1441,39 +1462,20 @@ public class CharacterSheetsController : ControllerBase
                     EditbyUserGuid = characterSheet.EditbyUserGuid
                 };
 
-                if (theNewSheet.Img1 != null)
-                {
-                    var folderName = Path.Combine("images", "characters", "UnApproved");
-                    var pathCopyFrom = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                // Grab the latest version of the image in the store and point it to the new approved item. 
+                StatObjectArgs statObjectArgs = new StatObjectArgs()
+                                                    .WithBucket("nexusdata")
+                                                    .WithObject("images/Characters/" + characterSheet.Guid.ToString() + ".jpg");
+                ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
 
-                    var toFolderName = Path.Combine("images", "characters", "Approved");
-                    var pathCopyTo = Path.Combine(Directory.GetCurrentDirectory(), toFolderName);
+                theNewSheet.Img1 = objectStat.VersionId;
 
-                    if (!Directory.Exists(pathCopyTo + "/"))
-                    {
-                        var di = Directory.CreateDirectory(pathCopyTo + "/");
-                    }
+                statObjectArgs = new StatObjectArgs()
+                                                    .WithBucket("nexusdata")
+                                                    .WithObject("images/Characters/" + characterSheet.Guid.ToString() + "_2.jpg");
+                objectStat = await _minio.StatObjectAsync(statObjectArgs);
 
-                    System.IO.File.Copy(pathCopyFrom + "/" + theNewSheet.Img1, pathCopyTo + "/" + theNewSheet.Img1,
-                        true);
-                }
-
-                if (theNewSheet.Img2 != null)
-                {
-                    var folderName = Path.Combine("images", "characters", "UnApproved");
-                    var pathCopyFrom = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-
-                    var toFolderName = Path.Combine("images", "characters", "Approved");
-                    var pathCopyTo = Path.Combine(Directory.GetCurrentDirectory(), toFolderName);
-
-                    if (!Directory.Exists(pathCopyTo + "/"))
-                    {
-                        var di = Directory.CreateDirectory(pathCopyTo + "/");
-                    }
-
-                    System.IO.File.Copy(pathCopyFrom + "/" + theNewSheet.Img2, pathCopyTo + "/" + theNewSheet.Img2,
-                        true);
-                }
+                theNewSheet.Img2 = objectStat.VersionId;
 
                 _context.CharacterSheetApproveds.Add(theNewSheet);
                 _context.SaveChanges();
@@ -1494,6 +1496,8 @@ public class CharacterSheetsController : ControllerBase
 
                     _context.CharacterSheetApprovedTags.AddRange(csheetAppTags);
                     await _context.SaveChangesAsync();
+
+                    return CreatedAtAction("Full", new { id = characterSheet.Id });
                 }
                 catch (Exception e)
                 {
@@ -1502,7 +1506,7 @@ public class CharacterSheetsController : ControllerBase
             }
 
 
-            return NoContent();
+            return CreatedAtAction("First", new { id = characterSheet.Id });
         }
 
         return Unauthorized();
@@ -1546,45 +1550,45 @@ public class CharacterSheetsController : ControllerBase
 
             if (charSheet.Img2 != null) characterSheet.Img2 = charSheet.Img2;
 
-            if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
-            {
-                charSheet.Img1 = charSheet.Img1;
+            //if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
+            //{
+            //    charSheet.Img1 = charSheet.Img1;
 
-                var folderName = Path.Combine("images", "characters", "UnApproved");
-                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+            //    var folderName = Path.Combine("images", "characters", "UnApproved");
+            //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata1.Length > 0)
-                {
-                    if (!Directory.Exists(pathToSave + "/"))
-                    {
-                        var di = Directory.CreateDirectory(pathToSave + "/");
-                    }
+            //    if (charSheet.imagedata1.Length > 0)
+            //    {
+            //        if (!Directory.Exists(pathToSave + "/"))
+            //        {
+            //            var di = Directory.CreateDirectory(pathToSave + "/");
+            //        }
 
-                    System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
+            //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
 
-                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
-                }
-            }
+            //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
+            //    }
+            //}
 
-            if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
-            {
-                charSheet.Img2 = charSheet.Img2;
+            //if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
+            //{
+            //    charSheet.Img2 = charSheet.Img2;
 
-                var folderName = Path.Combine("images", "characters", "UnApproved");
-                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+            //    var folderName = Path.Combine("images", "characters", "UnApproved");
+            //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (charSheet.imagedata2.Length > 0)
-                {
-                    if (!Directory.Exists(pathToSave + "/"))
-                    {
-                        var di = Directory.CreateDirectory(pathToSave + "/");
-                    }
+            //    if (charSheet.imagedata2.Length > 0)
+            //    {
+            //        if (!Directory.Exists(pathToSave + "/"))
+            //        {
+            //            var di = Directory.CreateDirectory(pathToSave + "/");
+            //        }
 
-                    System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
-                    ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false);
-                    ;
-                }
-            }
+            //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
+            //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false);
+            //        ;
+            //    }
+            //}
 
             if (charSheet.Gmnotes != null) characterSheet.Gmnotes = charSheet.Gmnotes;
 

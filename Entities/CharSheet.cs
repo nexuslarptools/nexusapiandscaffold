@@ -285,8 +285,6 @@ public class CharSheet
     public string Reason4edit { get; set; }
     public int Version { get; set; }
     public List<TagOut> Tags { get; set; }
-    public byte[] imagedata1 { get; set; }
-    public byte[] imagedata2 { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string Editby { get; set; }
     public List<ReviewMessage> ReviewMessages { get; set; }
