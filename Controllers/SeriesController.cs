@@ -350,7 +350,7 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
             var ser = await _context.Series.Where(s => s.Title != "")
-              .OrderBy(o => StringLogic.IgnorePunct(o.Title))
+              .OrderBy(o => o.Title)
               .Select(s => new
               {
                   Series = s,

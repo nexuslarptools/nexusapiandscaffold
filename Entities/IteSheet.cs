@@ -315,6 +315,8 @@ public class IteSheet
         CreatedbyuserGuid = sheet.Sheet.CreatedbyuserGuid;
         FirstapprovalbyuserGuid = sheet.Sheet.FirstapprovalbyuserGuid;
         SecondapprovalbyuserGuid = sheet.Sheet.SecondapprovalbyuserGuid;
+        Firstapprovaldate  = sheet.Sheet.Firstapprovaldate;
+        Secondapprovaldate = sheet.Sheet.Secondapprovaldate;
         EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
         Version = sheet.Sheet.Version;
         Back = new Backside(sheet.Sheet);
@@ -365,6 +367,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.WasApproved = _context.ItemSheetApproveds.Any(isa => isa.Guid == sheet.Sheet.Guid);
 
         this.SetIsLarge();
     }
@@ -487,6 +491,7 @@ public class IteSheet
     public bool Isfrontonly { get; set; }
     public bool Isbackonly { get; set; }
     public Backside Back { get; set; }
+    public bool WasApproved { get; set; }
 
     public List<ReviewMessage> ReviewMessages { get; set; }
 
