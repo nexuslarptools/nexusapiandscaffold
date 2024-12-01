@@ -296,7 +296,7 @@ public class CharacterSheetsController : ControllerBase
 
             var Start_Items = new List<IteSheet>();
 
-            if (outputSheet.Sheet_Item != null && outputSheet.Sheet_Item.Islarge)
+            if (outputSheet.Sheet_Item != null && (outputSheet.Sheet_Item.Islarge || outputSheet.Sheet_Item.Isdoubleside))
             {
                 outputSheet.Sheet_Item.Issheetitem = true;
                 Start_Items.Add(outputSheet.Sheet_Item);
