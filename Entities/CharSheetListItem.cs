@@ -79,7 +79,8 @@ public class CharSheetListItem
 
 
         foreach (var tag in charSheet.TagList)
-            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d"))
+            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d") ||
+                tag.Tagtypeguid == Guid.Parse("18ac6dfa-86e9-11ed-956c-a37a96501122"))
                 tags.Add(new TagOut(tag));
 
         guid = charSheet.Sheet.Guid;
@@ -88,9 +89,11 @@ public class CharSheetListItem
         title = charSheet.Series.Title;
         createdbyuserGuid = charSheet.Createdbyuser.Guid;
         createdByUser = charSheet.Createdbyuser.Preferredname;
-        firstapprovalbyuserGuid = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Guid;
+        editbyUserGuid = charSheet.Sheet.EditbyUserGuid;
+        firstapprovalbyuserGuid = charSheet.Sheet.FirstapprovalbyuserGuid == null ? null : charSheet.Sheet.FirstapprovalbyuserGuid;
         firstApprovalUser = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Preferredname;
-        secondapprovalbyuserGuid = charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Guid;
+        secondapprovalbyuserGuid = charSheet.Sheet.SecondapprovalbyuserGuid == null ? null : charSheet.Sheet.SecondapprovalbyuserGuid;
+        ;
         ;
         secondApprovalUser =
             charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Preferredname;
@@ -166,7 +169,8 @@ public class CharSheetListItem
 
 
         foreach (var tag in charSheet.TagList)
-            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d"))
+            if (tag.Tagtypeguid == Guid.Parse("26cd7510-9401-11ea-899a-4fd87913c65d") ||
+                tag.Tagtypeguid == Guid.Parse("18ac6dfa-86e9-11ed-956c-a37a96501122"))
                 tags.Add(new TagOut(tag));
 
 
@@ -176,9 +180,10 @@ public class CharSheetListItem
         title = charSheet.Series.Title;
         createdbyuserGuid = charSheet.Createdbyuser.Guid;
         createdByUser = charSheet.Createdbyuser.Preferredname;
-        firstapprovalbyuserGuid = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Guid;
+        editbyUserGuid = charSheet.Sheet.EditbyUserGuid;
+        firstapprovalbyuserGuid = charSheet.Sheet.FirstapprovalbyuserGuid == null ? null : charSheet.Sheet.FirstapprovalbyuserGuid;
         firstApprovalUser = charSheet.Firstapprovalbyuser == null ? null : charSheet.Firstapprovalbyuser.Preferredname;
-        secondapprovalbyuserGuid = charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Guid;
+        secondapprovalbyuserGuid = charSheet.Sheet.SecondapprovalbyuserGuid == null ? null : charSheet.Sheet.SecondapprovalbyuserGuid;
         ;
         secondApprovalUser =
             charSheet.Secondapprovalbyuser == null ? null : charSheet.Secondapprovalbyuser.Preferredname;
@@ -198,6 +203,7 @@ public class CharSheetListItem
     public Guid? secondapprovalbyuserGuid { get; set; }
     public string secondApprovalUser { get; set; }
     public string editbyUser { get; set; }
+    public Guid? editbyUserGuid { get; set; }
     public bool readyforapproval { get; set; }
     public List<TagOut> tags { get; set; }
     public bool hasreview { get; set; }

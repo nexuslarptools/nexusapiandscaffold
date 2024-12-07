@@ -299,7 +299,7 @@ public class SeriesController : ControllerBase
                     Sheets = _context.CharacterSheetApproveds.Where(csa => csa.Isactive == true
                                                                            && csa.Seriesguid == s.Guid)
                         .OrderBy(csa => csa.Name).ToList(),
-                    TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
+                    TagsList = s.SeriesTags.Select(ist => ist.Tag).OrderBy(cst => cst.Name).ToList()
                 })
                 .ToListAsync();
             var serOutPut = new List<Seri>();
@@ -350,7 +350,7 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
             var ser = await _context.Series.Where(s => s.Title != "")
-              .OrderBy(o => StringLogic.IgnorePunct(o.Title))
+              .OrderBy(o => o.Title)
               .Select(s => new
               {
                   Series = s,
@@ -410,7 +410,7 @@ public class SeriesController : ControllerBase
             var allowedSeries = GetAllowedSeries(authId, accessToken);
 
             var foundTag = await _context.Tags
-                .Where(t => t.Isactive == true && t.Tagtype.Name == "Series" && t.Guid == pagingParameterModel.guid)
+                .Where(t => t.Isactive == true && (t.Tagtype.Name == "Series") && t.Guid == pagingParameterModel.guid)
                 .FirstOrDefaultAsync();
 
             if (foundTag == null) return NotFound();
@@ -921,6 +921,33 @@ public class SeriesController : ControllerBase
         }
 
         return Unauthorized();
+    }
+
+
+    // POST: api/Series
+    // To protect from overposting attacks, enable the specific properties you want to bind to, for
+    // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
+    [HttpPost("dumpin")]
+    public async Task<ActionResult<Series>> PostSeriesDump([FromBody] SeriInput input)
+    {
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+        if (accessToken != "IAmABanana!")
+        {
+            return Unauthorized();
+        }
+
+        var newSeries = new Series()
+        {
+            Guid = input.Guid,
+            Title = input.Title ?? null,
+            Titlejpn = input.Titlejpn ?? null,
+        };
+
+        _context.Series.Add(newSeries);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction("GetSeries", new { id = newSeries.Guid }, newSeries);
     }
 
     // DELETE: api/Series/5
