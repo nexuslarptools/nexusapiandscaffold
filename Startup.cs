@@ -13,9 +13,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Minio.AspNetCore;
+using Minio;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using NEXUSDataLayerScaffold.Attributes;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
 using OpenTelemetry.Logs;
@@ -115,6 +116,7 @@ public class Startup
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexus API V1", Version = "v1" });
+            c.OperationFilter<OpenApiParameterIgnoreFilter>();
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
@@ -236,9 +238,8 @@ public class Startup
         services.AddMvc(x => x.EnableEndpointRouting = false);
         services.AddMinio(configure =>
         {
-        configure.Endpoint = "decade.kylebrighton.com:9000";
-        configure.AccessKey = accesskey;
-        configure.SecretKey = secretkey;
+        configure.WithEndpoint("decade.kylebrighton.com:9000")
+                 .WithCredentials(accesskey, secretkey);
         });
     }
 

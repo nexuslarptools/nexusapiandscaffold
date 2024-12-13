@@ -28,7 +28,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="7.0.1" />
-        <PackageReference Include="Minio.AspNetCore" Version="6.0.1" />
+        <PackageReference Include="Minio" Version="6.0.3" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.1" />
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.10.0-rc.1" />

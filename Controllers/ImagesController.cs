@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -11,9 +12,12 @@ using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
 using Newtonsoft.Json;
+using NEXUSDataLayerScaffold.Attributes;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
+using Item = Minio.DataModel.Item;
 
 namespace NEXUSDataLayerScaffold.Controllers;
 
@@ -32,16 +36,17 @@ public class ImagesController : ControllerBase
 
     // GET: api/v1/Tags
     [HttpGet]
-    public async Task<ActionResult<string>> GetAllImages()
+    public async Task<ActionResult<string>> GetAllImages([OpenApiParameterIgnore] [FromHeader(Name = "Authorization")] string origin)
     {
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+        var accessToken = origin.Remove(0, 7);
 
         if (accessToken != "IAmABanana!")
         {
             return Unauthorized();
         }
 
-        string bucket = "nexusdata";
+        string bucket = "nexusdevdata";
 
         try
         {
@@ -60,11 +65,13 @@ public class ImagesController : ControllerBase
                                           .WithRecursive(true)
                                           .WithVersions(true);
 
-                IObservable<Item> observable = _minio.ListObjectsAsync(args);
-                IDisposable subscription = observable.Subscribe(
-                        item => Console.WriteLine("OnNext: {0} - {1}", item.Key, item.VersionId),
-                        ex => Console.WriteLine("OnError: {0}", ex.Message),
-                        () => Console.WriteLine("OnComplete: {0}"));
+                //IObservable<Item> observable = _minio.ListObjectsAsync(args);
+                //IObserver<Item> observer = Observer.Create<Item>(
+                //     item => Console.WriteLine("OnNext: {0} - {1}", item.Key, item.VersionId),
+                //     ex => Console.WriteLine("OnError: {0}", ex.Message),
+                 //     () => Console.WriteLine("OnCompleted"));
+               //IDisposable subscription = observable.Subscribe(observer);
+
             }
             else
             {
@@ -96,16 +103,16 @@ public class ImagesController : ControllerBase
     }
 
     [HttpPut("UpdateApprovedImageLinks")]
-    public async Task<ActionResult<string>> UpdateImages()
+    public async Task<ActionResult<string>> UpdateImages([OpenApiParameterIgnore][FromHeader(Name = "Authorization")] string origin)
     {
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = origin.Remove(0, 7);
 
         if (accessToken != "IAmABanana!")
         {
             return Unauthorized();
         }
 
-        string bucket = "nexusdata";
+        string bucket = "nexusdevdata";
 
         try
         {

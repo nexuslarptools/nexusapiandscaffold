@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
+using NEXUSDataLayerScaffold.Attributes;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
@@ -36,11 +37,12 @@ public class CharacterSheetApprovedsController : ControllerBase
     // GET: api/V1/CharacterSheetApproveds
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<CharSheetListItem>>> GetCharacterSheetApproved()
+    public async Task<ActionResult<IEnumerable<CharSheetListItem>>> GetCharacterSheetApproved([OpenApiParameterIgnore][FromHeader(Name = "Authorization")] string origin)
     {
+        var accessToken = origin.Remove(0, 7);
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        //var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
