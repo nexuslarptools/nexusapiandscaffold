@@ -1528,15 +1528,12 @@ public class CharacterSheetsController : ControllerBase
 
                 try
                 {
-                    var newSheetId = _context.CharacterSheetApproveds.Where(iss => iss.Guid == theNewSheet.Guid
-                        && iss.Isactive == true).FirstOrDefault().Id;
-
                     var csheetAppTags = new List<CharacterSheetApprovedTag>();
 
                     foreach (var tag in characterSheetTags)
                         csheetAppTags.Add(new CharacterSheetApprovedTag
                         {
-                            CharactersheetapprovedId = newSheetId,
+                            CharactersheetapprovedId = theNewSheet.Id,
                             TagGuid = tag.TagGuid
                         });
 

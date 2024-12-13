@@ -1209,7 +1209,7 @@ public class ItemSheetsController : ControllerBase
                     };
 
                     // Grab the latest version of the image in the store and point it to the new approved item. 
-                   
+
                     var huh = await Minostuff();
 
                     StatObjectArgs statObjectArgs = new StatObjectArgs()
@@ -1221,6 +1221,7 @@ public class ItemSheetsController : ControllerBase
                     newapproval.Img1 = objectStat.VersionId;
 
                     _context.ItemSheetApproveds.Add(newapproval);
+                    await _context.SaveChangesAsync();
 
                     //var CurrfolderName = Path.Combine("images", "items", "UnApproved");
                     //var NewfolderName = Path.Combine("images", "items", "Approved");
@@ -1230,24 +1231,18 @@ public class ItemSheetsController : ControllerBase
 
                     //if (System.IO.File.Exists(pathto)) System.IO.File.Delete(pathto);
                     //System.IO.File.Move(pathfrom, pathto);
+
+                    var isheetAppTags = new List<ItemSheetApprovedTag>();
+                    foreach (var tag in itemSheetTags)
+                        isheetAppTags.Add(new ItemSheetApprovedTag
+                        {
+                            ItemsheetapprovedId = newapproval.Id,
+                            TagGuid = tag.TagGuid
+                        });
+
+                    _context.ItemSheetApprovedTags.AddRange(isheetAppTags);
                 }
-
                 await _context.SaveChangesAsync();
-
-                var newSheetId = _context.ItemSheetApproveds.Where(iss => iss.Guid == itemSheet.Guid
-                                                                          && iss.Isactive == true).FirstOrDefault().Id;
-
-                var isheetAppTags = new List<ItemSheetApprovedTag>();
-                foreach (var tag in itemSheetTags)
-                    isheetAppTags.Add(new ItemSheetApprovedTag
-                    {
-                        ItemsheetapprovedId = newSheetId,
-                        TagGuid = tag.TagGuid
-                    });
-
-                _context.ItemSheetApprovedTags.AddRange(isheetAppTags);
-                await _context.SaveChangesAsync();
-
 
                 return Ok("{\"Approval\":\"" + approvaltype + "\"}");
             }
