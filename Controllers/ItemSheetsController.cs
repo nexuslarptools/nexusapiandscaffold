@@ -1213,7 +1213,7 @@ public class ItemSheetsController : ControllerBase
                     var huh = await Minostuff();
 
                     StatObjectArgs statObjectArgs = new StatObjectArgs()
-                                                            .WithBucket("nexusdevdata")
+                                                            .WithBucket("nexusdata")
                                                             .WithObject("/images/Items/" + itemSheet.Guid.ToString() + ".jpg");
                     ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
 
@@ -1790,7 +1790,7 @@ public class ItemSheetsController : ControllerBase
     private async Task<string> Minostuff()
     {
 
-        string bucket = "nexusdevdata";
+        string bucket = "nexusdata";
 
         try
         {
