@@ -30,10 +30,8 @@ public class PronounsController : ControllerBase
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, string.Empty, _context))
             return await _context.Pronouns.Select(p => new PronounsOut(p.Guid, p.Pronouns)).ToListAsync();
         return Unauthorized();
     }

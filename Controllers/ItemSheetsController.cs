@@ -1,18 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Minio;
+using Minio.DataModel;
+using Minio.DataModel.Args;
+using Minio.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
+using System.Reactive.Linq;
+using System.Reactive;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Item = NEXUSDataLayerScaffold.Extensions.Item;
 
 namespace NEXUSDataLayerScaffold.Controllers;
 
@@ -21,10 +28,12 @@ namespace NEXUSDataLayerScaffold.Controllers;
 public class ItemSheetsController : ControllerBase
 {
     private readonly NexusLarpLocalContext _context;
+    private readonly IMinioClient _minio;
 
-    public ItemSheetsController(NexusLarpLocalContext context)
+    public ItemSheetsController(NexusLarpLocalContext context, IMinioClient minio)
     {
         _context = context;
+        _minio = minio;
     }
 
     // GET: api/ItemSheets
@@ -129,10 +138,10 @@ public class ItemSheetsController : ControllerBase
 
             var outputItem = new IteSheet(itemSheet, _context);
 
-            if (outputItem.Img1 != null)
+/*            if (outputItem.Img1 != null)
                 if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
                     outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
-
+*/
             if (outputItem.Seriesguid != null)
             {
                 var connectedSeries =
@@ -243,7 +252,7 @@ public class ItemSheetsController : ControllerBase
 
     [HttpGet("MultiPick/")]
     [Authorize]
-    public async Task<ActionResult<List<ItemSheet>>> GetItemSheetList([FromQuery] ItemSheetInput input)
+    public async Task<ActionResult<List<IteSheet>>> GetItemSheetList([FromQuery] ItemSheetInput input)
     {
         //var input = JsonSerializer.Deserialize<ItemSheetInput>(guidjson);
 
@@ -275,55 +284,61 @@ public class ItemSheetsController : ControllerBase
 
             var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-            foreach (var guid in input.A)
+            if (input.A != null)
             {
-                var outputAppedItem =
-                    await GetApprovedItemSheetOutput(guid, allowedTags);
+                foreach (var guid in input.A)
+                {
+                    var outputAppedItem =
+                        await GetApprovedItemSheetOutput(guid, allowedTags);
 
-                outputItemList.Add(outputAppedItem);
+                    outputItemList.Add(outputAppedItem);
+                }
             }
 
-            foreach (var guid in input.U)
+            if (input.U != null)
             {
-                var itemSheet = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid)
-                    .FirstOrDefaultAsync();
-
-                if (itemSheet == null) return NotFound();
-
-                if (!allowedShets.Contains(guid)) return Unauthorized();
-
-                outputItem = Item.CreateItem(itemSheet, _context);
-
-                var tagslist = new JsonElement();
-
-                itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined")
+                foreach (var guid in input.U)
                 {
-                    var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
-                    {
-                        var fullTag = await _context.Tags
-                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
-                            .Include("Tagtype").FirstOrDefaultAsync();
-                        outputItem.Tags.Add(new TagOut(fullTag));
-                    }
-                }
-
-                if (outputItem.Img1 != null)
-                    if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
-                        outputItem.imagedata =
-                            System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
-
-                if (outputItem.Seriesguid != null)
-                {
-                    var connectedSeries = await _context.Series.Where(s => s.Guid == outputItem.Seriesguid)
+                    var itemSheet = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid)
                         .FirstOrDefaultAsync();
-                    if (connectedSeries != null) outputItem.Series = connectedSeries.Title;
-                }
 
-                outputItemList.Add(outputItem);
+                    if (itemSheet == null) return NotFound();
+
+                    if (!allowedShets.Contains(guid)) return Unauthorized();
+
+                    outputItem = Item.CreateItem(itemSheet, _context);
+
+                    var tagslist = new JsonElement();
+
+                    itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                    if (tagslist.ValueKind.ToString() != "Undefined")
+                    {
+                        var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                        foreach (var tag in TestJsonFeilds)
+                        {
+                            var fullTag = await _context.Tags
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .Include("Tagtype").FirstOrDefaultAsync();
+                            outputItem.Tags.Add(new TagOut(fullTag));
+                        }
+                    }
+
+                    //  if (outputItem.Img1 != null)
+                    //     if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputItem.Img1))
+                    //         outputItem.imagedata =
+                    //             System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + outputItem.Img1);
+
+                    if (outputItem.Seriesguid != null)
+                    {
+                        var connectedSeries = await _context.Series.Where(s => s.Guid == outputItem.Seriesguid)
+                            .FirstOrDefaultAsync();
+                        if (connectedSeries != null) outputItem.Series = connectedSeries.Title;
+                    }
+
+                    outputItemList.Add(outputItem);
+                }
             }
 
 
@@ -386,10 +401,10 @@ public class ItemSheetsController : ControllerBase
                          Version = sheet.Version,
                          Tags = new List<Tag>()
                      };*/
-                    if (newOutputSheet.Img1 != null)
-                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
-                            newOutputSheet.imagedata =
-                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                    //if (newOutputSheet.Img1 != null)
+                      //  if (System.IO.File.Exists(@"./images/items/UnApproved/" + newOutputSheet.Img1))
+                       //     newOutputSheet.imagedata =
+                       //         System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
                     {
@@ -472,7 +487,7 @@ public class ItemSheetsController : ControllerBase
                     !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item" || t.Tagtype.Name == "LARPRun").Select(t => t.Guid).ToList();
 
                 var allSheets = await _context.ItemSheets.Where(c => c.Isactive == true)
                     .Select(x => new ItemSheetDO
@@ -491,7 +506,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Readyforapproval = x.Readyforapproval
                         },
-                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -546,18 +561,29 @@ public class ItemSheetsController : ControllerBase
                         createdate = x.Max(row => row.Createdate)
                     });
 
+                var ActiveSheets = _context.ItemSheets.Where(x => x.Isactive == true).GroupBy(x => x.Guid)
+                 .Select(x => new
+                 {
+                     guid = x.Key,
+                     createdate = x.Max(row => row.Createdate)
+                 });
+
                 var allSheetIDs = _context.ItemSheets
                     .Join(SheetIds,
                         i => new { guid = i.Guid, createdate = i.Createdate },
                         s => new { s.guid, s.createdate }, (i, s) => i).Select(i => i.Id).ToList();
 
+                var activeSheetIDs = _context.ItemSheets.Join(ActiveSheets,
+                   i => new { guid = i.Guid, createdate = i.Createdate },
+                   s => new { s.guid, s.createdate }, (i, s) => i).Select(i => i.Id).ToList();
+
                 var allApprovedGuids = _context.ItemSheetApproveds.Where(ia => ia.Isactive == true)
                     .Select(ia => ia.Guid).ToList();
 
-                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item" || t.Tagtype.Name == "LARPRun").Select(t => t.Guid).ToList();
 
-                var allSheets = await _context.ItemSheets.Where(i => allSheetIDs.Contains(i.Id)
-                                                                     && !allApprovedGuids.Contains(i.Guid))
+                var allSheets = await _context.ItemSheets.Where(i => activeSheetIDs.Contains(i.Id)  ||  
+                     (allSheetIDs.Contains(i.Id) && !activeSheetIDs.Contains(i.Id)))
                     .Select(x => new ItemSheetDO
                     {
                         Sheet = new ItemSheet
@@ -573,9 +599,10 @@ public class ItemSheetsController : ControllerBase
                             SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
                             Secondapprovaldate = x.Secondapprovaldate,
                             EditbyUserGuid = x.EditbyUserGuid,
-                            Readyforapproval = x.Readyforapproval
+                            Readyforapproval = x.Readyforapproval,
+                            Isactive = x.Isactive
                         },
-                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -617,7 +644,7 @@ public class ItemSheetsController : ControllerBase
             {
                 var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
-                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item").Select(t => t.Guid).ToList();
+                var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item" || t.Tagtype.Name == "LARPRun").Select(t => t.Guid).ToList();
 
 
                 var allSheets = await _context.ItemSheets
@@ -639,7 +666,7 @@ public class ItemSheetsController : ControllerBase
                             EditbyUserGuid = x.EditbyUserGuid,
                             Isactive = x.Isactive
                         },
-                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).ToList(),
+                        TagList = x.ItemSheetTags.Where(ist => itemTagGuids.Contains(ist.TagGuid)).Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
                         EditbyUser = x.EditbyUser,
                         Firstapprovalbyuser = x.Firstapprovalbyuser,
@@ -1005,10 +1032,10 @@ public class ItemSheetsController : ControllerBase
                         Version = sheet.Version,
                         Tags = new List<TagOut>()
                     };
-                    if (newOutputSheet.Img1 != null)
-                        if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                            newOutputSheet.imagedata =
-                                System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+                    //if (newOutputSheet.Img1 != null)
+                        //if (System.IO.File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+                           // newOutputSheet.imagedata =
+                              //  System.IO.File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
                     if (newOutputSheet.CreatedbyuserGuid != null)
                     {
@@ -1082,141 +1109,147 @@ public class ItemSheetsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {
-            var approvaltype = "first";
-            var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
-            var itemSheet = await _context.ItemSheets.Where(cs => cs.Isactive == true && cs.Guid == guid)
-                .FirstOrDefaultAsync();
-            var itemSheetTags = _context.ItemSheetTags.Where(iss => iss.ItemsheetId == itemSheet.Id).ToList();
-
-
-            var fullapprove = false;
-
-            if (itemSheet == null) return BadRequest();
-
-            var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
-                .Select(ulr => (Guid)ulr.Larpguid).ToList();
-
-            var allowedTags = _context.Larptags.Where(lt =>
-                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
-                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
-
-            if (!allowedShets.Contains(guid)) return Unauthorized();
-
-            if (itemSheet.FirstapprovalbyuserGuid != null && itemSheet.SecondapprovalbyuserGuid == null)
-            {
-                if (result != itemSheet.EditbyUserGuid && result != itemSheet.FirstapprovalbyuserGuid)
-                {
-                    itemSheet.SecondapprovalbyuserGuid = result;
-                    itemSheet.Secondapprovaldate = DateTime.Now;
-                    itemSheet.Isactive = false;
-                    fullapprove = true;
-                }
-                else
-                {
-                    return Unauthorized();
-                }
-            }
-
-
-            if (itemSheet.FirstapprovalbyuserGuid == null)
-            {
-                if (result != itemSheet.EditbyUserGuid)
-                {
-                    itemSheet.FirstapprovalbyuserGuid = result;
-                    itemSheet.Firstapprovaldate = DateTime.Now;
-                }
-                else
-                {
-                    return Unauthorized();
-                }
-            }
-
-            _context.Update(itemSheet);
-
-
-            int? maxversion = 0;
-
-            if (fullapprove)
-            {
-                approvaltype = "second";
-                var approvedSheets = await _context.ItemSheetApproveds
-                    .Where(csa => csa.Guid == guid).ToListAsync();
-
-                if (approvedSheets.Count > 0) maxversion = approvedSheets.MaxBy(ash => ash.Version).Version;
-
-                maxversion++;
-
-                foreach (var asheet in approvedSheets)
-                {
-                    asheet.Isactive = false;
-                    _context.ItemSheetApproveds.Update(asheet);
-                }
-
-                var newapproval = new ItemSheetApproved
-                {
-                    Guid = itemSheet.Guid,
-                    ItemsheetId = itemSheet.Id,
-                    Seriesguid = itemSheet.Seriesguid,
-                    Name = itemSheet.Name,
-                    Img1 = itemSheet.Img1,
-                    Fields = itemSheet.Fields,
-                    Isactive = true,
-                    Createdate = DateTime.Now,
-                    CreatedbyuserGuid = itemSheet.CreatedbyuserGuid,
-                    FirstapprovalbyuserGuid = itemSheet.FirstapprovalbyuserGuid,
-                    Firstapprovaldate = itemSheet.Firstapprovaldate,
-                    SecondapprovalbyuserGuid = itemSheet.SecondapprovalbyuserGuid,
-                    Secondapprovaldate = itemSheet.Secondapprovaldate,
-                    Gmnotes = itemSheet.Gmnotes,
-                    Version = maxversion,
-                    Taglists = itemSheet.Taglists,
-                    EditbyUserGuid = itemSheet.EditbyUserGuid
-                };
-
-                _context.ItemSheetApproveds.Add(newapproval);
-
-                var CurrfolderName = Path.Combine("images", "items", "UnApproved");
-                var NewfolderName = Path.Combine("images", "items", "Approved");
-                var pathfrom = Path.Combine(Directory.GetCurrentDirectory(), CurrfolderName,
-                    itemSheet.Img1);
-                var pathto = Path.Combine(Directory.GetCurrentDirectory(), NewfolderName, itemSheet.Img1);
-
-                if (System.IO.File.Exists(pathto)) System.IO.File.Delete(pathto);
-
-                System.IO.File.Move(pathfrom, pathto);
-            }
-
-            await _context.SaveChangesAsync();
-
             try
             {
-                var newSheetId = _context.ItemSheetApproveds.Where(iss => iss.Guid == itemSheet.Guid
-                                                                          && iss.Isactive == true).FirstOrDefault().Id;
+                var approvaltype = "first";
+                var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+                var itemSheet = await _context.ItemSheets.Where(cs => cs.Isactive == true && cs.Guid == guid)
+                    .FirstOrDefaultAsync();
+                var itemSheetTags = _context.ItemSheetTags.Where(iss => iss.ItemsheetId == itemSheet.Id).ToList();
 
-                var isheetAppTags = new List<ItemSheetApprovedTag>();
-                foreach (var tag in itemSheetTags)
-                    isheetAppTags.Add(new ItemSheetApprovedTag
+
+                var fullapprove = false;
+
+                if (itemSheet == null) return BadRequest();
+
+                var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
+                    .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
+                var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+                    .Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt =>
+                    (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                    && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+                if (!allowedShets.Contains(guid)) return Unauthorized();
+
+                if (itemSheet.FirstapprovalbyuserGuid != null && itemSheet.SecondapprovalbyuserGuid == null)
+                {
+                    if (result != itemSheet.EditbyUserGuid && result != itemSheet.FirstapprovalbyuserGuid)
                     {
-                        ItemsheetapprovedId = newSheetId,
-                        TagGuid = tag.TagGuid
-                    });
+                        itemSheet.SecondapprovalbyuserGuid = result;
+                        itemSheet.Secondapprovaldate = DateTime.Now;
+                        itemSheet.Isactive = false;
+                        fullapprove = true;
+                    }
+                    else
+                    {
+                        return Unauthorized();
+                    }
+                }
 
-                _context.ItemSheetApprovedTags.AddRange(isheetAppTags);
+
+                if (itemSheet.FirstapprovalbyuserGuid == null)
+                {
+                    if (result != itemSheet.EditbyUserGuid)
+                    {
+                        itemSheet.FirstapprovalbyuserGuid = result;
+                        itemSheet.Firstapprovaldate = DateTime.Now;
+                    }
+                    else
+                    {
+                        return Unauthorized();
+                    }
+                }
+
+                _context.Update(itemSheet);
+
+
+                int? maxversion = 0;
+
+                if (fullapprove)
+                {
+                    approvaltype = "second";
+                    var approvedSheets = await _context.ItemSheetApproveds
+                        .Where(csa => csa.Guid == guid).ToListAsync();
+
+                    if (approvedSheets.Count > 0) maxversion = approvedSheets.MaxBy(ash => ash.Version).Version;
+
+                    maxversion++;
+
+                    foreach (var asheet in approvedSheets)
+                    {
+                        asheet.Isactive = false;
+                        _context.ItemSheetApproveds.Update(asheet);
+                    }
+
+                    var newapproval = new ItemSheetApproved
+                    {
+                        Guid = itemSheet.Guid,
+                        ItemsheetId = itemSheet.Id,
+                        Seriesguid = itemSheet.Seriesguid,
+                        Name = itemSheet.Name,
+                        Fields = itemSheet.Fields,
+                        Isactive = true,
+                        Createdate = DateTime.Now,
+                        CreatedbyuserGuid = itemSheet.CreatedbyuserGuid,
+                        FirstapprovalbyuserGuid = itemSheet.FirstapprovalbyuserGuid,
+                        Firstapprovaldate = itemSheet.Firstapprovaldate,
+                        SecondapprovalbyuserGuid = itemSheet.SecondapprovalbyuserGuid,
+                        Secondapprovaldate = itemSheet.Secondapprovaldate,
+                        Gmnotes = itemSheet.Gmnotes,
+                        Version = maxversion,
+                        Taglists = itemSheet.Taglists,
+                        EditbyUserGuid = itemSheet.EditbyUserGuid
+                    };
+
+                    // Grab the latest version of the image in the store and point it to the new approved item. 
+
+                    var huh = await Minostuff();
+
+                    StatObjectArgs statObjectArgs = new StatObjectArgs()
+                                                            .WithBucket("nexusdata")
+                                                            .WithObject("/images/Items/" + itemSheet.Guid.ToString() + ".jpg");
+                    ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
+
+
+                    newapproval.Img1 = objectStat.VersionId;
+
+                    _context.ItemSheetApproveds.Add(newapproval);
+                    await _context.SaveChangesAsync();
+
+                    //var CurrfolderName = Path.Combine("images", "items", "UnApproved");
+                    //var NewfolderName = Path.Combine("images", "items", "Approved");
+                    //var pathfrom = Path.Combine(Directory.GetCurrentDirectory(), CurrfolderName,
+                    //itemSheet.Img1);
+                    //var pathto = Path.Combine(Directory.GetCurrentDirectory(), NewfolderName, itemSheet.Img1);
+
+                    //if (System.IO.File.Exists(pathto)) System.IO.File.Delete(pathto);
+                    //System.IO.File.Move(pathfrom, pathto);
+
+                    var isheetAppTags = new List<ItemSheetApprovedTag>();
+                    foreach (var tag in itemSheetTags)
+                        isheetAppTags.Add(new ItemSheetApprovedTag
+                        {
+                            ItemsheetapprovedId = newapproval.Id,
+                            TagGuid = tag.TagGuid
+                        });
+
+                    _context.ItemSheetApprovedTags.AddRange(isheetAppTags);
+                }
                 await _context.SaveChangesAsync();
+
+                return Ok("{\"Approval\":\"" + approvaltype + "\"}");
             }
             catch (Exception e)
             {
                 return BadRequest(e.Message);
             }
-
-            return Ok("{\"Approval\":\"" + approvaltype + "\"}");
         }
 
         return Unauthorized();
@@ -1281,24 +1314,24 @@ public class ItemSheetsController : ControllerBase
 
                 var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-                if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
-                {
-                    itemSheet.Img1 = item.Img1;
+               // if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
+              //  {
+              //      itemSheet.Img1 = item.Img1;
 
-                    var folderName = Path.Combine("images", "items", "UnApproved");
-                    pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+               //     var folderName = Path.Combine("images", "items", "UnApproved");
+               //     pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                    if (item.imagedata.Length > 0 && pathToSave != string.Empty)
-                    {
-                        if (!Directory.Exists(pathToSave + "/"))
-                        {
-                            var di = Directory.CreateDirectory(pathToSave + "/");
-                        }
+              //      if (item.imagedata.Length > 0 && pathToSave != string.Empty)
+              //      {
+              //          if (!Directory.Exists(pathToSave + "/"))
+              //          {
+              //              var di = Directory.CreateDirectory(pathToSave + "/");
+              //          }
 
-                        System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
-                        ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
-                    }
-                }
+              //          System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
+              //          ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
+              //      }
+              //  }
 
                 if (item.Fields != null)
                     foreach (var tag in item.Fields)
@@ -1335,15 +1368,19 @@ public class ItemSheetsController : ControllerBase
 
                             foreach (var tagValues in TestJsonFeilds)
                             {
-                                var fields = tagValues["Tags"];
-
-                                foreach (Guid tagValue in fields)
+                                if (tagValues.HasValues)
                                 {
-                                    if (!allowedTags.Contains(tagValue)) return Unauthorized();
-                                    if (!listTags.AbilityTags.Contains(tagValue))
-                                        listTags.AbilityTags.Add(tagValue);
+                                    var fields = tagValues["Tags"];
+
+                                    foreach (Guid tagValue in fields)
+                                    {
+                                        if (!allowedTags.Contains(tagValue)) return Unauthorized();
+                                        if (!listTags.AbilityTags.Contains(tagValue))
+                                            listTags.AbilityTags.Add(tagValue);
+                                    }
                                 }
                             }
+
                         }
                     }
 
@@ -1482,14 +1519,14 @@ public class ItemSheetsController : ControllerBase
             itemSheet.Guid = item.Guid;
             if (item.Name != null) itemSheet.Name = item.Name;
 
-            if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
+           /* if (item.Img1 != null && item.imagedata != null && item.imagedata.Length != 0)
             {
                 itemSheet.Img1 = item.Img1;
 
                 var folderName = Path.Combine("images", "items", "UnApproved");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
-                if (item.imagedata.Length > 0)
+              *//*  if (item.imagedata.Length > 0)
                 {
                     if (!Directory.Exists(pathToSave + "/"))
                     {
@@ -1498,8 +1535,8 @@ public class ItemSheetsController : ControllerBase
 
                     System.IO.File.WriteAllBytes(pathToSave + "/" + item.Img1, item.imagedata);
                     ImageLogic.ResizeJpg(pathToSave + "/" + item.Img1, true);
-                }
-            }
+                }*//*
+            }*/
 
             if (item.Gmnotes != null) itemSheet.Gmnotes = item.Gmnotes;
 
@@ -1662,6 +1699,42 @@ public class ItemSheetsController : ControllerBase
         return Unauthorized();
     }
 
+    // DELETE: api/ItemSheets/5
+    [HttpPut("Deactivate/{id}")]
+    [Authorize]
+    public async Task<ActionResult<ItemSheet>> DeacrtivateItemSheet(int id)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var itemSheets = await _context.ItemSheets.Where(i => i.Id == id).ToListAsync();
+            if (itemSheets == null) return NotFound();
+
+            try
+            {
+                foreach (var item in itemSheets)
+                {
+                    item.Isactive = false;
+                    _context.ItemSheets.Update(item);
+                    _context.SaveChanges();
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+            return itemSheets.FirstOrDefault();
+        }
+
+        return Unauthorized();
+    }
+
     private async Task<IteSheet> GetApprovedItemSheetOutput(Guid guid, List<Guid?> allowedTags)
     {
         var itemSheet = await _context.ItemSheetApproveds.Where(ish => ish.Isactive == true && ish.Guid == guid)
@@ -1694,11 +1767,11 @@ public class ItemSheetsController : ControllerBase
                 outputItem.Tags.Add(new TagOut(fullTag));
             }
         }
-
+/*
         if (outputItem.Img1 != null)
             if (System.IO.File.Exists(@"./images/items/Approved/" + outputItem.Img1))
                 outputItem.imagedata = System.IO.File.ReadAllBytes(@"./images/items/Approved/" + outputItem.Img1);
-
+*/
         if (outputItem.Seriesguid != null)
         {
             var connectedSeries =
@@ -1712,5 +1785,63 @@ public class ItemSheetsController : ControllerBase
     private bool ItemSheetExists(Guid id)
     {
         return _context.ItemSheets.Any(e => e.Guid == id);
+    }
+
+    private async Task<string> Minostuff()
+    {
+
+        string bucket = "nexusdata";
+
+        try
+        {
+            BucketExistsArgs bargs = new BucketExistsArgs()
+                .WithBucket(bucket);
+            List<Tuple<string, string>> fullList = new List<Tuple<string, string>>();
+
+            // List of objects with version IDs.
+            // Check whether 'mybucket' exists or not.
+            var found = await _minio.BucketExistsAsync(bargs);
+            if (found)
+            {
+                // List objects from 'my-bucketname'
+                ListObjectsArgs args = new ListObjectsArgs()
+                                          .WithBucket(bucket)
+                                          .WithPrefix("images")
+                                          .WithRecursive(true)
+                                          .WithVersions(true);
+
+               // IObservable<Minio.DataModel.Item> observable = _minio.ListObjectsAsync(args);
+               // IObserver<Minio.DataModel.Item> observer = Observer.Create<Minio.DataModel.Item>(
+               //      item => fullList.Add(new Tuple<string, string>(item.Key, item.VersionId)),
+               //      ex => Console.WriteLine("OnError: {0}", ex.Message),
+               //       () => Console.WriteLine("OnCompleted"));
+               // IDisposable subscription = observable.Subscribe(observer);
+            }
+            else
+            {
+                Console.WriteLine("mybucket does not exist");
+            }
+
+
+            try
+            {
+                // Get the metadata of the object.
+                StatObjectArgs statObjectArgs = new StatObjectArgs()
+                                                    .WithBucket(bucket)
+                                                    .WithObject("images/ItemSheets/Approved/d2d18353-6a4e-465d-a003-67db21eaae4d.jpg");
+                ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
+                Console.WriteLine(objectStat);
+            }
+            catch (MinioException e)
+            {
+                Console.WriteLine("Error occurred: " + e);
+            }
+        }
+        catch (MinioException e)
+        {
+            Console.WriteLine("Error occurred: " + e);
+        }
+
+        return "Hoiw is that?";
     }
 }

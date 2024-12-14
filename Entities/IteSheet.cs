@@ -83,10 +83,10 @@ public class IteSheet
         if (Type != null) Back.Type = Type;
 
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+        //if (Img1 != null)
+         //   if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+          //      imagedata =
+          //          File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
         if (CreatedbyuserGuid != null)
         {
@@ -221,10 +221,10 @@ public class IteSheet
 
         if (Type != null) Back.Type = Type;
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
+        //if (Img1 != null)
+          //  if (File.Exists(@"./images/items/UnApproved/" + sheet.Img1))
+          //      imagedata =
+           //         File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Img1);
 
         if (CreatedbyuserGuid != null)
         {
@@ -315,6 +315,8 @@ public class IteSheet
         CreatedbyuserGuid = sheet.Sheet.CreatedbyuserGuid;
         FirstapprovalbyuserGuid = sheet.Sheet.FirstapprovalbyuserGuid;
         SecondapprovalbyuserGuid = sheet.Sheet.SecondapprovalbyuserGuid;
+        Firstapprovaldate  = sheet.Sheet.Firstapprovaldate;
+        Secondapprovaldate = sheet.Sheet.Secondapprovaldate;
         EditbyUserGuid = sheet.Sheet.EditbyUserGuid;
         Version = sheet.Sheet.Version;
         Back = new Backside(sheet.Sheet);
@@ -326,10 +328,10 @@ public class IteSheet
 
         Gmnotes = sheet.Sheet.Gmnotes;
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
+        //if (Img1 != null)
+          //  if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
+           //     imagedata =
+           //         File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
 
         createdby = sheet.Createdbyuser?.Preferredname;
         if (sheet.Createdbyuser == null || sheet.Createdbyuser.Preferredname == null ||
@@ -365,6 +367,8 @@ public class IteSheet
             hasreview = true;
             ReviewMessages.Add(new ReviewMessage(message, _context));
         }
+
+        this.WasApproved = _context.ItemSheetApproveds.Any(isa => isa.Guid == sheet.Sheet.Guid);
 
         this.SetIsLarge();
     }
@@ -407,10 +411,10 @@ public class IteSheet
 
         if (Type != null) Back.Type = Type;
 
-        if (Img1 != null)
-            if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
-                imagedata =
-                    File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
+        //if (Img1 != null)
+          //  if (File.Exists(@"./images/items/UnApproved/" + sheet.Sheet.Img1))
+            //    imagedata =
+               //     File.ReadAllBytes(@"./images/items/UnApproved/" + sheet.Sheet.Img1);
 
         createdby = sheet.Createdbyuser.Preferredname;
         if (sheet.Createdbyuser.Preferredname == null || sheet.Createdbyuser.Preferredname == string.Empty)
@@ -476,7 +480,7 @@ public class IteSheet
     public string Reason4edit { get; set; }
     public int? Version { get; set; }
     public List<TagOut> Tags { get; set; }
-    public byte[] imagedata { get; set; }
+    //public byte[] imagedata { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string EditbyUser { get; set; }
     public bool readyforapproval { get; set; }
@@ -487,6 +491,7 @@ public class IteSheet
     public bool Isfrontonly { get; set; }
     public bool Isbackonly { get; set; }
     public Backside Back { get; set; }
+    public bool WasApproved { get; set; }
 
     public List<ReviewMessage> ReviewMessages { get; set; }
 
@@ -546,7 +551,8 @@ public class IteSheet
     public void SetIsLarge()
     {
         this.Islarge = false;
-        if (_largeItems.Contains(this.Type.ToLower()))
+
+        if (this.Type != null && _largeItems.Contains(this.Type.ToLower()))
         {
             this.Islarge = true;
         }

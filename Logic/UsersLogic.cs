@@ -83,6 +83,11 @@ public class UsersLogic
             return false;
         }
 
+        if (authLevel == string.Empty)
+        {
+            return true;
+        }
+
         var roleNum = _context.Roles.Where(r => r.Rolename == authLevel).Select(r => r.Ord).FirstOrDefault();
 
         var foundrole = _context.UserLarproles

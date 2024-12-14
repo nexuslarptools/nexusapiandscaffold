@@ -13,8 +13,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Minio;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using NEXUSDataLayerScaffold.Attributes;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
 using OpenTelemetry.Logs;
@@ -114,6 +116,7 @@ public class Startup
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexus API V1", Version = "v1" });
+            c.OperationFilter<OpenApiParameterIgnoreFilter>();
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
@@ -210,11 +213,19 @@ public class Startup
                        _config.GetValue<string>("ConnectionSrings:DBUsername");
         var password = Environment.GetEnvironmentVariable("Password") ??
                        _config.GetValue<string>("ConnectionSrings:Password");
+        var accesskey = Environment.GetEnvironmentVariable("accesskey") ??
+               _config.GetValue<string>("ConnectionSrings:accesskey");
+        var secretkey = Environment.GetEnvironmentVariable("secretkey") ??
+               _config.GetValue<string>("ConnectionSrings:secretkey");
 
         var connstring = "Host=" + host + ";Port=" + port
                          + ";Database=" + database + "; Username=" + username + ";Password=" + password;
 
+        
+        
         //connstring = "Host=localhost;Port=5432;Database=NexusLARP_Local;Username=postgres;Password=L4RPEverywhere!";
+        accesskey = "S6epybsl7DRwSNmstqaq";
+        secretkey = "UCMzYZCJ1pXG5AQ9eAEsDmfAYkeeCPr4vWjba9EM";
         // LOCAL DOCKER CONNSTTRING
         //connstring = "Host=LARPpi;Port=32775;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!";
 
@@ -225,6 +236,11 @@ public class Startup
         services.AddDbContext<NexusLarpLocalContext>(options => options.UseNpgsql(connstring)
         );
         services.AddMvc(x => x.EnableEndpointRouting = false);
+        services.AddMinio(configure =>
+        {
+        configure.WithEndpoint("decade.kylebrighton.com:9000")
+                 .WithCredentials(accesskey, secretkey);
+        });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
