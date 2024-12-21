@@ -271,6 +271,7 @@ public class CharSheet
     public JObject Fields { get; set; }
     public IteSheet Sheet_Item { get; set; }
     public List<IteSheet> Starting_Items { get; set; }
+    public List<IteSheet> Upgrade_Items { get; set; }
     public bool? Isactive { get; set; }
     public DateTime Createdate { get; set; }
     public Guid? CreatedbyUserGuid { get; set; }
@@ -285,8 +286,6 @@ public class CharSheet
     public string Reason4edit { get; set; }
     public int Version { get; set; }
     public List<TagOut> Tags { get; set; }
-    public byte[] imagedata1 { get; set; }
-    public byte[] imagedata2 { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string Editby { get; set; }
     public List<ReviewMessage> ReviewMessages { get; set; }

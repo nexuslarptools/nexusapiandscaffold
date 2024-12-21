@@ -34,11 +34,11 @@ public class Item
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
 
-        if (iSheet.Img1 != null)
+/*        if (iSheet.Img1 != null)
             if (File.Exists(pathToSave + iSheet.Img1))
                 newiemSheet.imagedata =
                     File.ReadAllBytes(pathToSave + iSheet.Img1);
-
+*/
         if (iSheet.CreatedbyuserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == iSheet.CreatedbyuserGuid)
@@ -118,19 +118,19 @@ public class Item
         var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
 
 
-        if (iSheet.Img1 != null)
+/*        if (iSheet.Img1 != null)
             if (File.Exists(pathToSave + "\\" + iSheet.Img1))
                 newiemSheet.imagedata =
                     File.ReadAllBytes(pathToSave + "\\" + iSheet.Img1);
 
-
+*/
         if (iSheet.CreatedbyuserGuid != null)
         {
             var lookupuser = _context.Users.Where(u => u.Guid == iSheet.CreatedbyuserGuid)
                 .FirstOrDefault();
 
             newiemSheet.createdby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0) newiemSheet.createdby += " " + lookupuser.Lastname[0];
+            if (lookupuser.Lastname != null && lookupuser.Lastname.Length > 0) newiemSheet.createdby += " " + lookupuser.Lastname[0];
 
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
                 newiemSheet.createdby = lookupuser.Firstname + " " + lookupuser.Lastname;
