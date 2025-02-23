@@ -16,6 +16,7 @@ public class Character
 
         var newCharSheet = new CharSheet();
 
+        newCharSheet.Id = cSheet.Id;
         newCharSheet.Guid = cSheet.Guid;
         newCharSheet.Seriesguid = cSheet.Seriesguid;
 
@@ -100,6 +101,7 @@ public class Character
 
         var newCharSheet = new CharSheet();
 
+        newCharSheet.Id = cSheet.Id;
         newCharSheet.Guid = cSheet.Guid;
         newCharSheet.Seriesguid = cSheet.Seriesguid;
         newCharSheet.Fields = FeildsWInit;
@@ -182,6 +184,7 @@ public class Character
 
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(cSheet.Fields.RootElement.ToString()));
 
+        newCharSheet.Id = cSheet.Id;
         newCharSheet.Guid = cSheet.Guid;
         newCharSheet.Seriesguid = cSheet.Seriesguid;
         newCharSheet.Fields = FeildsWInit;

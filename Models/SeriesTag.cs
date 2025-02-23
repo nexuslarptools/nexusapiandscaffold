@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class SeriesTag
+public partial class SeriesTag
 {
     public int Id { get; set; }
 

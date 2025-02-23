@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class LarpplayerTagAllowed
+public partial class LarpplayerTagAllowed
 {
     public Guid Guid { get; set; }
 
@@ -12,7 +13,7 @@ public class LarpplayerTagAllowed
 
     public Guid CreatedbyuserGuid { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
 
     public DateTime Createdate { get; set; }
 

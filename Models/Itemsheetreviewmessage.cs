@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class ItemSheetReviewMessage
+public partial class ItemSheetReviewMessage
 {
     public int Id { get; set; }
 
@@ -17,4 +18,6 @@ public class ItemSheetReviewMessage
     public Guid? CreatedbyuserGuid { get; set; }
 
     public virtual User Createdbyuser { get; set; }
+
+    public virtual ICollection<ItemSheetMessageAck> ItemSheetMessageAcks { get; set; } = new List<ItemSheetMessageAck>();
 }

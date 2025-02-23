@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class Role
+public partial class Role
 {
     public int Id { get; set; }
 
@@ -10,5 +11,5 @@ public class Role
 
     public int? Ord { get; set; }
 
-    public virtual ICollection<UserLarprole> UserLarproles { get; } = new List<UserLarprole>();
+    public virtual ICollection<UserLarprole> UserLarproles { get; set; } = new List<UserLarprole>();
 }

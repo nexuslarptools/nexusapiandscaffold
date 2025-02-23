@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class CharacterSheetReviewMessage
+public partial class CharacterSheetReviewMessage
 {
     public int Id { get; set; }
 
@@ -15,6 +16,8 @@ public class CharacterSheetReviewMessage
     public DateTime Createdate { get; set; }
 
     public Guid? CreatedbyuserGuid { get; set; }
+
+    public virtual ICollection<CharacterSheetMessageAck> CharacterSheetMessageAcks { get; set; } = new List<CharacterSheetMessageAck>();
 
     public virtual User Createdbyuser { get; set; }
 }

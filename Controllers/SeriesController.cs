@@ -890,6 +890,7 @@ public class SeriesController : ControllerBase
                 Guid=Guid.NewGuid(),
                 Title = input.Title ?? null,
                 Titlejpn = input.Titlejpn ?? null,
+                Isactive=true
             };
 
             if (input.Tags != null)

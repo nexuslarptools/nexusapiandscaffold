@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Models;
 
@@ -194,8 +195,8 @@ public class UsersLogic
         return returnlist;
     }
 
-    public static Guid GetUserGuid(string authIdValue, NexusLarpLocalContext _context)
+    public static async Task<Guid> GetUserGuid(string authIdValue, NexusLarpLocalContext _context)
     {
-        return _context.Users.Where(u => u.Authid == authIdValue).Select(u => u.Guid).FirstOrDefault();
+        return await _context.Users.Where(u => u.Authid == authIdValue).Select(u => u.Guid).FirstOrDefaultAsync();
     }
 }

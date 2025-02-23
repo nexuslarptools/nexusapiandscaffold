@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class TagType
+public partial class TagType
 {
     public Guid Guid { get; set; }
 
     public string Name { get; set; }
 
-    public virtual ICollection<Tag> Tags { get; } = new List<Tag>();
+    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
 }

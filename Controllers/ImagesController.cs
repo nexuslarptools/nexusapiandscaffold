@@ -46,7 +46,7 @@ public class ImagesController : ControllerBase
             return Unauthorized();
         }
 
-        string bucket = "nexusdata";
+        string bucket = "nexusdevdata";
 
         try
         {
@@ -112,7 +112,7 @@ public class ImagesController : ControllerBase
             return Unauthorized();
         }
 
-        string bucket = "nexusdata";
+        string bucket = "nexusdevdata";
 
         try
         {

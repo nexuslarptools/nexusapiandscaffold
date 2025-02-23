@@ -135,14 +135,16 @@ public class IteSheet
 
         ReviewMessages = new List<ReviewMessage>();
 
-        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                          && isrm.ItemsheetId == sheet.Id).ToList();
+
+        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Guid).Select(x => x.Id).ToList();
+        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true &&
+                                                                          ListId.Contains(isrm.ItemsheetId)).ToList();
 
         hasreview = false;
         foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
         this.SetIsLarge();
@@ -273,14 +275,15 @@ public class IteSheet
 
         ReviewMessages = new List<ReviewMessage>();
         hasreview = false;
+
+        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Guid).Select(x => x.Id).ToList();
         var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                          && isrm.ItemsheetId == sheet.ItemsheetId)
-            .ToList();
+                                                                          && ListId.Contains(isrm.ItemsheetId)).ToList();
 
         foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
         this.SetIsLarge();
@@ -362,10 +365,15 @@ public class IteSheet
         ReviewMessages = new List<ReviewMessage>();
 
         hasreview = false;
-        foreach (var message in sheet.ListMessages)
+
+        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Sheet.Guid).Select(x => x.Id).ToList();
+        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true 
+            && ListId.Contains(isrm.ItemsheetId)).ToList();
+
+        foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
         this.WasApproved = _context.ItemSheetApproveds.Any(isa => isa.Guid == sheet.Sheet.Guid);
@@ -448,10 +456,14 @@ public class IteSheet
         ReviewMessages = new List<ReviewMessage>();
 
         hasreview = false;
-        foreach (var message in sheet.ListMessages)
+        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Sheet.Guid).Select(x => x.Id).ToList();
+        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+            && ListId.Contains(isrm.ItemsheetId)).ToList();
+
+        foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
         this.SetIsLarge();

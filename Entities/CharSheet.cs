@@ -19,6 +19,7 @@ public class CharSheet
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
 
+        Id = input.Id;
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
         Name = input.Name;
@@ -37,6 +38,7 @@ public class CharSheet
         Reason4edit = input.Reason4edit;
         Version = input.Version;
         Readyforapproval = false;
+        HasReview = false;
 
         var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
             .FirstOrDefault();
@@ -133,17 +135,21 @@ public class CharSheet
 
         ReviewMessages = new List<ReviewMessage>();
 
+        var ListId = _context.CharacterSheets.Where(ish => ish.Guid == input.Guid).Select(x => x.Id).ToList();
         var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                               && isrm.CharactersheetId == input.Id)
-            .ToList();
+            && ListId.Contains(isrm.CharactersheetId)).ToList();
 
-        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+        if (ListMessages.Count() > 0)
+        {
+            HasReview = true;
+        }
     }
 
     public CharSheet(CharacterSheet input, NexusLarpLocalContext _context)
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
 
+        Id = input.Id;
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
         Name = input.Name;
@@ -255,13 +261,16 @@ public class CharSheet
 
         ReviewMessages = new List<ReviewMessage>();
 
+        var ListId = _context.CharacterSheets.Where(ish => ish.Guid == input.Guid).Select(x => x.Id).ToList();
         var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                               && isrm.CharactersheetId == input.Id)
-            .ToList();
+            && ListId.Contains(isrm.CharactersheetId)).ToList();
 
-        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+        if (ListMessages.Count() > 0)
+        {
+            HasReview = true;
+        }
     }
-
+    public int Id { get; set; }
     public Guid Guid { get; set; }
     public Guid? Seriesguid { get; set; }
     public string SeriesTitle { get; set; }
@@ -288,8 +297,10 @@ public class CharSheet
     public List<TagOut> Tags { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string Editby { get; set; }
+    public bool HasReview { get; set; }
     public List<ReviewMessage> ReviewMessages { get; set; }
     public bool Readyforapproval { get; set; }
+
 
     public CharacterSheet OutputToCharacterSheet()
     {
@@ -301,7 +312,7 @@ public class CharSheet
             Img1 = Img1,
             Img2 = Img2,
             Fields = JsonDocument.Parse(Fields.ToString()),
-            Isactive = Isactive,
+            Isactive = Isactive == null || (bool)Isactive,
             Createdate = Createdate,
             EditbyUserGuid = EditbyUserGuid,
             CreatedbyuserGuid = CreatedbyUserGuid,

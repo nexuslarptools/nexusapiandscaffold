@@ -1,4 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace NEXUSDataLayerScaffold.Models;
 
@@ -13,13 +17,19 @@ public partial class NexusLarpLocalContext : DbContext
     {
     }
 
+
+
     public virtual DbSet<CharacterSheet> CharacterSheets { get; set; }
 
     public virtual DbSet<CharacterSheetApproved> CharacterSheetApproveds { get; set; }
 
     public virtual DbSet<CharacterSheetApprovedTag> CharacterSheetApprovedTags { get; set; }
 
+    public virtual DbSet<CharacterSheetMessageAck> CharacterSheetMessageAcks { get; set; }
+
     public virtual DbSet<CharacterSheetReviewMessage> CharacterSheetReviewMessages { get; set; }
+
+    public virtual DbSet<CharacterSheetReviewSubscription> CharacterSheetReviewSubscriptions { get; set; }
 
     public virtual DbSet<CharacterSheetTag> CharacterSheetTags { get; set; }
 
@@ -31,7 +41,11 @@ public partial class NexusLarpLocalContext : DbContext
 
     public virtual DbSet<ItemSheetApprovedTag> ItemSheetApprovedTags { get; set; }
 
+    public virtual DbSet<ItemSheetMessageAck> ItemSheetMessageAcks { get; set; }
+
     public virtual DbSet<ItemSheetReviewMessage> ItemSheetReviewMessages { get; set; }
+
+    public virtual DbSet<ItemSheetReviewSubscription> ItemSheetReviewSubscriptions { get; set; }
 
     public virtual DbSet<ItemSheetTag> ItemSheetTags { get; set; }
 
@@ -81,7 +95,7 @@ public partial class NexusLarpLocalContext : DbContext
 
     //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-    //      => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=NexusLARP;Username=postgres;Password=postgres");
+    //      => optionsBuilder.UseNpgsql("");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -120,14 +134,15 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("img2");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Name)
                 .IsRequired()
                 .HasMaxLength(1000)
                 .HasColumnName("name");
-            entity.Property(e => e.Readyforapproval).HasColumnName("readyforapproval");
+            entity.Property(e => e.Readyforapproval)
+                .HasDefaultValue(false)
+                .HasColumnName("readyforapproval");
             entity.Property(e => e.Reason4edit)
                 .HasMaxLength(2000)
                 .HasColumnName("reason4edit");
@@ -140,7 +155,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
-                .HasDefaultValueSql("1")
+                .HasDefaultValue(1)
                 .HasColumnName("version");
 
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.CharacterSheetCreatedbyusers)
@@ -197,8 +212,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("img2");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Name)
                 .IsRequired()
@@ -216,7 +230,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
-                .HasDefaultValueSql("1")
+                .HasDefaultValue(1)
                 .HasColumnName("version");
 
             entity.HasOne(d => d.Charactersheet).WithMany(p => p.CharacterSheetApproveds)
@@ -264,6 +278,31 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasConstraintName("CharacterSheetApprovedTags_Tag_guid");
         });
 
+        modelBuilder.Entity<CharacterSheetMessageAck>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("charactersheetmessageacks_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CharactersheetreviewmessagesId).HasColumnName("charactersheetreviewmessages_id");
+            entity.Property(e => e.Isactive)
+                .HasDefaultValue(true)
+                .HasColumnName("isactive");
+            entity.Property(e => e.Seendate)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("seendate");
+            entity.Property(e => e.UserGuid).HasColumnName("user_guid");
+
+            entity.HasOne(d => d.Charactersheetreviewmessages).WithMany(p => p.CharacterSheetMessageAcks)
+                .HasForeignKey(d => d.CharactersheetreviewmessagesId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("CharacterSheetMessageAcks_CharacterSheetReviewMessages_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.CharacterSheetMessageAcks)
+                .HasForeignKey(d => d.UserGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("CharacterSheetMessageAcks_user_guid_fkey");
+        });
+
         modelBuilder.Entity<CharacterSheetReviewMessage>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("charactersheetreviewmessages_id");
@@ -276,7 +315,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Message)
                 .HasMaxLength(5000)
@@ -285,6 +324,27 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.CharacterSheetReviewMessages)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("CharacterSheetReviewMessages_createdbyuser_guid_fkey");
+        });
+
+        modelBuilder.Entity<CharacterSheetReviewSubscription>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("charactersheetreviewsubscriptions_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CharactersheetGuid).HasColumnName("charactersheet_guid");
+            entity.Property(e => e.Createdate)
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("createdate");
+            entity.Property(e => e.Stopdate)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("stopdate");
+            entity.Property(e => e.UserGuid).HasColumnName("user_guid");
+
+            entity.HasOne(d => d.User).WithMany(p => p.CharacterSheetReviewSubscriptions)
+                .HasForeignKey(d => d.UserGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("CharacterSheetReviewSubscriptions_user_guid_fkey");
         });
 
         modelBuilder.Entity<CharacterSheetTag>(entity =>
@@ -337,8 +397,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("img2");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Name)
                 .IsRequired()
@@ -353,7 +412,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("secondapprovaldate");
             entity.Property(e => e.Seriesguid).HasColumnName("seriesguid");
             entity.Property(e => e.Version)
-                .HasDefaultValueSql("1")
+                .HasDefaultValue(1)
                 .HasColumnName("version");
 
             entity.HasOne(d => d.Charactersheet).WithMany(p => p.CharacterSheetVersions)
@@ -384,6 +443,8 @@ public partial class NexusLarpLocalContext : DbContext
 
             entity.ToTable("ItemSheet");
 
+            entity.HasIndex(e => e.Isactive, "items_active");
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Createdate)
                 .HasDefaultValueSql("now()")
@@ -411,18 +472,19 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("img1");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Isdoubleside)
-                .HasDefaultValueSql("false")
+                .HasDefaultValue(false)
                 .HasColumnName("isdoubleside");
             entity.Property(e => e.ItemtypeGuid).HasColumnName("itemtype_guid");
             entity.Property(e => e.Name)
                 .IsRequired()
                 .HasMaxLength(1000)
                 .HasColumnName("name");
-            entity.Property(e => e.Readyforapproval).HasColumnName("readyforapproval");
+            entity.Property(e => e.Readyforapproval)
+                .HasDefaultValue(false)
+                .HasColumnName("readyforapproval");
             entity.Property(e => e.Reason4edit)
                 .HasMaxLength(2000)
                 .HasColumnName("reason4edit");
@@ -435,7 +497,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
-                .HasDefaultValueSql("1")
+                .HasDefaultValue(1)
                 .HasColumnName("version");
 
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.ItemSheetCreatedbyusers)
@@ -496,11 +558,10 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("img1");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Isdoubleside)
-                .HasDefaultValueSql("false")
+                .HasDefaultValue(false)
                 .HasColumnName("isdoubleside");
             entity.Property(e => e.ItemsheetId).HasColumnName("itemsheet_id");
             entity.Property(e => e.ItemtypeGuid).HasColumnName("itemtype_guid");
@@ -520,7 +581,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnType("json")
                 .HasColumnName("taglists");
             entity.Property(e => e.Version)
-                .HasDefaultValueSql("1")
+                .HasDefaultValue(1)
                 .HasColumnName("version");
 
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.ItemSheetApprovedCreatedbyusers)
@@ -567,6 +628,31 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasConstraintName("ItemSheetApprovedTags_Tag_guid");
         });
 
+        modelBuilder.Entity<ItemSheetMessageAck>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("itemsheetmessageacks_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Isactive)
+                .HasDefaultValue(true)
+                .HasColumnName("isactive");
+            entity.Property(e => e.ItemsheetreviewmessagesId).HasColumnName("itemsheetreviewmessages_id");
+            entity.Property(e => e.Seendate)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("seendate");
+            entity.Property(e => e.UserGuid).HasColumnName("user_guid");
+
+            entity.HasOne(d => d.Itemsheetreviewmessages).WithMany(p => p.ItemSheetMessageAcks)
+                .HasForeignKey(d => d.ItemsheetreviewmessagesId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ItemSheetMessageAcks_ItemSheetReviewMessages_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ItemSheetMessageAcks)
+                .HasForeignKey(d => d.UserGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ItemSheetMessageAcks_user_guid_fkey");
+        });
+
         modelBuilder.Entity<ItemSheetReviewMessage>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("itemsheetreviewmessages_id");
@@ -578,7 +664,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.ItemsheetId).HasColumnName("itemsheet_id");
             entity.Property(e => e.Message)
@@ -588,6 +674,27 @@ public partial class NexusLarpLocalContext : DbContext
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.ItemSheetReviewMessages)
                 .HasForeignKey(d => d.CreatedbyuserGuid)
                 .HasConstraintName("ItemSheetReviewMessages_createdbyuser_guid_fkey");
+        });
+
+        modelBuilder.Entity<ItemSheetReviewSubscription>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("itemsheetreviewsubscriptions_id");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Createdate)
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("createdate");
+            entity.Property(e => e.ItemsheetGuid).HasColumnName("itemsheet_guid");
+            entity.Property(e => e.Stopdate)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("stopdate");
+            entity.Property(e => e.UserGuid).HasColumnName("user_guid");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ItemSheetReviewSubscriptions)
+                .HasForeignKey(d => d.UserGuid)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("ItemSheetReviewSubscriptions_user_guid_fkey");
         });
 
         modelBuilder.Entity<ItemSheetTag>(entity =>
@@ -638,8 +745,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("img1");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.ItemsheetId).HasColumnName("itemsheet_id");
             entity.Property(e => e.Name)
@@ -655,7 +761,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("secondapprovaldate");
             entity.Property(e => e.Seriesguid).HasColumnName("seriesguid");
             entity.Property(e => e.Version)
-                .HasDefaultValueSql("1")
+                .HasDefaultValue(1)
                 .HasColumnName("version");
 
             entity.HasOne(d => d.Createdbyuser).WithMany(p => p.ItemSheetVersionCreatedbyusers)
@@ -683,8 +789,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasDefaultValueSql("uuid_generate_v1()")
                 .HasColumnName("guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Type).HasMaxLength(1000);
         });
@@ -727,8 +832,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasDefaultValueSql("uuid_generate_v1()")
                 .HasColumnName("guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Location)
                 .HasMaxLength(1000)
@@ -757,8 +861,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarpGuid).HasColumnName("larp_guid");
 
@@ -788,8 +891,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarpGuid).HasColumnName("larp_guid");
 
@@ -818,8 +920,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarpGuid).HasColumnName("larp_guid");
             entity.Property(e => e.SeriesGuid).HasColumnName("series_guid");
@@ -854,8 +955,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarpGuid).HasColumnName("larp_guid");
             entity.Property(e => e.SeriesGuid).HasColumnName("series_guid");
@@ -890,8 +990,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarpGuid).HasColumnName("larp_guid");
             entity.Property(e => e.TagGuid).HasColumnName("tag_guid");
@@ -927,8 +1026,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarpGuid).HasColumnName("larp_guid");
             entity.Property(e => e.TagGuid).HasColumnName("tag_guid");
@@ -964,8 +1062,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("createdate");
             entity.Property(e => e.CreatedbyuserGuid).HasColumnName("createdbyuser_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarpGuid).HasColumnName("larp_guid");
             entity.Property(e => e.Larprunenddate)
@@ -1026,23 +1123,19 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(2000)
                 .HasColumnName("charactersheet_customchoice3_series");
             entity.Property(e => e.CharactersheetRegistered).HasColumnName("charactersheet_registered");
-            entity.Property(e => e.CharactersheetRegisteredApprovedbyUser)
-                .HasColumnName("charactersheet_registered_approvedby_user");
-            entity.Property(e => e.CharactersheetRegisteredApprovedsheet)
-                .HasColumnName("charactersheet_registered_approvedsheet");
+            entity.Property(e => e.CharactersheetRegisteredApprovedbyUser).HasColumnName("charactersheet_registered_approvedby_user");
+            entity.Property(e => e.CharactersheetRegisteredApprovedsheet).HasColumnName("charactersheet_registered_approvedsheet");
             entity.Property(e => e.Createdate)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("createdate");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.LarprunGuid).HasColumnName("larprun_guid");
             entity.Property(e => e.UserGuid).HasColumnName("user_guid");
 
-            entity.HasOne(d => d.CharactersheetRegisteredApprovedbyUserNavigation)
-                .WithMany(p => p.LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations)
+            entity.HasOne(d => d.CharactersheetRegisteredApprovedbyUserNavigation).WithMany(p => p.LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations)
                 .HasForeignKey(d => d.CharactersheetRegisteredApprovedbyUser)
                 .HasConstraintName("LARPRunPreReg_charactersheet_registered_approvedby_user_fkey");
 
@@ -1065,7 +1158,7 @@ public partial class NexusLarpLocalContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Isactive)
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Larpguid).HasColumnName("larpguid");
             entity.Property(e => e.Tagguid).HasColumnName("tagguid");
@@ -1117,8 +1210,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("deactivedate");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Tags)
                 .HasColumnType("jsonb")
@@ -1188,11 +1280,10 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasColumnName("guid");
             entity.Property(e => e.ApprovedbyUserGuid).HasColumnName("approvedby_user_guid");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Isapproved)
-                .HasDefaultValueSql("false")
+                .HasDefaultValue(false)
                 .HasColumnName("isapproved");
             entity.Property(e => e.Name)
                 .HasMaxLength(1000)
@@ -1241,8 +1332,7 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("firstname");
             entity.Property(e => e.Isactive)
-                .IsRequired()
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Lastname)
                 .HasMaxLength(1000)
@@ -1265,7 +1355,7 @@ public partial class NexusLarpLocalContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Isactive)
-                .HasDefaultValueSql("true")
+                .HasDefaultValue(true)
                 .HasColumnName("isactive");
             entity.Property(e => e.Larpguid).HasColumnName("larpguid");
             entity.Property(e => e.Roleid).HasColumnName("roleid");
