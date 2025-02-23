@@ -742,6 +742,7 @@ public class ItemSheetApprovedsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
+            var currUser = await UsersLogic.GetUserGuid(authId, _context);
             var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.ItemSheetApprovedTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
@@ -760,24 +761,22 @@ public class ItemSheetApprovedsController : ControllerBase
                 .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
 
             if (pagingParameterModel.userCreated == true)
-                initItems = initItems.Where(ii => ii.CreatedbyuserGuid == UsersLogic.GetUserGuid(authId, _context))
+                initItems = initItems.Where(ii => ii.CreatedbyuserGuid == currUser)
                     .ToList();
             if (pagingParameterModel.userCreated == false)
-                initItems = initItems.Where(ii => ii.CreatedbyuserGuid != UsersLogic.GetUserGuid(authId, _context))
+                initItems = initItems.Where(ii => ii.CreatedbyuserGuid != currUser)
                     .ToList();
 
             if (pagingParameterModel.userApproved == true)
             {
-                var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == curUserGuid ||
-                                                  ii.SecondapprovalbyuserGuid == curUserGuid).ToList();
+                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == currUser ||
+                                                  ii.SecondapprovalbyuserGuid == currUser).ToList();
             }
 
             if (pagingParameterModel.userApproved == false)
             {
-                var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
-                                                  ii.SecondapprovalbyuserGuid != curUserGuid).ToList();
+                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != currUser &&
+                                                  ii.SecondapprovalbyuserGuid != currUser).ToList();
             }
 
             var taggedItems = new List<ItemSheetApproved>();

@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class ItemSheetTag
+public partial class ItemSheetTag
 {
     public int Id { get; set; }
 

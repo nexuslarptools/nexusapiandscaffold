@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class Series
+public partial class Series
 {
     public Guid Guid { get; set; }
 
@@ -14,31 +14,27 @@ public class Series
 
     public JsonDocument Tags { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
 
     public DateTime Createdate { get; set; }
 
     public DateTime? Deactivedate { get; set; }
 
-    public virtual ICollection<CharacterSheetApproved> CharacterSheetApproveds { get; } =
-        new List<CharacterSheetApproved>();
+    public virtual ICollection<CharacterSheetApproved> CharacterSheetApproveds { get; set; } = new List<CharacterSheetApproved>();
 
-    public virtual ICollection<CharacterSheetVersion> CharacterSheetVersions { get; } =
-        new List<CharacterSheetVersion>();
+    public virtual ICollection<CharacterSheetVersion> CharacterSheetVersions { get; set; } = new List<CharacterSheetVersion>();
 
-    public virtual ICollection<CharacterSheet> CharacterSheets { get; } = new List<CharacterSheet>();
+    public virtual ICollection<CharacterSheet> CharacterSheets { get; set; } = new List<CharacterSheet>();
 
-    public virtual ICollection<ItemSheetApproved> ItemSheetApproveds { get; } = new List<ItemSheetApproved>();
+    public virtual ICollection<ItemSheetApproved> ItemSheetApproveds { get; set; } = new List<ItemSheetApproved>();
 
-    public virtual ICollection<ItemSheetVersion> ItemSheetVersions { get; } = new List<ItemSheetVersion>();
+    public virtual ICollection<ItemSheetVersion> ItemSheetVersions { get; set; } = new List<ItemSheetVersion>();
 
-    public virtual ICollection<ItemSheet> ItemSheets { get; } = new List<ItemSheet>();
+    public virtual ICollection<ItemSheet> ItemSheets { get; set; } = new List<ItemSheet>();
 
-    public virtual ICollection<LarpplayerSeriesAllowed> LarpplayerSeriesAlloweds { get; } =
-        new List<LarpplayerSeriesAllowed>();
+    public virtual ICollection<LarpplayerSeriesAllowed> LarpplayerSeriesAlloweds { get; set; } = new List<LarpplayerSeriesAllowed>();
 
-    public virtual ICollection<LarpplayerSeriesDisllowed> LarpplayerSeriesDislloweds { get; } =
-        new List<LarpplayerSeriesDisllowed>();
+    public virtual ICollection<LarpplayerSeriesDisllowed> LarpplayerSeriesDislloweds { get; set; } = new List<LarpplayerSeriesDisllowed>();
 
-    public virtual ICollection<SeriesTag> SeriesTags { get; } = new List<SeriesTag>();
+    public virtual ICollection<SeriesTag> SeriesTags { get; set; } = new List<SeriesTag>();
 }

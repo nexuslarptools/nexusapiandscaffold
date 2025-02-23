@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class Larprun
+public partial class Larprun
 {
     public Guid Guid { get; set; }
 
@@ -21,7 +21,7 @@ public class Larprun
 
     public Guid CreatedbyuserGuid { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
 
     public DateTime Createdate { get; set; }
 
@@ -29,5 +29,5 @@ public class Larprun
 
     public virtual Larp Larp { get; set; }
 
-    public virtual ICollection<LarprunPreReg> LarprunPreRegs { get; } = new List<LarprunPreReg>();
+    public virtual ICollection<LarprunPreReg> LarprunPreRegs { get; set; } = new List<LarprunPreReg>();
 }

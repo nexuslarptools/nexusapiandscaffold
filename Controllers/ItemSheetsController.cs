@@ -854,6 +854,8 @@ public class ItemSheetsController : ControllerBase
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             try
             {
+                var currUser = await UsersLogic.GetUserGuid(authId, _context);
+
                 var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                     .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
 
@@ -873,24 +875,22 @@ public class ItemSheetsController : ControllerBase
 
                 if (pagingParameterModel.userCreated == true)
                     initItems = initItems
-                        .Where(ii => ii.CreatedbyuserGuid == UsersLogic.GetUserGuid(authId, _context)).ToList();
+                        .Where(ii => ii.CreatedbyuserGuid == currUser).ToList();
 
                 if (pagingParameterModel.userCreated == false)
                     initItems = initItems
-                        .Where(ii => ii.CreatedbyuserGuid != UsersLogic.GetUserGuid(authId, _context)).ToList();
+                        .Where(ii => ii.CreatedbyuserGuid != currUser).ToList();
 
                 if (pagingParameterModel.userApproved == true)
                 {
-                    var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == curUserGuid ||
-                                                      ii.SecondapprovalbyuserGuid == curUserGuid).ToList();
+                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == currUser ||
+                                                      ii.SecondapprovalbyuserGuid == currUser).ToList();
                 }
 
                 if (pagingParameterModel.userApproved == false)
                 {
-                    var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
-                                                      ii.SecondapprovalbyuserGuid != curUserGuid).OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
+                    initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != currUser &&
+                                                      ii.SecondapprovalbyuserGuid != currUser).OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
                 }
 
                 var taggedItems = new List<ItemSheet>();
@@ -1213,7 +1213,7 @@ public class ItemSheetsController : ControllerBase
                     var huh = await Minostuff();
 
                     StatObjectArgs statObjectArgs = new StatObjectArgs()
-                                                            .WithBucket("nexusdata")
+                                                            .WithBucket("nexusdevdata")
                                                             .WithObject("/images/Items/" + itemSheet.Guid.ToString() + ".jpg");
                     ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
 
@@ -1790,7 +1790,7 @@ public class ItemSheetsController : ControllerBase
     private async Task<string> Minostuff()
     {
 
-        string bucket = "nexusdata";
+        string bucket = "nexusdevdata";
 
         try
         {

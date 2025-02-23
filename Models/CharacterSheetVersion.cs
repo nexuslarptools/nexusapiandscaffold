@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class CharacterSheetVersion
+public partial class CharacterSheetVersion
 {
     public int Id { get; set; }
 
@@ -21,7 +22,7 @@ public class CharacterSheetVersion
 
     public JsonDocument Fields { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
 
     public DateTime Createdate { get; set; }
 

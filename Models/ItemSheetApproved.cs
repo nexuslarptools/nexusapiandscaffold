@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class ItemSheetApproved
+public partial class ItemSheetApproved
 {
     public int Id { get; set; }
 
@@ -20,7 +20,7 @@ public class ItemSheetApproved
 
     public JsonDocument Fields { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
 
     public DateTime Createdate { get; set; }
 
@@ -56,7 +56,7 @@ public class ItemSheetApproved
 
     public virtual User Firstapprovalbyuser { get; set; }
 
-    public virtual ICollection<ItemSheetApprovedTag> ItemSheetApprovedTags { get; } = new List<ItemSheetApprovedTag>();
+    public virtual ICollection<ItemSheetApprovedTag> ItemSheetApprovedTags { get; set; } = new List<ItemSheetApprovedTag>();
 
     public virtual ItemType Itemtype { get; set; }
 

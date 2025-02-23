@@ -58,7 +58,10 @@ public class CharacterSheetReviewMessageController : ControllerBase
 
             var output = new List<ReviewMessage>();
 
-            foreach (var message in csheetReviews) output.Add(new ReviewMessage(message, _context));
+            foreach (var message in csheetReviews)
+            {
+                output.Add(new ReviewMessage(message, _context));
+            }
 
             return Ok(output);
         }
