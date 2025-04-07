@@ -76,7 +76,7 @@ public class Character
             var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Editby = lookupuser.Preferredname;
-            if (lookupuser.Lastname.Length > 0) newCharSheet.Editby += " " + lookupuser.Lastname[0];
+            if (lookupuser.Lastname != null && lookupuser.Lastname.Length > 0) newCharSheet.Editby += " " + lookupuser.Lastname[0];
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
                 newCharSheet.Editby = lookupuser.Firstname + " " + lookupuser.Lastname;
         }

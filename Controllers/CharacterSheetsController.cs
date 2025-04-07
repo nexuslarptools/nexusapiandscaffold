@@ -872,6 +872,99 @@ public class CharacterSheetsController : ControllerBase
         return Unauthorized();
     }
 
+    /// <summary>
+    ///     Search for character based on partial character name or alternate name.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    // GET: api/v1/Search
+    [HttpGet("SearchByCreatorEditor/{input}")]
+    [Authorize]
+    public async Task<ActionResult<Series>> GetCharacterSearchCreatorEditor(string input)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        {
+            var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
+                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+                .Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+            var allowedTags = _context.Larptags.Where(lt =>
+                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+            var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+            var userGuid = _context.Users.Where(u =>
+            u.Firstname.ToLower().Contains(input.ToLower()) ||
+            u.Lastname.ToLower().Contains(input.ToLower()) ||
+            u.Preferredname.ToLower().Contains(input.ToLower())).Select(u => u.Guid).ToList();
+
+            var testChar = await _context.CharacterSheets
+                .Where(ch => 
+                (ch.CreatedbyuserGuid != null && userGuid.Contains((Guid)ch.CreatedbyuserGuid) ||
+                ch.FirstapprovalbyuserGuid != null && userGuid.Contains((Guid)ch.FirstapprovalbyuserGuid) ||
+                ch.SecondapprovalbyuserGuid != null && userGuid.Contains((Guid)ch.SecondapprovalbyuserGuid)) &&
+                ch.Isactive == true && allowedSheets.Contains(ch.Guid)).Select(cha => new
+                {
+                    cha.Guid,
+                    cha.Name,
+                    cha.Seriesguid,
+                    cha.Series.Title,
+                    cha.Fields,
+                    cha.CreatedbyuserGuid,
+                    cha.FirstapprovalbyuserGuid,
+                    cha.SecondapprovalbyuserGuid,
+                    Tags = new List<Tag>()
+                }).ToListAsync();
+
+            var characters = testChar.Select(ch => new
+            {
+                ch.Guid,
+                ch.Name,
+                ch.Seriesguid,
+                ch.Title,
+                ch.Fields,
+                ch.Tags
+            }).ToList();
+
+            if (characters == null) return NotFound();
+
+            foreach (var sheet in characters)
+            {
+                var tagslist = new JsonElement();
+
+                sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
+
+                if (tagslist.ValueKind.ToString() != "Undefined")
+                {
+                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
+
+                    foreach (var tag in TestJsonFeilds)
+                    {
+                        var fullTag = await _context.Tags
+                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                            .FirstOrDefaultAsync();
+                        sheet.Tags.Add(fullTag);
+                    }
+                }
+            }
+
+            return Ok(characters);
+        }
+
+        return Unauthorized();
+    }
+
 
     [HttpGet("BySpecialSkillsTag/{guid}")]
     [Authorize]
