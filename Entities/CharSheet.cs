@@ -169,7 +169,7 @@ public class CharSheet
         Version = input.Version;
         Readyforapproval = input.Readyforapproval;
 
-        var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
+        var assocSeries = _context.Series.Where(s => s.Guid == input.Seriesguid)
             .FirstOrDefault();
 
         SeriesTitle = assocSeries.Title;

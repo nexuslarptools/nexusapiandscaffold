@@ -93,6 +93,7 @@ public class ItemSheetApprovedsController : ControllerBase
 
             if (!allowedSheets.Contains(guid)) return Unauthorized();
 
+
             var outputItem = new IteSheet(itemSheet, _context);
 
             /*            var tagslist = new JsonElement();
@@ -639,11 +640,13 @@ public class ItemSheetApprovedsController : ControllerBase
                             && isrm.ItemsheetId == x.Id).ToList()
                     }).ToListAsync();
 
-                foreach (var sheet in allSheets)
-                {
-                    var newOutputSheet = new IteSheet(sheet, _context);
-                    outPutList.Add(newOutputSheet);
-                }
+                var itemTypes = _context.ItemTypes.Where(it => it.Isactive == true).ToList();
+                var isheets = _context.ItemSheets.Where(it => it.Isactive == true).ToList();
+                var isheetreviewm = _context.ItemSheetReviewMessages.Where(it => it.Isactive == true).ToList();
+                var isheetapprov = _context.ItemSheetApproveds.Where(it => it.Isactive == true).ToList();
+
+                outPutList = allSheets.Select(a => new IteSheet(a, itemTypes, isheets,
+                          isheetreviewm, isheetapprov)).ToList();
 
                 var output = new IteListOut();
                 output.IteList = outPutList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
@@ -701,11 +704,13 @@ public class ItemSheetApprovedsController : ControllerBase
                             && isrm.ItemsheetId == x.Id).ToList()
                     }).ToListAsync();
 
-                foreach (var sheet in allSheets)
-                {
-                    var newOutputSheet = new IteSheet(sheet, _context);
-                    outPutList.Add(newOutputSheet);
-                }
+                var itemTypes = _context.ItemTypes.Where(it => it.Isactive == true).ToList();
+                var isheets = _context.ItemSheets.Where(it => it.Isactive == true).ToList();
+                var isheetreviewm = _context.ItemSheetReviewMessages.Where(it => it.Isactive == true).ToList();
+                var isheetapprov = _context.ItemSheetApproveds.Where(it => it.Isactive == true).ToList();
+
+                outPutList = allSheets.Select(a => new IteSheet(a, itemTypes, isheets,
+                          isheetreviewm, isheetapprov)).ToList();
 
                 var output = new IteListOut();
                 output.IteList = outPutList.OrderBy(x => x.Createdate).OrderBy(x => x.Id).ToList();

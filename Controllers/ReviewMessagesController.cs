@@ -73,9 +73,10 @@ namespace NEXUSDataLayerScaffold.Controllers
                 var rml = new ReviewMessageLogic(_context);
                 var rmal = new ReviewMessageAcksLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
+                var usersList = _context.Users.Select(x => x).ToList();
 
                 var result = await rml.GetCharacterMessage(id);
-                var outp = new ReviewMessage(result, _context);
+                var outp = new ReviewMessage(result, usersList);
 
                 if (outp.CreatedbyuserGuid == currUserGuid)
                 {

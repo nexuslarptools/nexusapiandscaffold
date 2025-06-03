@@ -72,7 +72,7 @@ public class CharSheetListItem
         readyforapproval = false;
     }
 
-    public CharSheetListItem(CharacterSheetApprovedDO charSheet, NexusLarpLocalContext _context)
+    public CharSheetListItem(CharacterSheetApprovedDO charSheet)
     {
         var tagslist = new JsonElement();
         tags = new List<TagOut>();
@@ -162,7 +162,7 @@ public class CharSheetListItem
         readyforapproval = charSheet.Readyforapproval;
     }
 
-    public CharSheetListItem(CharacterSheetDO charSheet, NexusLarpLocalContext _context)
+    public CharSheetListItem(CharacterSheetDO charSheet)
     {
         var tagslist = new JsonElement();
         tags = new List<TagOut>();
