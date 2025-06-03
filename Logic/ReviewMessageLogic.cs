@@ -64,9 +64,11 @@ namespace NEXUSDataLayerScaffold.Logic
         {
             try
             {
+                var usersList = _context.Users.Select(x => x).ToList();
+
                 return _context.CharacterSheetReviewMessages
                     .Where(isrm => isrm.CreatedbyuserGuid == userGuid)
-                    .Select(x => new ReviewMessage(x, _context)).ToList();
+                    .Select(x => new ReviewMessage(x, usersList)).ToList();
 
             }
             catch (Exception e)
@@ -126,9 +128,10 @@ namespace NEXUSDataLayerScaffold.Logic
                 var messages = await _context.CharacterSheetReviewMessages
                     .Where(isrm => charIds.Contains(isrm.CharactersheetId)).ToListAsync();
 
+                var usersList = _context.Users.Select(x => x).ToList();
                 foreach (var mess in messages)
                 {
-                    retList.Add(new ReviewMessage(mess, _context));
+                    retList.Add(new ReviewMessage(mess, usersList));
                 }
 
                 return retList;

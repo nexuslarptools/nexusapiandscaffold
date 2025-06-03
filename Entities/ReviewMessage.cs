@@ -12,7 +12,7 @@ public class ReviewMessage
     {
     }
 
-    public ReviewMessage(CharacterSheetReviewMessage reviewMessage, NexusLarpLocalContext _context)
+    public ReviewMessage(CharacterSheetReviewMessage reviewMessage, List<User> userList)
     {
         Id = reviewMessage.Id;
         SheetId = reviewMessage.CharactersheetId;
@@ -24,7 +24,7 @@ public class ReviewMessage
 
         if (CreatedbyuserGuid != null)
         {
-            var creUser = _context.Users.Where(u => u.Guid == CreatedbyuserGuid)
+            var creUser = userList.Where(u => u.Guid == CreatedbyuserGuid)
                 .FirstOrDefault();
             createdby = creUser.Preferredname;
             if (creUser.Preferredname == null || creUser.Preferredname == string.Empty) createdby = creUser.Firstname + " " + creUser.Lastname;

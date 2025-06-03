@@ -289,7 +289,8 @@ public class IteSheet
         this.SetIsLarge();
     }
 
-    public IteSheet(ItemSheetDO sheet, NexusLarpLocalContext _context)
+    public IteSheet(ItemSheetDO sheet, List<ItemType> itemTypes, List<ItemSheet> isheets, 
+        List<ItemSheetReviewMessage> isheetreviewm, List<ItemSheetApproved> isheetapprov)
     {
         Tags = new List<TagOut>();
 
@@ -299,7 +300,7 @@ public class IteSheet
 
         if (sheet.Sheet.ItemtypeGuid != null)
         {
-            var thistype = _context.ItemTypes.Where(i => i.Guid == (Guid)sheet.Sheet.ItemtypeGuid).FirstOrDefault();
+            var thistype = itemTypes.Where(i => i.Guid == (Guid)sheet.Sheet.ItemtypeGuid).FirstOrDefault();
             Type = thistype.Type;
             ItemTypeGuid = (Guid)sheet.Sheet.ItemtypeGuid;
         }
@@ -366,8 +367,8 @@ public class IteSheet
 
         hasreview = false;
 
-        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Sheet.Guid).Select(x => x.Id).ToList();
-        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true 
+        var ListId = isheets.Where(ish => ish.Guid == sheet.Sheet.Guid).Select(x => x.Id).ToList();
+        var ListMessages = isheetreviewm.Where(isrm => isrm.Isactive == true 
             && ListId.Contains(isrm.ItemsheetId)).ToList();
 
         foreach (var message in ListMessages)
@@ -376,7 +377,7 @@ public class IteSheet
             //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
-        this.WasApproved = _context.ItemSheetApproveds.Any(isa => isa.Guid == sheet.Sheet.Guid);
+        this.WasApproved = isheetapprov.Any(isa => isa.Guid == sheet.Sheet.Guid);
 
         this.SetIsLarge();
     }

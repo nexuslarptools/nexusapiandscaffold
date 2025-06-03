@@ -9,7 +9,8 @@ namespace NEXUSDataLayerScaffold.Extensions;
 
 public class Character
 {
-    public static CharSheet CreateCharSheet(CharacterSheet cSheet, NexusLarpLocalContext _context)
+    public static CharSheet CreateCharSheet(CharacterSheet cSheet, List<User> userList,
+        List<CharacterSheetReviewMessage> csrm)
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(cSheet.Fields.RootElement.ToString()));
 
@@ -41,7 +42,7 @@ public class Character
 
         if (cSheet.CreatedbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == cSheet.CreatedbyuserGuid)
+            var lookupuser = userList.Where(u => u.Guid == cSheet.CreatedbyuserGuid)
                 .FirstOrDefault();
 
             newCharSheet.createdby = lookupuser.Preferredname;
@@ -53,7 +54,7 @@ public class Character
 
         if (newCharSheet.FirstapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
+            var lookupuser = userList.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Firstapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newCharSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
@@ -63,7 +64,7 @@ public class Character
 
         if (newCharSheet.SecondapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
+            var lookupuser = userList.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Secondapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newCharSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
@@ -73,7 +74,7 @@ public class Character
 
         if (newCharSheet.EditbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
+            var lookupuser = userList.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Editby = lookupuser.Preferredname;
             if (lookupuser.Lastname != null && lookupuser.Lastname.Length > 0) newCharSheet.Editby += " " + lookupuser.Lastname[0];
@@ -83,11 +84,9 @@ public class Character
 
         var ReviewMessages = new List<ReviewMessage>();
 
-        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                               && isrm.CharactersheetId == cSheet.Id)
-            .ToList();
+        var ListMessages = csrm.Where(isrm => isrm.Isactive == true && isrm.CharactersheetId == cSheet.Id).ToList();
 
-        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, userList));
 
         newCharSheet.ReviewMessages = ReviewMessages;
 
@@ -95,7 +94,8 @@ public class Character
     }
 
 
-    public static CharSheet CreateCharSheet(CharacterSheetApproved cSheet, NexusLarpLocalContext _context)
+    public static CharSheet CreateCharSheet(CharacterSheetApproved cSheet, List<User> userList,
+        List<CharacterSheetReviewMessage> csrm)
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(cSheet.Fields.RootElement.ToString()));
 
@@ -126,7 +126,7 @@ public class Character
 
         if (cSheet.CreatedbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == cSheet.CreatedbyuserGuid)
+            var lookupuser = userList.Where(u => u.Guid == cSheet.CreatedbyuserGuid)
                 .FirstOrDefault();
 
             newCharSheet.createdby = lookupuser.Preferredname;
@@ -137,7 +137,7 @@ public class Character
 
         if (newCharSheet.FirstapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
+            var lookupuser = userList.Where(u => u.Guid == newCharSheet.FirstapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Firstapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newCharSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
@@ -147,7 +147,7 @@ public class Character
 
         if (newCharSheet.SecondapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
+            var lookupuser = userList.Where(u => u.Guid == newCharSheet.SecondapprovalbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Secondapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newCharSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
@@ -157,7 +157,7 @@ public class Character
 
         if (newCharSheet.EditbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
+            var lookupuser = userList.Where(u => u.Guid == newCharSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newCharSheet.Editby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newCharSheet.Editby += " " + lookupuser.Lastname[0];
@@ -167,11 +167,10 @@ public class Character
 
         var ReviewMessages = new List<ReviewMessage>();
 
-        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                               && isrm.CharactersheetId ==
-                                                                               cSheet.CharactersheetId).ToList();
+        var ListMessages = csrm.Where(isrm => isrm.Isactive == true && isrm.CharactersheetId ==
+                  cSheet.CharactersheetId).ToList();
 
-        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, userList));
 
         newCharSheet.ReviewMessages = ReviewMessages;
 
