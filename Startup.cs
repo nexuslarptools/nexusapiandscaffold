@@ -223,7 +223,7 @@ public class Startup
 
         
         
-        connstring = "Host=localhost;Port=5433;Database=NexusLarp_Local_FromNick2;Username=postgres;Password=L4RPEverywhere!";
+        //connstring = "Host=localhost;Port=5433;Database=NexusLarp_Local_FromNick2;Username=postgres;Password=L4RPEverywhere!";
         accesskey = "S6epybsl7DRwSNmstqaq";
         secretkey = "UCMzYZCJ1pXG5AQ9eAEsDmfAYkeeCPr4vWjba9EM";
         // LOCAL DOCKER CONNSTTRING
