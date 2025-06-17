@@ -10,7 +10,8 @@ namespace NEXUSDataLayerScaffold.Extensions;
 
 public class Item
 {
-    public static IteSheet CreateItem(ItemSheet iSheet, NexusLarpLocalContext _context)
+    public static IteSheet CreateItem(ItemSheet iSheet, List<User> listUsers,
+        List<ItemType> listItemTypes)
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(iSheet.Fields.RootElement.ToString()));
 
@@ -41,7 +42,7 @@ public class Item
 */
         if (iSheet.CreatedbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == iSheet.CreatedbyuserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == iSheet.CreatedbyuserGuid)
                 .FirstOrDefault();
 
             newiemSheet.createdby = lookupuser.Preferredname;
@@ -54,7 +55,7 @@ public class Item
 
         if (newiemSheet.FirstapprovalbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.FirstapprovalbyuserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == newiemSheet.FirstapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Firstapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newiemSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
@@ -64,7 +65,7 @@ public class Item
 
         if (newiemSheet.SecondapprovalbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.SecondapprovalbyuserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == newiemSheet.SecondapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Secondapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newiemSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
@@ -74,7 +75,7 @@ public class Item
 
         if (newiemSheet.EditbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.EditbyUserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == newiemSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newiemSheet.EditbyUser = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newiemSheet.EditbyUser += " " + lookupuser.Lastname[0];
@@ -82,7 +83,7 @@ public class Item
                 newiemSheet.EditbyUser = lookupuser.Firstname + " " + lookupuser.Lastname;
         }
 
-        var thisType = _context.ItemTypes.Where(i => i.Guid == iSheet.ItemtypeGuid).FirstOrDefault();
+        var thisType = listItemTypes.Where(i => i.Guid == iSheet.ItemtypeGuid).FirstOrDefault();
         
         if(thisType != null)
         {
@@ -95,7 +96,8 @@ public class Item
         return newiemSheet;
     }
 
-    public static IteSheet CreateItem(ItemSheetApproved iSheet, NexusLarpLocalContext _context)
+    public static IteSheet CreateItem(ItemSheetApproved iSheet, List<User> listUsers,
+        List<ItemType> listItemTypes)
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(iSheet.Fields.RootElement.ToString()));
 
@@ -126,7 +128,7 @@ public class Item
 */
         if (iSheet.CreatedbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == iSheet.CreatedbyuserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == iSheet.CreatedbyuserGuid)
                 .FirstOrDefault();
 
             newiemSheet.createdby = lookupuser.Preferredname;
@@ -138,7 +140,7 @@ public class Item
 
         if (newiemSheet.FirstapprovalbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.FirstapprovalbyuserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == newiemSheet.FirstapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Firstapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newiemSheet.Firstapprovalby += " " + lookupuser.Lastname[0];
@@ -148,7 +150,7 @@ public class Item
 
         if (newiemSheet.SecondapprovalbyuserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.SecondapprovalbyuserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == newiemSheet.SecondapprovalbyuserGuid)
                 .FirstOrDefault();
             newiemSheet.Secondapprovalby = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newiemSheet.Secondapprovalby += " " + lookupuser.Lastname[0];
@@ -158,7 +160,7 @@ public class Item
 
         if (newiemSheet.EditbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == newiemSheet.EditbyUserGuid)
+            var lookupuser = listUsers.Where(u => u.Guid == newiemSheet.EditbyUserGuid)
                 .FirstOrDefault();
             newiemSheet.EditbyUser = lookupuser.Preferredname;
             if (lookupuser.Lastname.Length > 0) newiemSheet.EditbyUser += " " + lookupuser.Lastname[0];
@@ -166,7 +168,7 @@ public class Item
                 newiemSheet.EditbyUser = lookupuser.Firstname + " " + lookupuser.Lastname;
         }
 
-        var thisType = _context.ItemTypes.Where(i => i.Guid == iSheet.ItemtypeGuid).FirstOrDefault();
+        var thisType = listItemTypes.Where(i => i.Guid == iSheet.ItemtypeGuid).FirstOrDefault();
 
         if (thisType != null)
         {

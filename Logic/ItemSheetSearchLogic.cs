@@ -2,30 +2,30 @@
 using NEXUSDataLayerScaffold.Logic;
 using System.Collections.Generic;
 using System;
+using NEXUSDataLayerScaffold.Models;
 using NEXUSDataLayerScaffold.Entities;
 using System.Linq;
 
 namespace NEXUSDataLayerScaffold.Logic
 {
-    public class CharacterSheetSearchLogic
+    public class ItemSheetSearchLogic
     {
 
-        public CharacterSheetSearchLogic()
+        public ItemSheetSearchLogic()
         {
-            sheets = new List<CharSheetPullObj>();
+            sheets = new List<ItemSheetPullObj>();
             andAttrisheets = new List<Guid>();
             orAttrisheets = new List<Guid>();
-            searchInObj = new CharacterSearchInObj();
+            searchInObj = new ItemSearchInObj();
         }
 
-        public List<CharSheetPullObj> sheets { get; set; }
+        public List<ItemSheetPullObj> sheets { get; set; }
         public List<Guid> andAttrisheets { get; set; }
         public List<Guid> orAttrisheets { get; set; }
-        public CharacterSearchInObj searchInObj { get; set; }
+        public ItemSearchInObj searchInObj { get; set; }
 
         public void DoFullSearch()
         {
-
             this.andAttrisheets = sheets.Select(g => g.Guid).ToList();
 
             if (searchInObj.Name != null)
@@ -33,17 +33,11 @@ namespace NEXUSDataLayerScaffold.Logic
                 andAttrisheets = sheets.Where(tc => tc.Name.ToLower().Contains(searchInObj.Name.ToLower())).Select(g => g.Guid).ToList();
             }
 
-            if (searchInObj.AlternateName != null)
+            if (searchInObj.ItemType != null && searchInObj.ItemType != "" && searchInObj.ItemType != " ")
             {
                 andAttrisheets = sheets.Where(ts =>
-                     ts.Fields.RootElement.TryGetProperty("Alternate_Names", out var value))
-                .Select(tc => new
-                {
-                    array = tc.Fields.RootElement.GetProperty("Alternate_Names").EnumerateArray()
-                     .Select(c => c.ToString().ToLower()).ToArray(),
-                    tc.Guid
-                }
-                ).ToList().Where(a => a.array.Any(s => s.Contains(searchInObj.AlternateName.ToLower())))
+                     ts.Fields.RootElement.TryGetProperty("TYPE", out var value))
+                .Where(a => a.Fields.RootElement.GetProperty("TYPE").ToString().ToLower() == searchInObj.ItemType.ToLower())
                 .Select(g => g.Guid).ToList();
             }
 
@@ -71,7 +65,7 @@ namespace NEXUSDataLayerScaffold.Logic
             this.orAttrisheets = new List<Guid>();
 
 
-            if ((searchInObj.OrTagsList == null || searchInObj.OrTagsList.Count == 0) 
+            if ((searchInObj.OrTagsList == null || searchInObj.OrTagsList.Count == 0)
                 && (searchInObj.OrAttributeSkillList == null || searchInObj.OrAttributeSkillList.Count == 0)
                  && (searchInObj.OrSpecialSkillList == null || searchInObj.OrSpecialSkillList.Count == 0))
             {

@@ -19,4 +19,15 @@ namespace NEXUSDataLayerScaffold.Entities
         public string Description { get; set; }
         public List<Guid> TagsList { get; set; }
     }
+
+    public class Special_Skill
+    {
+        public string Name { get; set; }
+        public string Rank { get; set; }
+        public string Cost { get; set; }
+        public string Uses { get; set; }
+        public string Description { get; set; }
+        public int arraynum { get; set; }
+        public List<Guid> Tags { get; set; }
+    }
 }

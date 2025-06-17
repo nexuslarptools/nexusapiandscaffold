@@ -357,6 +357,7 @@ public class SeriesController : ControllerBase
                   TagsList = s.SeriesTags.Select(ist => ist.Tag).ToList()
               })
                  .ToListAsync();
+
             var serOutPut = new List<Seri>();
 
             foreach (var s in ser)

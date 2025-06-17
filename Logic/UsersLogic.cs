@@ -5,8 +5,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Azure.Core;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Enums;
 using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Logic;
@@ -20,112 +23,131 @@ public class UsersLogic
         _context = context;
     }
 
+    public static MetadataRoles GetUserAuth0Info(string authIdValue)
+    {
+        var curruser = GetUserInfoByAuth(authIdValue).Result;
+
+        var a0 = new AuthLogic();
+        var auth0user = a0.GetUserByAuthID(authIdValue).Result;
+
+        if (auth0user != null)
+        {
+            var metad = auth0user.AppMetadata.ToString();
+            if (metad != null)
+            {
+                return JsonConvert.DeserializeObject<MetadataRoles>(metad);
+            }
+        }
+        return null;
+    }
+
     public static bool IsUserAuthed(string authIdValue, string accessToken, string authLevel,
         NexusLarpLocalContext _context)
     {
+        //var curruser = GetUserInfoByAuth(authIdValue).Result;
         var foundUsers = _context.Users.Where(u => u.Authid == authIdValue).ToList();
 
-        if (foundUsers.Count > 1 && foundUsers.Any(fu => fu.Isactive == true))
-        {
-            foundUsers[0].Isactive = true;
-            _context.Users.Update(foundUsers[0]);
-            _context.SaveChanges();
-
-            for (var i = 1; i < foundUsers.Count; i++)
-            {
-                var user = foundUsers[i];
-                user.Isactive = false;
-                _context.Users.Update(user);
-                _context.SaveChanges();
-            }
-        }
-
-        var foundUser = foundUsers.FirstOrDefault();
-
-        if (foundUser == null)
-        {
-            var autheduser = GetUserInfo(accessToken, _context);
-
-            if (autheduser.Result.authid != null && autheduser.Result.authid != string.Empty)
-            {
-                var newUsers = new User
+                if (foundUsers.Count > 1 && foundUsers.Any(fu => fu.Isactive == true))
                 {
-                    Email = autheduser.Result.email,
-                    Preferredname = autheduser.Result.name,
-                    Authid = autheduser.Result.authid,
-                    Isactive = true
-                };
-
-                try
-                {
-                    _context.Users.Add(newUsers);
+                    foundUsers[0].Isactive = true;
+                    _context.Users.Update(foundUsers[0]);
                     _context.SaveChanges();
+
+                    for (var i = 1; i < foundUsers.Count; i++)
+                    {
+                        var user = foundUsers[i];
+                        user.Isactive = false;
+                        _context.Users.Update(user);
+                        _context.SaveChanges();
+                    }
                 }
-                catch (Exception e)
+
+                var foundUser = foundUsers.FirstOrDefault();
+
+                if (foundUser == null)
                 {
-                    var huh = e;
+                    var autheduser = GetUserInfo(accessToken, _context);
+
+                    if (autheduser.Result.authid != null && autheduser.Result.authid != string.Empty)
+                    {
+                        var newUsers = new User
+                        {
+                            Email = autheduser.Result.email,
+                            Preferredname = autheduser.Result.name,
+                            Authid = autheduser.Result.authid,
+                            Isactive = true
+                        };
+
+                        try
+                        {
+                            _context.Users.Add(newUsers);
+                            _context.SaveChanges();
+                        }
+                        catch (Exception e)
+                        {
+                            var huh = e;
+                        }
+                    }
+
+                    return false;
                 }
-            }
 
-            return false;
-        }
+                if (foundUser.Isactive == false)
+                {
+                    if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
+                    {
+                        foundUser.Isactive = true;
+                        _context.Users.Update(foundUser);
+                        _context.SaveChanges();
 
-        if (foundUser.Isactive == false)
-        {
-            if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
-            {
-                foundUser.Isactive = true;
-                _context.Users.Update(foundUser);
-                _context.SaveChanges();
+                        return true;
+                    }
 
-                return true;
-            }
+                    return false;
+                }
 
-            return false;
-        }
+                if (authLevel == string.Empty)
+                {
+                    return true;
+                }
 
-        if (authLevel == string.Empty)
-        {
-            return true;
-        }
+                var roleNum = _context.Roles.Where(r => r.Rolename == authLevel).Select(r => r.Ord).FirstOrDefault();
 
-        var roleNum = _context.Roles.Where(r => r.Rolename == authLevel).Select(r => r.Ord).FirstOrDefault();
-
-        var foundrole = _context.UserLarproles
-            .Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Ord >= roleNum && ulr.Isactive == true)
-            .FirstOrDefault();
-
-        if (foundrole == null)
-        {
-            if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
-            {
-                foundrole = _context.UserLarproles.Where(ulr =>
-                        ulr.Userguid == foundUser.Guid && ulr.Role.Rolename == authLevel && ulr.Isactive == false)
+                var foundrole = _context.UserLarproles
+                    .Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Ord >= roleNum && ulr.Isactive == true)
                     .FirstOrDefault();
 
                 if (foundrole == null)
                 {
-                    foundrole = new UserLarprole
+                    if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
                     {
-                        Userguid = foundUser.Guid,
-                        Larpguid = _context.Larps.Where(l => l.Isactive == true && l.Name == "Default")
-                            .Select(l => l.Guid).FirstOrDefault(),
-                        Roleid = _context.Roles.Where(r => r.Rolename == "Wizard").Select(l => l.Id).FirstOrDefault()
-                    };
+                        foundrole = _context.UserLarproles.Where(ulr =>
+                                ulr.Userguid == foundUser.Guid && ulr.Role.Rolename == authLevel && ulr.Isactive == false)
+                            .FirstOrDefault();
 
-                    _context.UserLarproles.Add(foundrole);
+                        if (foundrole == null)
+                        {
+                            foundrole = new UserLarprole
+                            {
+                                Userguid = foundUser.Guid,
+                                Larpguid = _context.Larps.Where(l => l.Isactive == true && l.Name == "Default")
+                                    .Select(l => l.Guid).FirstOrDefault(),
+                                Roleid = _context.Roles.Where(r => r.Rolename == "Wizard").Select(l => l.Id).FirstOrDefault()
+                            };
+
+                            _context.UserLarproles.Add(foundrole);
+                        }
+                        else
+                        {
+                            foundrole.Isactive = true;
+                            _context.UserLarproles.Update(foundrole);
+                        }
+
+                        _context.SaveChanges();
+                    }
+
+                    return false;
                 }
-                else
-                {
-                    foundrole.Isactive = true;
-                    _context.UserLarproles.Update(foundrole);
-                }
-
-                _context.SaveChanges();
-            }
-
-            return false;
-        }
 
         return true;
     }
@@ -199,4 +221,22 @@ public class UsersLogic
     {
         return await _context.Users.Where(u => u.Authid == authIdValue).Select(u => u.Guid).FirstOrDefaultAsync();
     }
+
+    public static async void UpdateAuth0User(string email, MetadataRoles roles)
+    {
+        var aLogic = new AuthLogic();
+        var usersemail = aLogic.GetAllUsersByEmail(email);
+
+        foreach (var u in usersemail.Result)
+        {
+            var usr = aLogic.UpdateUserRoles(u.UserId, roles);
+        }
+    }
+
+    public static async Task<Auth0.ManagementApi.Models.User> GetUserInfoByAuth(string authIdValue)
+    {
+        var aLogic = new AuthLogic();
+        return await aLogic.GetUserByAuthID(authIdValue);
+    }
+
 }
