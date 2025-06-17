@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace NEXUSDataLayerScaffold.Models
+namespace NEXUSDataLayerScaffold.Entities
 {
     public class CharSheetPullObj
     {
@@ -11,6 +11,7 @@ namespace NEXUSDataLayerScaffold.Models
         public Guid? Seriesguid { get; set; }
         public string Title { get; set; }
         public JsonDocument Fields { get; set; }
+        public JsonDocument Fields2ndSide { get; set; }
         public List<Guid> MainTags { get; set; }
         public List<Guid> AbilityTags { get; set; }
     }

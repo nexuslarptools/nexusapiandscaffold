@@ -1,12 +1,13 @@
-﻿using Newtonsoft.Json;
+﻿using Google.Protobuf.Compiler;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
-using NEXUSDataLayerScaffold.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace NEXUSDataLayerScaffold.Logic
 {
@@ -38,6 +39,48 @@ namespace NEXUSDataLayerScaffold.Logic
             }
         }
 
+        public static List<Guid> AttributeCompareMain(List<ItemSheetPullObj> sheets, AttributeSearchTerm term)
+        {
+            try
+            {
+                //Find attribute name and whittle down sheets to only those with the attribute:
+                if (term.Attribute != null)
+                {
+                    var subsheets = sheets.Where(ts =>
+                      ts.Fields.RootElement.TryGetProperty(term.Attribute, out var value))
+                      .Select(tc => new JsonFieldRef
+                      {
+                          Guid = tc.Guid,
+                          FieldValue = tc.Fields.RootElement.GetProperty(term.Attribute).ToString()
+                      }).ToList();
+
+                    var subsheet2ndside = sheets.Where(ts => ts.Fields2ndside != null &&
+                     ts.Fields2ndside.RootElement.TryGetProperty(term.Attribute, out var value))
+                       .Select(tc => new JsonFieldRef
+                       {
+                           Guid = tc.Guid,
+                           FieldValue = tc.Fields2ndside.RootElement.GetProperty(term.Attribute).ToString()
+                       }).ToList();
+
+                    foreach(var sheet in subsheet2ndside)
+                    {
+                        if (subsheets.Select(x => x.Guid).ToList().Contains(sheet.Guid))
+                        {
+                            subsheets.Add(sheet);
+                        }
+                    }
+
+                    return AttributeCompareSwitch(subsheets, term).Select(acs => acs.Guid).ToList();
+
+                }
+                return new List<Guid>();
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
         public static List<Guid> SpecialSkillCompareMain(List<CharSheetPullObj> sheets, SpecialSkillSearchTerm term)
         {
             try
@@ -45,21 +88,171 @@ namespace NEXUSDataLayerScaffold.Logic
                 var output = sheets.Select(s => s.Guid).ToList();
                 //Extract Special Skills
 
-
-                var SpecialSkills = sheets.Where(ts =>
+                var SpecialSkills2 = sheets.Where(ts =>
                  ts.Fields.RootElement.TryGetProperty("Special_Skills", out var value)
                  && ts.Fields.RootElement.GetProperty("Special_Skills").ValueKind == JsonValueKind.Array
                  ).Select(s => new
                  {
                      s.Guid,
-                     Skills = s.Fields.RootElement.GetProperty("Special_Skills").EnumerateObject()
-                 }).ToList().SelectMany(sk => sk.Skills.Select(
-                 (ski, i) => new SpecialSkillObj()
+                     Skills = JsonConvert.DeserializeObject<List<Skill>>(s.Fields.RootElement.GetProperty("Special_Skills").ToString())
+                 }).ToList();
+
+
+                var SpecialSkills = SpecialSkills2.SelectMany(ski => ski.Skills.Select((s, i) => new SpecialSkillObj()
+                {
+                    Guid = ski.Guid,
+                    Skill = s,
+                    Ord = i
+                })).ToList();
+
+
+                var SpecialSkills2side2 = sheets.Where(ts =>
+                 ts.Fields2ndSide.RootElement.TryGetProperty("Special_Skills", out var value)
+                   && ts.Fields2ndSide.RootElement.GetProperty("Special_Skills").ValueKind == JsonValueKind.Array
+                ).Select(s => new
+                   {
+                    s.Guid,
+                    Skills = JsonConvert.DeserializeObject<List<Skill>>(s.Fields.RootElement.GetProperty("Special_Skills").ToString())
+                }).ToList();
+
+
+                var SpecialSkillsSide2 = SpecialSkills2side2.SelectMany(ski => ski.Skills.Select((s, i) => new SpecialSkillObj()
+                {
+                    Guid = ski.Guid,
+                    Skill = s,
+                    Ord = i
+                })).ToList();
+
+                SpecialSkills.AddRange(SpecialSkillsSide2);
+
+
+                if (term.Name != null)
+                {
+                    var result = AttributeCompareSwitch(SpecialSkills
+                        .Where(sp => output.Contains(sp.Guid))
+                        .Select(
+                        sp => new JsonFieldRef()
+                        {
+                            Guid = sp.Guid,
+                            FieldValue = sp.Skill.Name,
+                            Ord = sp.Ord
+                        }).ToList(), term.Name);
+
+
+                    output = output.Where(o => result.Any(r => r.Guid == o)).ToList();
+                }
+
+                if (term.Rank != null)
+                {
+                    var result = AttributeCompareSwitch(SpecialSkills
+                   .Where(sp => output.Contains(sp.Guid))
+                    .Select(
+                     sp => new JsonFieldRef()
+                     {
+                         Guid = sp.Guid,
+                         FieldValue = sp.Skill.Rank,
+                         Ord = sp.Ord
+                     }).ToList(), term.Rank);
+
+                    output = output.Where(o => result.Any(r => r.Guid == o)).ToList();
+                }
+
+                if (term.Cost != null)
+                {
+                    var result = AttributeCompareSwitch(SpecialSkills
+                   .Where(sp => output.Contains(sp.Guid))
+                    .Select(
+                     sp => new JsonFieldRef()
+                     {
+                         Guid = sp.Guid,
+                         FieldValue = sp.Skill.Cost,
+                         Ord = sp.Ord
+                     }).ToList(), term.Cost);
+
+                    output = output.Where(o => result.Any(r => r.Guid == o)).ToList();
+                }
+
+                if (term.Uses != null)
+                {
+                    var result = AttributeCompareSwitch(SpecialSkills
+                   .Where(sp => output.Contains(sp.Guid))
+                    .Select(
+                     sp => new JsonFieldRef()
+                     {
+                         Guid = sp.Guid,
+                         FieldValue = sp.Skill.Uses,
+                         Ord = sp.Ord
+                     }).ToList(), term.Uses);
+
+                    output = output.Where(o => result.Any(r => r.Guid == o)).ToList();
+                }
+
+                if (term.Description != null)
+                {
+                    var fullOut = new List<List<JsonFieldRef>>();
+                    var result = new List<JsonFieldRef>();
+
+                    foreach (var item in term.Description)
+                    {
+                        fullOut.Add(AttributeCompareSwitch(SpecialSkills
+                       .Where(sp => output.Contains(sp.Guid))
+                        .Select(
+                         sp => new JsonFieldRef()
+                         {
+                             Guid = sp.Guid,
+                             FieldValue = sp.Skill.Description,
+                             Ord = sp.Ord
+                         }).ToList(), item));
+                    }
+
+                    for (int i = 0; i < fullOut.Count; i++)
+                    {
+                        if (i == 0)
+                        {
+                            result = fullOut[i];
+                        }
+                        else
+                        {
+                            result = result.Where(r => fullOut[i].Any(fo => fo.Guid == r.Guid
+                            && fo.Ord == r.Ord)).ToList();
+                        }
+                    }
+
+                    output = output.Where(o => result.Any(r => r.Guid == o)).ToList();
+                }
+
+                //return results. 
+                return output;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public static List<Guid> SpecialSkillCompareMain(List<ItemSheetPullObj> sheets, SpecialSkillSearchTerm term)
+        {
+            try
+            {
+                var output = sheets.Select(s => s.Guid).ToList();
+                //Extract Special Skills
+
+                var SpecialSkills2 = sheets.Where(ts =>
+                 ts.Fields.RootElement.TryGetProperty("Special_Skills", out var value)
+                 && ts.Fields.RootElement.GetProperty("Special_Skills").ValueKind == JsonValueKind.Array
+                 ).Select(s => new
                  {
-                   Guid = sk.Guid,
-                   Skill = JsonConvert.DeserializeObject<Skill>(ski.ToString()),
-                   Ord = i
-                 }));
+                     s.Guid,
+                     Skills = JsonConvert.DeserializeObject<List<Skill>>(s.Fields.RootElement.GetProperty("Special_Skills").ToString())
+                 }).ToList();
+
+
+                var SpecialSkills = SpecialSkills2.SelectMany(ski => ski.Skills.Select((s, i) => new SpecialSkillObj()
+                {
+                    Guid = ski.Guid,
+                    Skill = s,
+                    Ord = i
+                })).ToList();
 
                 /*              var SpecialSkills = sheets.Where(ts =>
                                    ts.Fields.RootElement.TryGetProperty("Special_Skills", out var value)
@@ -155,7 +348,7 @@ namespace NEXUSDataLayerScaffold.Logic
                          }).ToList(), item));
                     }
 
-                    for(int i = 0; i < fullOut.Count; i++)
+                    for (int i = 0; i < fullOut.Count; i++)
                     {
                         if (i == 0)
                         {

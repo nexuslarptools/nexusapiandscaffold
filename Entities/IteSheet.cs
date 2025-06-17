@@ -38,7 +38,8 @@ public class IteSheet
                 var fullTag = _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == tag.TagGuid)
                     .Include("Tagtype").FirstOrDefault();
-                if (fullTag != null) Tags.Add(new TagOut(fullTag));
+                if (fullTag != null && (fullTag.Tagtype.Name == "Item" ||
+                    fullTag.Tagtype.Name == "LARPrun")) Tags.Add(new TagOut(fullTag));
             }
 
         if (sheet.ItemtypeGuid != null)
@@ -505,6 +506,7 @@ public class IteSheet
     public bool Isbackonly { get; set; }
     public Backside Back { get; set; }
     public bool WasApproved { get; set; }
+    public int CountVersions { get; set; }
 
     public List<ReviewMessage> ReviewMessages { get; set; }
 

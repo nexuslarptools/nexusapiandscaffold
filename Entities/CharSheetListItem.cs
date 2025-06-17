@@ -190,6 +190,7 @@ public class CharSheetListItem
         editbyUser = charSheet.EditbyUser == null ? null : charSheet.EditbyUser.Preferredname;
         hasreview = charSheet.CharacterSheetReviewMessages.Count > 0 ? true : false;
         readyforapproval = charSheet.Sheet.Readyforapproval;
+        isactive = charSheet.Sheet.Isactive;
     }
 
     public Guid guid { get; set; }
@@ -207,6 +208,8 @@ public class CharSheetListItem
     public bool readyforapproval { get; set; }
     public List<TagOut> tags { get; set; }
     public bool hasreview { get; set; }
+    public bool isactive { get; set; }
+    public bool wasapproved { get; set; }
 
     public bool IsNullOrEmpty(Guid? input)
     {
