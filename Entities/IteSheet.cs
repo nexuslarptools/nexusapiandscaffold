@@ -39,7 +39,7 @@ public class IteSheet
                     .Where(t => t.Isactive == true && t.Guid == tag.TagGuid)
                     .Include("Tagtype").FirstOrDefault();
                 if (fullTag != null && (fullTag.Tagtype.Name == "Item" ||
-                    fullTag.Tagtype.Name == "LARPrun")) Tags.Add(new TagOut(fullTag));
+                    fullTag.Tagtype.Name == "LARPRun")) Tags.Add(new TagOut(fullTag));
             }
 
         if (sheet.ItemtypeGuid != null)
