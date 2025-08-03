@@ -107,7 +107,5 @@ public partial class User
 
     public virtual ICollection<SheetUsersContact> SheetUsersContactUsers { get; set; } = new List<SheetUsersContact>();
 
-    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
-
     public virtual ICollection<UserLarprole> UserLarproles { get; set; } = new List<UserLarprole>();
 }

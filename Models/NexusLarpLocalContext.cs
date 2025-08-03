@@ -17,8 +17,6 @@ public partial class NexusLarpLocalContext : DbContext
     {
     }
 
-
-
     public virtual DbSet<CharacterSheet> CharacterSheets { get; set; }
 
     public virtual DbSet<CharacterSheetApproved> CharacterSheetApproveds { get; set; }
@@ -84,6 +82,8 @@ public partial class NexusLarpLocalContext : DbContext
     public virtual DbSet<SeriesTag> SeriesTags { get; set; }
 
     public virtual DbSet<SheetUsersContact> SheetUsersContacts { get; set; }
+
+    public virtual DbSet<ShipCrewList> ShipCrewLists { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
 
@@ -282,6 +282,10 @@ public partial class NexusLarpLocalContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("charactersheetmessageacks_id");
 
+            entity.HasIndex(e => e.CharactersheetreviewmessagesId, "IX_CharacterSheetMessageAcks_charactersheetreviewmessages_id");
+
+            entity.HasIndex(e => e.UserGuid, "IX_CharacterSheetMessageAcks_user_guid");
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CharactersheetreviewmessagesId).HasColumnName("charactersheetreviewmessages_id");
             entity.Property(e => e.Isactive)
@@ -329,6 +333,8 @@ public partial class NexusLarpLocalContext : DbContext
         modelBuilder.Entity<CharacterSheetReviewSubscription>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("charactersheetreviewsubscriptions_id");
+
+            entity.HasIndex(e => e.UserGuid, "IX_CharacterSheetReviewSubscriptions_user_guid");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CharactersheetGuid).HasColumnName("charactersheet_guid");
@@ -632,6 +638,10 @@ public partial class NexusLarpLocalContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("itemsheetmessageacks_id");
 
+            entity.HasIndex(e => e.ItemsheetreviewmessagesId, "IX_ItemSheetMessageAcks_itemsheetreviewmessages_id");
+
+            entity.HasIndex(e => e.UserGuid, "IX_ItemSheetMessageAcks_user_guid");
+
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Isactive)
                 .HasDefaultValue(true)
@@ -679,6 +689,8 @@ public partial class NexusLarpLocalContext : DbContext
         modelBuilder.Entity<ItemSheetReviewSubscription>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("itemsheetreviewsubscriptions_id");
+
+            entity.HasIndex(e => e.UserGuid, "IX_ItemSheetReviewSubscriptions_user_guid");
 
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Createdate)
@@ -1137,17 +1149,17 @@ public partial class NexusLarpLocalContext : DbContext
 
             entity.HasOne(d => d.CharactersheetRegisteredApprovedbyUserNavigation).WithMany(p => p.LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations)
                 .HasForeignKey(d => d.CharactersheetRegisteredApprovedbyUser)
-                .HasConstraintName("LARPRunPreReg_charactersheet_registered_approvedby_user_fkey");
+                .HasConstraintName("larprunprereg_charactersheet_registered_approvedby_user_fkey");
 
             entity.HasOne(d => d.Larprun).WithMany(p => p.LarprunPreRegs)
                 .HasForeignKey(d => d.LarprunGuid)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("LARPRunPreReg_larprun_guid_fkey");
+                .HasConstraintName("larprunprereg_larprun_guid_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.LarprunPreRegUsers)
                 .HasForeignKey(d => d.UserGuid)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("LARPRunPreReg_user_guid_fkey");
+                .HasConstraintName("larprunprereg_user_guid_fkey");
         });
 
         modelBuilder.Entity<Larptag>(entity =>
@@ -1271,6 +1283,32 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasConstraintName("fk_sheetuser_contact_userguid");
         });
 
+        modelBuilder.Entity<ShipCrewList>(entity =>
+        {
+            entity.HasKey(e => e.Guid).HasName("shipcrewlist_guid");
+
+            entity.ToTable("ShipCrewList");
+
+            entity.Property(e => e.Guid)
+                .HasDefaultValueSql("uuid_generate_v1()")
+                .HasColumnName("guid");
+            entity.Property(e => e.Createdate)
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("createdate");
+            entity.Property(e => e.Details)
+                .HasMaxLength(100000)
+                .HasColumnName("details");
+            entity.Property(e => e.Isactive)
+                .HasDefaultValue(true)
+                .HasColumnName("isactive");
+            entity.Property(e => e.Ord).HasColumnName("ord");
+            entity.Property(e => e.Position)
+                .IsRequired()
+                .HasMaxLength(1000)
+                .HasColumnName("position");
+        });
+
         modelBuilder.Entity<Tag>(entity =>
         {
             entity.HasKey(e => e.Guid).HasName("tags_guid");
@@ -1289,10 +1327,6 @@ public partial class NexusLarpLocalContext : DbContext
                 .HasMaxLength(1000)
                 .HasColumnName("name");
             entity.Property(e => e.Tagtypeguid).HasColumnName("tagtypeguid");
-
-            entity.HasOne(d => d.ApprovedbyUser).WithMany(p => p.Tags)
-                .HasForeignKey(d => d.ApprovedbyUserGuid)
-                .HasConstraintName("Tags_approvedby_fkey");
 
             entity.HasOne(d => d.Tagtype).WithMany(p => p.Tags)
                 .HasForeignKey(d => d.Tagtypeguid)
@@ -1371,7 +1405,7 @@ public partial class NexusLarpLocalContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.UserLarproles)
                 .HasForeignKey(d => d.Userguid)
-                .HasConstraintName("UserLARPRoles_userguid_fkey");
+                .HasConstraintName("userlarproles_users_guid_fk");
         });
 
         OnModelCreatingPartial(modelBuilder);

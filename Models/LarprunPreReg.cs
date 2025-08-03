@@ -35,9 +35,9 @@ public partial class LarprunPreReg
 
     public Guid? CharactersheetRegisteredApprovedbyUser { get; set; }
 
-    public bool Isactive { get; set; }
+    public bool? Isactive { get; set; }
 
-    public DateTime Createdate { get; set; }
+    public DateTime? Createdate { get; set; }
 
     public virtual User CharactersheetRegisteredApprovedbyUserNavigation { get; set; }
 
