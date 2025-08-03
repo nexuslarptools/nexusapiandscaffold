@@ -42,9 +42,9 @@ public partial class CharacterSheet
 
     public Guid? EditbyUserGuid { get; set; }
 
-    public string Taglists { get; set; }
-
     public bool Readyforapproval { get; set; }
+
+    public string Taglists { get; set; }
 
     public virtual ICollection<CharacterSheetApproved> CharacterSheetApproveds { get; set; } = new List<CharacterSheetApproved>();
 

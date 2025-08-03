@@ -40,9 +40,9 @@ public partial class ItemSheet
 
     public Guid? EditbyUserGuid { get; set; }
 
-    public string Taglists { get; set; }
-
     public bool Readyforapproval { get; set; }
+
+    public string Taglists { get; set; }
 
     public bool? Isdoubleside { get; set; }
 

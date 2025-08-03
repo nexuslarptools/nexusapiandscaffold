@@ -17,8 +17,6 @@ public partial class Tag
 
     public Guid? ApprovedbyUserGuid { get; set; }
 
-    public virtual User ApprovedbyUser { get; set; }
-
     public virtual ICollection<CharacterSheetApprovedTag> CharacterSheetApprovedTags { get; set; } = new List<CharacterSheetApprovedTag>();
 
     public virtual ICollection<CharacterSheetTag> CharacterSheetTags { get; set; } = new List<CharacterSheetTag>();
