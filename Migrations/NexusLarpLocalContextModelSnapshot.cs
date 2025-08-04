@@ -83,8 +83,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -93,7 +93,9 @@ namespace NEXUSDataLayerScaffold.Migrations
                         .HasColumnName("name");
 
                     b.Property<bool>("Readyforapproval")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(false)
                         .HasColumnName("readyforapproval");
 
                     b.Property<string>("Reason4edit")
@@ -120,8 +122,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<int>("Version")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("version")
-                        .HasDefaultValueSql("1");
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("csheet_guid");
@@ -200,8 +202,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -233,8 +235,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<int>("Version")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("version")
-                        .HasDefaultValueSql("1");
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("csheetapprov_guid");
@@ -281,6 +283,43 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.ToTable("CharacterSheetApprovedTags");
                 });
 
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetMessageAck", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CharactersheetreviewmessagesId")
+                        .HasColumnType("integer")
+                        .HasColumnName("charactersheetreviewmessages_id");
+
+                    b.Property<bool>("Isactive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
+
+                    b.Property<DateTime?>("Seendate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("seendate");
+
+                    b.Property<Guid>("UserGuid")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_guid");
+
+                    b.HasKey("Id")
+                        .HasName("charactersheetmessageacks_id");
+
+                    b.HasIndex("CharactersheetreviewmessagesId");
+
+                    b.HasIndex("UserGuid");
+
+                    b.ToTable("CharacterSheetMessageAcks");
+                });
+
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetReviewMessage", b =>
                 {
                     b.Property<int>("Id")
@@ -307,8 +346,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool?>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Message")
                         .HasMaxLength(5000)
@@ -321,6 +360,41 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasIndex("CreatedbyuserGuid");
 
                     b.ToTable("CharacterSheetReviewMessages");
+                });
+
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetReviewSubscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("CharactersheetGuid")
+                        .HasColumnType("uuid")
+                        .HasColumnName("charactersheet_guid");
+
+                    b.Property<DateTime>("Createdate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createdate")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTime?>("Stopdate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("stopdate");
+
+                    b.Property<Guid>("UserGuid")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_guid");
+
+                    b.HasKey("Id")
+                        .HasName("charactersheetreviewsubscriptions_id");
+
+                    b.HasIndex("UserGuid");
+
+                    b.ToTable("CharacterSheetReviewSubscriptions");
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetTag", b =>
@@ -407,8 +481,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -436,8 +510,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<int>("Version")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("version")
-                        .HasDefaultValueSql("1");
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("csheetvers_guid");
@@ -513,14 +587,14 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<bool?>("Isdoubleside")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isdoubleside")
-                        .HasDefaultValueSql("false");
+                        .HasDefaultValue(false)
+                        .HasColumnName("isdoubleside");
 
                     b.Property<Guid?>("ItemtypeGuid")
                         .HasColumnType("uuid")
@@ -533,7 +607,9 @@ namespace NEXUSDataLayerScaffold.Migrations
                         .HasColumnName("name");
 
                     b.Property<bool>("Readyforapproval")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(false)
                         .HasColumnName("readyforapproval");
 
                     b.Property<string>("Reason4edit")
@@ -560,8 +636,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<int?>("Version")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("version")
-                        .HasDefaultValueSql("1");
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("isheet_guid");
@@ -577,6 +653,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasIndex("SecondapprovalbyuserGuid");
 
                     b.HasIndex("Seriesguid");
+
+                    b.HasIndex(new[] { "Isactive" }, "items_active");
 
                     b.ToTable("ItemSheet", (string)null);
                 });
@@ -639,14 +717,14 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<bool?>("Isdoubleside")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isdoubleside")
-                        .HasDefaultValueSql("false");
+                        .HasDefaultValue(false)
+                        .HasColumnName("isdoubleside");
 
                     b.Property<int>("ItemsheetId")
                         .HasColumnType("integer")
@@ -686,8 +764,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<int?>("Version")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("version")
-                        .HasDefaultValueSql("1");
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("isheetapp_guid");
@@ -734,6 +812,43 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.ToTable("ItemSheetApprovedTags");
                 });
 
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetMessageAck", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Isactive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
+
+                    b.Property<int>("ItemsheetreviewmessagesId")
+                        .HasColumnType("integer")
+                        .HasColumnName("itemsheetreviewmessages_id");
+
+                    b.Property<DateTime?>("Seendate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("seendate");
+
+                    b.Property<Guid>("UserGuid")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_guid");
+
+                    b.HasKey("Id")
+                        .HasName("itemsheetmessageacks_id");
+
+                    b.HasIndex("ItemsheetreviewmessagesId");
+
+                    b.HasIndex("UserGuid");
+
+                    b.ToTable("ItemSheetMessageAcks");
+                });
+
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetReviewMessage", b =>
                 {
                     b.Property<int>("Id")
@@ -756,8 +871,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool?>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<int>("ItemsheetId")
                         .HasColumnType("integer")
@@ -774,6 +889,41 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasIndex("CreatedbyuserGuid");
 
                     b.ToTable("ItemSheetReviewMessages");
+                });
+
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetReviewSubscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Createdate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createdate")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("ItemsheetGuid")
+                        .HasColumnType("uuid")
+                        .HasColumnName("itemsheet_guid");
+
+                    b.Property<DateTime?>("Stopdate")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("stopdate");
+
+                    b.Property<Guid>("UserGuid")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_guid");
+
+                    b.HasKey("Id")
+                        .HasName("itemsheetreviewsubscriptions_id");
+
+                    b.HasIndex("UserGuid");
+
+                    b.ToTable("ItemSheetReviewSubscriptions");
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetTag", b =>
@@ -853,8 +1003,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<int>("ItemsheetId")
                         .HasColumnType("integer")
@@ -886,8 +1036,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<int?>("Version")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("version")
-                        .HasDefaultValueSql("1");
+                        .HasDefaultValue(1)
+                        .HasColumnName("version");
 
                     b.HasKey("Id")
                         .HasName("isheetvers_guid");
@@ -914,8 +1064,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Type")
                         .HasMaxLength(1000)
@@ -976,8 +1126,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Location")
                         .HasMaxLength(1000)
@@ -1025,8 +1175,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid?>("LarpGuid")
                         .HasColumnType("uuid")
@@ -1067,8 +1217,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid?>("LarpGuid")
                         .HasColumnType("uuid")
@@ -1105,8 +1255,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid?>("LarpGuid")
                         .HasColumnType("uuid")
@@ -1149,8 +1299,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid?>("LarpGuid")
                         .HasColumnType("uuid")
@@ -1193,8 +1343,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid>("LarpGuid")
                         .HasColumnType("uuid")
@@ -1237,8 +1387,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid>("LarpGuid")
                         .HasColumnType("uuid")
@@ -1281,8 +1431,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid>("LarpGuid")
                         .HasColumnType("uuid")
@@ -1390,8 +1540,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid>("LarprunGuid")
                         .HasColumnType("uuid")
@@ -1425,8 +1575,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool?>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid?>("Larpguid")
                         .HasColumnType("uuid")
@@ -1510,8 +1660,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<JsonDocument>("Tags")
                         .HasColumnType("jsonb")
@@ -1614,14 +1764,14 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<bool?>("Isapproved")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isapproved")
-                        .HasDefaultValueSql("false");
+                        .HasDefaultValue(false)
+                        .HasColumnName("isapproved");
 
                     b.Property<string>("Name")
                         .HasMaxLength(1000)
@@ -1692,8 +1842,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<string>("Lastname")
                         .HasMaxLength(1000)
@@ -1729,8 +1879,8 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Property<bool?>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
-                        .HasColumnName("isactive")
-                        .HasDefaultValueSql("true");
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
 
                     b.Property<Guid?>("Larpguid")
                         .HasColumnType("uuid")
@@ -1860,6 +2010,25 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Navigation("Tag");
                 });
 
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetMessageAck", b =>
+                {
+                    b.HasOne("NEXUSDataLayerScaffold.Models.CharacterSheetReviewMessage", "Charactersheetreviewmessages")
+                        .WithMany("CharacterSheetMessageAcks")
+                        .HasForeignKey("CharactersheetreviewmessagesId")
+                        .IsRequired()
+                        .HasConstraintName("CharacterSheetMessageAcks_CharacterSheetReviewMessages_id_fkey");
+
+                    b.HasOne("NEXUSDataLayerScaffold.Models.User", "User")
+                        .WithMany("CharacterSheetMessageAcks")
+                        .HasForeignKey("UserGuid")
+                        .IsRequired()
+                        .HasConstraintName("CharacterSheetMessageAcks_user_guid_fkey");
+
+                    b.Navigation("Charactersheetreviewmessages");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetReviewMessage", b =>
                 {
                     b.HasOne("NEXUSDataLayerScaffold.Models.User", "Createdbyuser")
@@ -1868,6 +2037,17 @@ namespace NEXUSDataLayerScaffold.Migrations
                         .HasConstraintName("CharacterSheetReviewMessages_createdbyuser_guid_fkey");
 
                     b.Navigation("Createdbyuser");
+                });
+
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetReviewSubscription", b =>
+                {
+                    b.HasOne("NEXUSDataLayerScaffold.Models.User", "User")
+                        .WithMany("CharacterSheetReviewSubscriptions")
+                        .HasForeignKey("UserGuid")
+                        .IsRequired()
+                        .HasConstraintName("CharacterSheetReviewSubscriptions_user_guid_fkey");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetTag", b =>
@@ -2037,6 +2217,25 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Navigation("Tag");
                 });
 
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetMessageAck", b =>
+                {
+                    b.HasOne("NEXUSDataLayerScaffold.Models.ItemSheetReviewMessage", "Itemsheetreviewmessages")
+                        .WithMany("ItemSheetMessageAcks")
+                        .HasForeignKey("ItemsheetreviewmessagesId")
+                        .IsRequired()
+                        .HasConstraintName("ItemSheetMessageAcks_ItemSheetReviewMessages_id_fkey");
+
+                    b.HasOne("NEXUSDataLayerScaffold.Models.User", "User")
+                        .WithMany("ItemSheetMessageAcks")
+                        .HasForeignKey("UserGuid")
+                        .IsRequired()
+                        .HasConstraintName("ItemSheetMessageAcks_user_guid_fkey");
+
+                    b.Navigation("Itemsheetreviewmessages");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetReviewMessage", b =>
                 {
                     b.HasOne("NEXUSDataLayerScaffold.Models.User", "Createdbyuser")
@@ -2045,6 +2244,17 @@ namespace NEXUSDataLayerScaffold.Migrations
                         .HasConstraintName("ItemSheetReviewMessages_createdbyuser_guid_fkey");
 
                     b.Navigation("Createdbyuser");
+                });
+
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetReviewSubscription", b =>
+                {
+                    b.HasOne("NEXUSDataLayerScaffold.Models.User", "User")
+                        .WithMany("ItemSheetReviewSubscriptions")
+                        .HasForeignKey("UserGuid")
+                        .IsRequired()
+                        .HasConstraintName("ItemSheetReviewSubscriptions_user_guid_fkey");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetTag", b =>
@@ -2424,6 +2634,11 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Navigation("CharacterSheetApprovedTags");
                 });
 
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetReviewMessage", b =>
+                {
+                    b.Navigation("CharacterSheetMessageAcks");
+                });
+
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheet", b =>
                 {
                     b.Navigation("ItemSheetTags");
@@ -2432,6 +2647,11 @@ namespace NEXUSDataLayerScaffold.Migrations
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetApproved", b =>
                 {
                     b.Navigation("ItemSheetApprovedTags");
+                });
+
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetReviewMessage", b =>
+                {
+                    b.Navigation("ItemSheetMessageAcks");
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemType", b =>
@@ -2538,7 +2758,11 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.Navigation("CharacterSheetFirstapprovalbyusers");
 
+                    b.Navigation("CharacterSheetMessageAcks");
+
                     b.Navigation("CharacterSheetReviewMessages");
+
+                    b.Navigation("CharacterSheetReviewSubscriptions");
 
                     b.Navigation("CharacterSheetSecondapprovalbyusers");
 
@@ -2562,7 +2786,11 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.Navigation("ItemSheetFirstapprovalbyusers");
 
+                    b.Navigation("ItemSheetMessageAcks");
+
                     b.Navigation("ItemSheetReviewMessages");
+
+                    b.Navigation("ItemSheetReviewSubscriptions");
 
                     b.Navigation("ItemSheetSecondapprovalbyusers");
 
