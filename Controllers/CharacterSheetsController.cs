@@ -1807,14 +1807,14 @@ public class CharacterSheetsController : ControllerBase
 
                 // Grab the latest version of the image in the store and point it to the new approved item. 
                 StatObjectArgs statObjectArgs = new StatObjectArgs()
-                                                    .WithBucket("nexusdevdata")
+                                                    .WithBucket("nexusdata")
                                                     .WithObject("images/Characters/" + characterSheet.Guid.ToString() + ".jpg");
                 ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
 
                 theNewSheet.Img1 = objectStat.VersionId;
 
                 statObjectArgs = new StatObjectArgs()
-                                                    .WithBucket("nexusdevdata")
+                                                    .WithBucket("nexusdata")
                                                     .WithObject("images/Characters/" + characterSheet.Guid.ToString() + "_2.jpg");
                 objectStat = await _minio.StatObjectAsync(statObjectArgs);
 
