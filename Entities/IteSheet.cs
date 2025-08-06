@@ -19,7 +19,8 @@ public class IteSheet
          "mecha",
         "companion",
         "pokemon",
-        "vehicle" 
+        "vehicle", 
+        "ship"
     });
 
 
