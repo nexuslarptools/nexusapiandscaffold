@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Minio;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
+using Newtonsoft.Json;
 using NEXUSDataLayerScaffold.Attributes;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Extensions;
@@ -42,24 +43,25 @@ public class CharacterSheetApprovedsController : ControllerBase
         var accessToken = origin.Remove(0, 7);
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        //var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        var userData = UsersLogic.GetUserAuth0Info(authId);
+        if (userData.isAuthed("Reader"))
+        //if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
-            var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
-
             //var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
             //    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
-            var allowedLARPS = _context.UserLarproles
-                .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
-                .ToList();
+            //var allowedLARPS = _context.UserLarproles
+            //    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+            //    .ToList();
 
             var disAllowedTags = _context.Larptags.Where(lt =>
-                !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                !(userData.GetAllowedLARPGuid().Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
+            var csrs = _context.CharacterSheetReviewMessages
+                  .Where(csr => csr.Isactive == true).AsEnumerable();
+
             var allSheets = await _context.CharacterSheetApproveds.Where(c => c.Isactive == true)
-.Select(x => new CharacterSheetApprovedDO
+               .Select(x => new CharacterSheetApprovedDO
 {
     Sheet = new CharacterSheetApproved
     {
@@ -81,18 +83,18 @@ public class CharacterSheetApprovedsController : ControllerBase
     Firstapprovalbyuser = x.Firstapprovalbyuser,
     Secondapprovalbyuser = x.Secondapprovalbyuser,
     Series = x.Series,
-    CharacterSheetReviewMessages = _context.CharacterSheetReviewMessages.Where(csr => csr.CharactersheetId == x.Id).ToList()
+    CharacterSheetReviewMessages = csrs.Where(csr => csr.CharactersheetId == x.Id).ToList()
 })
                 .OrderBy(x =>x.Sheet.Name).ToListAsync();
 
-            if (!wizardauth)
+            if (!(userData.isAuthed("Wizard")))
                 allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat)))
                     .ToList();
 
             var outp = new List<CharSheetListItem>();
             foreach (var c in allSheets)
             {
-                var newshee = new CharSheetListItem(c, _context);
+                var newshee = new CharSheetListItem(c);
                 outp.Add(newshee);
             }
 
@@ -104,7 +106,6 @@ public class CharacterSheetApprovedsController : ControllerBase
 
         return Unauthorized();
     }
-
 
     /// <summary>
     ///     Gets list of all character sheets which exist in the Approved table, including diabled sheets
@@ -183,8 +184,11 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             if (characterSheet == null) return NotFound();
 
+            var usersList = _context.Users.ToList();
+            var crsm = _context.CharacterSheetReviewMessages.Select(x => x).ToList();
+            var listItemTypes = _context.ItemTypes.Select(x => x).ToList();
 
-            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
+            var outputSheet = Character.CreateCharSheet(characterSheet, usersList, crsm);
 
             var tagslist = new JsonElement();
 
@@ -230,7 +234,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(),
-                        _context);
+                        usersList, listItemTypes);
                     //if (outputSheet.Sheet_Item.Img1 != null)
                     //    if (System.IO.File.Exists(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1))
                     //        outputSheet.Sheet_Item.imagedata =
@@ -245,7 +249,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(),
-                        _context);
+                        usersList, listItemTypes);
                     //if (outputSheet.Sheet_Item.Img1 != null)
                      //   if (System.IO.File.Exists(@"./images/items/UnApproved/" + outputSheet.Sheet_Item.Img1))
                      //       outputSheet.Sheet_Item.imagedata =
@@ -272,7 +276,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 {
                     var starting_I = Item.CreateItem(await _context.ItemSheetApproveds.Where(issh =>
                         issh.Isactive == true &&
-                        issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), _context);
+                        issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), usersList, listItemTypes);
 
                    // if (starting_I.Img1 != null)
                     //    if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
@@ -289,7 +293,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
                     var starting_I = Item.CreateItem(await _context.ItemSheets.Where(issh => issh.Isactive == true &&
                             issh.Guid.ToString() == iGuid.ToString())
-                        .FirstOrDefaultAsync(), _context);
+                        .FirstOrDefaultAsync(), usersList, listItemTypes);
 
                    // if (starting_I.Img1 != null)
                     //    if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
@@ -313,7 +317,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     {
                         var I = Item.CreateItem(await _context.ItemSheetApproveds.Where(issh =>
                             issh.Isactive == true &&
-                            issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), _context);
+                            issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync(), usersList, listItemTypes);
 
                         // if (starting_I.Img1 != null)
                         //    if (System.IO.File.Exists(@"./images/items/Approved/" + starting_I.Img1))
@@ -331,7 +335,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
                         var I = Item.CreateItem(await _context.ItemSheets.Where(issh => issh.Isactive == true &&
                                 issh.Guid.ToString() == iGuid.ToString())
-                            .FirstOrDefaultAsync(), _context);
+                            .FirstOrDefaultAsync(), usersList, listItemTypes);
 
                         //  if (starting_I.Img1 != null)
                         //     if (System.IO.File.Exists(@"./images/items/UnApproved/" + starting_I.Img1))
@@ -362,6 +366,16 @@ public class CharacterSheetApprovedsController : ControllerBase
             var output = new CharListWithItemList();
             var guidlist = guids.Split(',');
 
+
+            var seriesList = _context.Series.Select(x => x).ToList();
+            var appItemList = _context.ItemSheetApproveds.Select(x => x).ToList();
+            var itemList = _context.ItemSheets.Select(x => x).ToList();
+            var usersList = _context.Users.Select(x => x).ToList();
+            var listCharSheets = _context.CharacterSheets.Select(x => x).ToList();
+            var listCSRM = _context.CharacterSheetReviewMessages.Select(x => x).ToList();
+            var listItemTypes = _context.ItemTypes.Select(x => x).ToList();
+
+
             foreach (var input in guidlist)
                 if (Guid.TryParse(input, out var inputGuid))
                 {
@@ -373,14 +387,16 @@ public class CharacterSheetApprovedsController : ControllerBase
                     if (charSheetA == null && charSheet != null)
                     {
                         if (!UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context)) return Unauthorized();
-                        var cha = new CharSheet(charSheet, _context);
+                        var cha = new CharSheet(charSheet, seriesList, appItemList, 
+                            itemList, usersList, listCharSheets, listCSRM, listItemTypes);
                         output.Characters.Add(cha);
                         output.Items.Add(cha.Sheet_Item);
                         foreach (var sItem in cha.Starting_Items) output.Items.Add(sItem);
                     }
                     else if (charSheetA != null)
                     {
-                        var cha = new CharSheet(charSheetA, _context);
+                        var cha = new CharSheet(charSheetA, seriesList, appItemList,
+                            itemList, usersList, listCharSheets, listCSRM, listItemTypes);
                         output.Characters.Add(cha);
                         output.Items.Add(cha.Sheet_Item);
                         foreach (var sItem in cha.Starting_Items) output.Items.Add(sItem);
@@ -492,7 +508,7 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
 
-            var json = JsonSerializer.Serialize(input);
+            var json = System.Text.Json.JsonSerializer.Serialize(input);
 
             using var dynJson = JsonDocument.Parse(json);
 
@@ -572,53 +588,134 @@ public class CharacterSheetApprovedsController : ControllerBase
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+         Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-        {
-            var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
-                .Select(ulr => (Guid)ulr.Larpguid).ToList();
-
-            var allowedTags = _context.Larptags.Where(lt =>
-                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
-                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
-                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
-
-            var testChar = await _context.CharacterSheetApproveds
-                .Where(ch => ch.Isactive == true && allowedSheets.Contains(ch.Guid)).Select(cha => new
-                {
-                    cha.Guid,
-                    cha.Name,
-                    cha.Seriesguid,
-                    cha.Series.Title,
-                    cha.Fields
-                }).ToListAsync();
-
-            var testQuery = testChar.Where(tc =>
-                tc.Fields.RootElement.GetProperty("Alternate Names").ToString().ToLower().Contains(input.ToLower()) ||
-                tc.Name.ToLower().Contains(input.ToLower())).ToList();
-
-
-            var characters = testQuery.Select(ch => new
+       // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
-                ch.Guid,
-                ch.Name,
-                ch.Seriesguid,
-                ch.Title
-            }).ToList();
+            /*   
+           var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
+               .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
+           var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+               .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
-            if (characters == null) return NotFound();
+           var allowedTags = _context.Larptags.Where(lt =>
+               (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+               && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+           if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+               allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+           var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
+
+           var testChar = await _context.CharacterSheetApproveds
+               .Where(ch => ch.Isactive == true && allowedSheets.Contains(ch.Guid)).Select(cha => new
+               {
+                   cha.Guid,
+                   cha.Name,
+                   cha.Seriesguid,
+                   cha.Series.Title,
+                   cha.Fields
+               }).ToListAsync();
+
+           var testQuery = testChar.Where(tc =>
+               tc.Fields.RootElement.GetProperty("Alternate Names").ToString().ToLower().Contains(input.ToLower()) ||
+               tc.Name.ToLower().Contains(input.ToLower())).ToList();
 
 
-            return Ok(characters);
-        }
+           var characters = testQuery.Select(ch => new
+           {
+               ch.Guid,
+               ch.Name,
+               ch.Seriesguid,
+               ch.Title
+           }).ToList();
+
+           if (characters == null) return NotFound();
+
+
+           return Ok(characters);
+       }
+
+       return Unauthorized();*/
+
+
+            var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
+
+                var allowedLARPS = _context.UserLarproles
+                    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .ToList();
+
+                var disAllowedTags = _context.Larptags.Where(lt =>
+                    !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                    && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+            CharacterSheetSearchLogic searchLogic = new CharacterSheetSearchLogic();
+            searchLogic.searchInObj = JsonConvert.DeserializeObject<CharacterSearchInObj>(input);
+
+            searchLogic.sheets = await _context.CharacterSheetApproveds
+                    .Where(ch => ch.Isactive == true).Select(cha => new CharSheetPullObj()
+                    {
+                        Guid = cha.Guid,
+                        Name = cha.Name,
+                        Seriesguid = cha.Seriesguid,
+                        Title = cha.Series.Title,
+                        Fields = cha.Fields,
+                        MainTags = cha.Taglists == null ? new List<Guid>() :
+                    JsonConvert.DeserializeObject<TagsObject>(cha.Taglists).MainTags,
+                        AbilityTags = cha.Taglists == null ? new List<Guid>() :
+                    JsonConvert.DeserializeObject<TagsObject>(cha.Taglists).AbilityTags
+                    }).ToListAsync();
+
+            searchLogic.DoFullSearch();
+
+            var allSheets = await _context.CharacterSheetApproveds.Where(c => c.Isactive == true
+            && searchLogic.andAttrisheets.Contains(c.Guid)
+            && searchLogic.orAttrisheets.Contains(c.Guid))
+                    .Select(x => new CharacterSheetDO
+                    {
+                        Sheet = new CharacterSheet
+                        {
+                            Guid = x.Guid,
+                            Seriesguid = (Guid)x.Seriesguid,
+                            Name = x.Name,
+                            Createdate = x.Createdate,
+                            CreatedbyuserGuid = x.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                            Firstapprovaldate = x.Firstapprovaldate,
+                            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                            Secondapprovaldate = x.Secondapprovaldate,
+                            EditbyUserGuid = x.EditbyUserGuid,
+                            Taglists = x.Taglists
+                        },
+                        TagList = x.CharacterSheetApprovedTags.Select(cst => cst.Tag).OrderBy(cst => cst.Name).ToList(),
+                        Createdbyuser = x.Createdbyuser,
+                        EditbyUser = x.EditbyUser,
+                        Firstapprovalbyuser = x.Firstapprovalbyuser,
+                        Secondapprovalbyuser = x.Secondapprovalbyuser,
+                        Series = x.Series,
+                        CharacterSheetReviewMessages = _context.CharacterSheetReviewMessages
+                            .Where(csr => csr.CharactersheetId == x.Id).ToList()
+                    })
+                    .OrderBy(x => x.Sheet.Name).ToListAsync();
+
+                if (!wizardauth)
+                    allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat)))
+                        .ToList();
+
+                var outp = new List<CharSheetListItem>();
+                foreach (var c in allSheets)
+                {
+                    var newshee = new CharSheetListItem(c);
+                    outp.Add(newshee);
+                }
+
+
+                if (outp == null) return NotFound();
+
+                return Ok(outp.OrderBy(o => StringLogic.IgnorePunct(o.name)).OrderBy(o => o.title));
+
+            }
 
         return Unauthorized();
     }
@@ -722,8 +819,11 @@ public class CharacterSheetApprovedsController : ControllerBase
             var characterSheet = await _context.CharacterSheetApproveds.Where
                 (cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
 
+            var usersList = _context.Users.Select(x => x).ToList();
+            var crsm = _context.CharacterSheetReviewMessages.Select(x => x).ToList();
+            var listItemTypes = _context.ItemTypes.Select(x => x).ToList();
 
-            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
+            var outputSheet = Character.CreateCharSheet(characterSheet, usersList, crsm);
 
             var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == outputSheet.Seriesguid)
                 .FirstOrDefault();
@@ -743,7 +843,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(),
-                        _context);
+                        usersList, listItemTypes);
 
                 else if (_context.ItemSheets
                              .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
@@ -752,7 +852,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(),
-                        _context);
+                        usersList, listItemTypes);
             }
 
 
@@ -825,8 +925,11 @@ public class CharacterSheetApprovedsController : ControllerBase
             var characterSheet = await _context.CharacterSheetApproveds.Where
                 (cs => cs.Isactive == true && cs.Guid == guid).FirstOrDefaultAsync();
 
+            var usersList = _context.Users.Select(x => x).ToList();
+            var crsm = _context.CharacterSheetReviewMessages.Select(x => x).ToList();
+            var listItemTypes = _context.ItemTypes.Select(x => x).ToList();
 
-            var outputSheet = Character.CreateCharSheet(characterSheet, _context);
+            var outputSheet = Character.CreateCharSheet(characterSheet, usersList, crsm);
 
             var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == outputSheet.Seriesguid)
                 .FirstOrDefault();
@@ -846,7 +949,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(),
-                        _context);
+                        usersList, listItemTypes);
 
                 else if (_context.ItemSheets
                              .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
@@ -855,7 +958,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                     outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheets
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                             .FirstOrDefault(),
-                        _context);
+                        usersList, listItemTypes);
             }
 
             var Start_Items = new List<IteSheet>();
@@ -877,7 +980,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         issh.Guid.ToString() == iGuid.ToString()).FirstOrDefaultAsync();
 
 
-                    Start_Items.Add(Item.CreateItem(starting_I, _context));
+                    Start_Items.Add(Item.CreateItem(starting_I, usersList, listItemTypes));
                 }
                 else if (_context.ItemSheets
                              .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
@@ -889,7 +992,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                                                                              issh.Guid.ToString() == iGuid.ToString())
                         .FirstOrDefaultAsync();
 
-                    Start_Items.Add(Item.CreateItem(starting_I, _context));
+                    Start_Items.Add(Item.CreateItem(starting_I, usersList, listItemTypes));
                 }
 
             if (Start_Items != null) outputSheet.Starting_Items = Start_Items;

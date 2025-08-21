@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -112,8 +113,8 @@ public class UsersController : ControllerBase
                         currLARP.Roles.Add(newRoleOut);
 
                         var sortedroles = from role in currLARP.Roles
-                            orderby role.RoleID
-                            select role;
+                                          orderby role.RoleID
+                                          select role;
 
                         currLARP.Roles = sortedroles.ToList();
                     }
@@ -122,8 +123,8 @@ public class UsersController : ControllerBase
             }
 
             var sortedusers = from user in UserListOut
-                orderby user.Email
-                select user;
+                              orderby user.Email
+                              select user;
 
             UserListOut = sortedusers.ToList();
 
@@ -195,8 +196,8 @@ public class UsersController : ControllerBase
                         currLARP.Roles.Add(newRoleOut);
 
                         var sortedroles = from role in currLARP.Roles
-                            orderby role.RoleID
-                            select role;
+                                          orderby role.RoleID
+                                          select role;
 
                         currLARP.Roles = sortedroles.ToList();
                     }
@@ -205,8 +206,8 @@ public class UsersController : ControllerBase
             }
 
             var sortedusers = from user in UserListOut
-                orderby user.Email
-                select user;
+                              orderby user.Email
+                              select user;
 
             UserListOut = sortedusers.ToList();
 
@@ -613,6 +614,36 @@ public class UsersController : ControllerBase
             return NoContent();
         }
 
+        return Unauthorized();
+    }
+
+    [HttpPost("UpdateAuth0")]
+    [Authorize]
+    public async Task<IActionResult> UpdateAuth0Users()
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+
+            var UserList = await _context.Users.Where(u => u.Isactive == true)
+                .Include(u => u.UserLarproles)
+                .ThenInclude(ulr => ulr.Larp)
+                .Include(u => u.UserLarproles)
+                .ThenInclude(ulr => ulr.Role).ToListAsync();
+
+            foreach (var u in UserList)
+            {
+                MetadataRoles mdateroles = new MetadataRoles(u);
+                var aLogic = new AuthLogic();
+                var usr = aLogic.UpdateUserRoles(u.Authid, mdateroles);
+                bool stophere = true;
+            }
+
+            return Ok();
+        }
         return Unauthorized();
     }
 }

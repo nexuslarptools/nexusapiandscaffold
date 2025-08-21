@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Logic;
@@ -92,6 +93,7 @@ public class ItemSheetApprovedsController : ControllerBase
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
 
             if (!allowedSheets.Contains(guid)) return Unauthorized();
+
 
             var outputItem = new IteSheet(itemSheet, _context);
 
@@ -639,11 +641,13 @@ public class ItemSheetApprovedsController : ControllerBase
                             && isrm.ItemsheetId == x.Id).ToList()
                     }).ToListAsync();
 
-                foreach (var sheet in allSheets)
-                {
-                    var newOutputSheet = new IteSheet(sheet, _context);
-                    outPutList.Add(newOutputSheet);
-                }
+                var itemTypes = _context.ItemTypes.Where(it => it.Isactive == true).ToList();
+                var isheets = _context.ItemSheets.Where(it => it.Isactive == true).ToList();
+                var isheetreviewm = _context.ItemSheetReviewMessages.Where(it => it.Isactive == true).ToList();
+                var isheetapprov = _context.ItemSheetApproveds.Where(it => it.Isactive == true).ToList();
+
+                outPutList = allSheets.Select(a => new IteSheet(a, itemTypes, isheets,
+                          isheetreviewm, isheetapprov)).ToList();
 
                 var output = new IteListOut();
                 output.IteList = outPutList.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
@@ -701,11 +705,13 @@ public class ItemSheetApprovedsController : ControllerBase
                             && isrm.ItemsheetId == x.Id).ToList()
                     }).ToListAsync();
 
-                foreach (var sheet in allSheets)
-                {
-                    var newOutputSheet = new IteSheet(sheet, _context);
-                    outPutList.Add(newOutputSheet);
-                }
+                var itemTypes = _context.ItemTypes.Where(it => it.Isactive == true).ToList();
+                var isheets = _context.ItemSheets.Where(it => it.Isactive == true).ToList();
+                var isheetreviewm = _context.ItemSheetReviewMessages.Where(it => it.Isactive == true).ToList();
+                var isheetapprov = _context.ItemSheetApproveds.Where(it => it.Isactive == true).ToList();
+
+                outPutList = allSheets.Select(a => new IteSheet(a, itemTypes, isheets,
+                          isheetreviewm, isheetapprov)).ToList();
 
                 var output = new IteListOut();
                 output.IteList = outPutList.OrderBy(x => x.Createdate).OrderBy(x => x.Id).ToList();
@@ -742,6 +748,7 @@ public class ItemSheetApprovedsController : ControllerBase
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
+            var currUser = await UsersLogic.GetUserGuid(authId, _context);
             var legalsheets = _context.ItemSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.ItemSheetApprovedTags)).ToList();
             var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
@@ -760,24 +767,22 @@ public class ItemSheetApprovedsController : ControllerBase
                 .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
 
             if (pagingParameterModel.userCreated == true)
-                initItems = initItems.Where(ii => ii.CreatedbyuserGuid == UsersLogic.GetUserGuid(authId, _context))
+                initItems = initItems.Where(ii => ii.CreatedbyuserGuid == currUser)
                     .ToList();
             if (pagingParameterModel.userCreated == false)
-                initItems = initItems.Where(ii => ii.CreatedbyuserGuid != UsersLogic.GetUserGuid(authId, _context))
+                initItems = initItems.Where(ii => ii.CreatedbyuserGuid != currUser)
                     .ToList();
 
             if (pagingParameterModel.userApproved == true)
             {
-                var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == curUserGuid ||
-                                                  ii.SecondapprovalbyuserGuid == curUserGuid).ToList();
+                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid == currUser ||
+                                                  ii.SecondapprovalbyuserGuid == currUser).ToList();
             }
 
             if (pagingParameterModel.userApproved == false)
             {
-                var curUserGuid = UsersLogic.GetUserGuid(authId, _context);
-                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != curUserGuid &&
-                                                  ii.SecondapprovalbyuserGuid != curUserGuid).ToList();
+                initItems = initItems.Where(ii => ii.FirstapprovalbyuserGuid != currUser &&
+                                                  ii.SecondapprovalbyuserGuid != currUser).ToList();
             }
 
             var taggedItems = new List<ItemSheetApproved>();
@@ -964,6 +969,113 @@ public class ItemSheetApprovedsController : ControllerBase
 
 
     /// <summary>
+    ///     Search for item based on partial item name or various attributes.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <returns></returns>
+    // GET: api/v1/Search
+    [HttpGet("Search/{input}")]
+    [Authorize]
+    public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetItemSearchPartial(string input)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        {
+            ItemSheetSearchLogic searchLogic = new ItemSheetSearchLogic();
+            searchLogic.searchInObj = JsonConvert.DeserializeObject<ItemSearchInObj>(input);
+
+            var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
+
+            var allowedLARPS = _context.UserLarproles
+                .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                .ToList();
+
+            var disAllowedTags = _context.Larptags.Where(lt =>
+                !(allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+            searchLogic.sheets = await _context.ItemSheetApproveds
+                .Where(ch => ch.Isactive == true).Select(cha => new ItemSheetPullObj()
+                {
+                    Guid = cha.Guid,
+                    Name = cha.Name,
+                    Seriesguid = cha.Seriesguid,
+                    Title = cha.Series.Title,
+                    Fields = cha.Fields,
+                    Fields2ndside = cha.Fields2ndside,
+                    MainTags = cha.Taglists == null ? new List<Guid>() :
+                    JsonConvert.DeserializeObject<TagsObject>(cha.Taglists).MainTags,
+                    AbilityTags = cha.Taglists == null ? new List<Guid>() :
+                    JsonConvert.DeserializeObject<TagsObject>(cha.Taglists).AbilityTags
+                }).ToListAsync();
+
+            searchLogic.DoFullSearch();
+
+            var allSheets = await _context.ItemSheetApproveds.Where(c => c.Isactive == true
+            && searchLogic.andAttrisheets.Contains(c.Guid)
+            && searchLogic.orAttrisheets.Contains(c.Guid))
+                    .Select(x => new ItemSheetDO
+                    {
+                        Sheet = new ItemSheet
+                        {
+                            Guid = x.Guid,
+                            Seriesguid = x.Seriesguid,
+                            Name = x.Name,
+                            Createdate = x.Createdate,
+                            CreatedbyuserGuid = x.CreatedbyuserGuid,
+                            FirstapprovalbyuserGuid = x.FirstapprovalbyuserGuid,
+                            Firstapprovaldate = x.Firstapprovaldate,
+                            SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
+                            Secondapprovaldate = x.Secondapprovaldate,
+                            EditbyUserGuid = x.EditbyUserGuid,
+                            Taglists = x.Taglists,
+                        },
+                        TagList = x.ItemSheetApprovedTags.Select(cst => cst.Tag)
+                           .Where(cst => cst.Tagtype.Name == "Item" ||
+                           cst.Tagtype.Name == "LARPRun").OrderBy(cst => cst.Name).ToList(),
+                        Createdbyuser = x.Createdbyuser,
+                        EditbyUser = x.EditbyUser,
+                        Firstapprovalbyuser = x.Firstapprovalbyuser,
+                        Secondapprovalbyuser = x.Secondapprovalbyuser,
+                        Series = x.Series,
+                        ListMessages = _context.ItemSheetReviewMessages
+                        .Where(csr => csr.ItemsheetId == x.Id).ToList()
+                    })
+                .OrderBy(x => x.Sheet.Name).ToListAsync();
+
+            if (!wizardauth)
+                allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat)))
+                    .ToList();
+
+            var outp = new List<IteSheet>();
+
+            var itemTypes = _context.ItemTypes.Where(it => it.Isactive == true).ToList();
+            var isheets = _context.ItemSheets.Where(it => it.Isactive == true).ToList();
+            var isheetreviewm = _context.ItemSheetReviewMessages.Where(it => it.Isactive == true).ToList();
+            var isheetapprov = _context.ItemSheetApproveds.Where(it => it.Isactive == true).ToList();
+
+            outp = allSheets.Select(a => new IteSheet(a, itemTypes, isheets,
+                      isheetreviewm, isheetapprov)).ToList();
+
+            if (outp == null) return NotFound();
+
+            var output = new IteListOut();
+            output.IteList = outp.OrderBy(x => StringLogic.IgnorePunct(x.Name)).ToList();
+            output.fulltotal = outp.Count;
+
+            return Ok(output);
+
+        }
+
+        return Unauthorized();
+    }
+
+
+
+    /// <summary>
     ///     Kick an approved sheet down to unapproved again. WIZARD ONLY
     /// </summary>
     /// <param name="guid"></param>
@@ -1035,6 +1147,75 @@ public class ItemSheetApprovedsController : ControllerBase
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        return Unauthorized();
+    }
+
+    /// <summary>
+    ///     Instantly Pushes an item to approved status. WIZARD ONLY
+    /// </summary>
+    /// <param name="sheet_id"></param>
+    /// <returns></returns>
+    [HttpPut("push/{sheet_id}")]
+    public async Task<IActionResult> PushItemSheetApproved(int sheet_id)
+    {
+        var authId = HttpContext.User.Claims.ToList()[1].Value;
+
+        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+
+        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        {
+            var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+
+            var oldApprovedSheet = _context.ItemSheetApproveds.Where(csa => csa.Id == sheet_id).FirstOrDefault();
+
+            if (oldApprovedSheet != null)
+            {
+                _context.ItemSheetApproveds.Update(oldApprovedSheet);
+                _context.SaveChanges();
+                return Ok();
+            }
+
+            var newApprovedSheet = _context.ItemSheets.Where(csa => csa.Id == sheet_id).FirstOrDefault();
+
+            if (newApprovedSheet == null) return NotFound();
+
+            var selectedApprovedSheets = _context.ItemSheetApproveds
+                .Where(apps => apps.Guid == newApprovedSheet.Guid)
+                .ToList();
+
+            var newaprovedsheet = new ItemSheetApproved
+            {
+                Guid = newApprovedSheet.Guid,
+                ItemsheetId = newApprovedSheet.Id,
+                Seriesguid = (Guid)newApprovedSheet.Seriesguid,
+                Name = newApprovedSheet.Name,
+                Img1 = newApprovedSheet.Img1,
+                Fields = newApprovedSheet.Fields,
+                Isactive = true,
+                CreatedbyuserGuid = newApprovedSheet.CreatedbyuserGuid,
+                Gmnotes = newApprovedSheet.Gmnotes,
+                Version = newApprovedSheet.Version,
+                EditbyUserGuid = result,
+                Taglists = newApprovedSheet.Taglists,
+                Firstapprovaldate = DateTime.Now,
+                FirstapprovalbyuserGuid = result,
+                Secondapprovaldate = DateTime.Now,
+                SecondapprovalbyuserGuid = result,
+                Reason4edit = "Instant Approval Performed (What was I THINKING!?)",
+            };
+
+            foreach (var sheet in selectedApprovedSheets) sheet.Isactive = false;
+
+            _context.ItemSheetApproveds.Add(newaprovedsheet);
+            _context.ItemSheetApproveds.UpdateRange(selectedApprovedSheets);
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
 
         return Unauthorized();

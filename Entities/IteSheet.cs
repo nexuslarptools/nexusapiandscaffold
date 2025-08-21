@@ -19,7 +19,8 @@ public class IteSheet
          "mecha",
         "companion",
         "pokemon",
-        "vehicle" 
+        "vehicle", 
+        "ship"
     });
 
 
@@ -38,7 +39,8 @@ public class IteSheet
                 var fullTag = _context.Tags
                     .Where(t => t.Isactive == true && t.Guid == tag.TagGuid)
                     .Include("Tagtype").FirstOrDefault();
-                if (fullTag != null) Tags.Add(new TagOut(fullTag));
+                if (fullTag != null && (fullTag.Tagtype.Name == "Item" ||
+                    fullTag.Tagtype.Name == "LARPRun")) Tags.Add(new TagOut(fullTag));
             }
 
         if (sheet.ItemtypeGuid != null)
@@ -135,14 +137,16 @@ public class IteSheet
 
         ReviewMessages = new List<ReviewMessage>();
 
-        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                          && isrm.ItemsheetId == sheet.Id).ToList();
+
+        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Guid).Select(x => x.Id).ToList();
+        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true &&
+                                                                          ListId.Contains(isrm.ItemsheetId)).ToList();
 
         hasreview = false;
         foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
         this.SetIsLarge();
@@ -273,20 +277,22 @@ public class IteSheet
 
         ReviewMessages = new List<ReviewMessage>();
         hasreview = false;
+
+        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Guid).Select(x => x.Id).ToList();
         var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                          && isrm.ItemsheetId == sheet.ItemsheetId)
-            .ToList();
+                                                                          && ListId.Contains(isrm.ItemsheetId)).ToList();
 
         foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
         this.SetIsLarge();
     }
 
-    public IteSheet(ItemSheetDO sheet, NexusLarpLocalContext _context)
+    public IteSheet(ItemSheetDO sheet, List<ItemType> itemTypes, List<ItemSheet> isheets, 
+        List<ItemSheetReviewMessage> isheetreviewm, List<ItemSheetApproved> isheetapprov)
     {
         Tags = new List<TagOut>();
 
@@ -296,7 +302,7 @@ public class IteSheet
 
         if (sheet.Sheet.ItemtypeGuid != null)
         {
-            var thistype = _context.ItemTypes.Where(i => i.Guid == (Guid)sheet.Sheet.ItemtypeGuid).FirstOrDefault();
+            var thistype = itemTypes.Where(i => i.Guid == (Guid)sheet.Sheet.ItemtypeGuid).FirstOrDefault();
             Type = thistype.Type;
             ItemTypeGuid = (Guid)sheet.Sheet.ItemtypeGuid;
         }
@@ -362,13 +368,18 @@ public class IteSheet
         ReviewMessages = new List<ReviewMessage>();
 
         hasreview = false;
-        foreach (var message in sheet.ListMessages)
+
+        var ListId = isheets.Where(ish => ish.Guid == sheet.Sheet.Guid).Select(x => x.Id).ToList();
+        var ListMessages = isheetreviewm.Where(isrm => isrm.Isactive == true 
+            && ListId.Contains(isrm.ItemsheetId)).ToList();
+
+        foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
-        this.WasApproved = _context.ItemSheetApproveds.Any(isa => isa.Guid == sheet.Sheet.Guid);
+        this.WasApproved = isheetapprov.Any(isa => isa.Guid == sheet.Sheet.Guid);
 
         this.SetIsLarge();
     }
@@ -448,10 +459,14 @@ public class IteSheet
         ReviewMessages = new List<ReviewMessage>();
 
         hasreview = false;
-        foreach (var message in sheet.ListMessages)
+        var ListId = _context.ItemSheets.Where(ish => ish.Guid == sheet.Sheet.Guid).Select(x => x.Id).ToList();
+        var ListMessages = _context.ItemSheetReviewMessages.Where(isrm => isrm.Isactive == true
+            && ListId.Contains(isrm.ItemsheetId)).ToList();
+
+        foreach (var message in ListMessages)
         {
             hasreview = true;
-            ReviewMessages.Add(new ReviewMessage(message, _context));
+            //ReviewMessages.Add(new ReviewMessage(message, _context));
         }
 
         this.SetIsLarge();
@@ -492,6 +507,7 @@ public class IteSheet
     public bool Isbackonly { get; set; }
     public Backside Back { get; set; }
     public bool WasApproved { get; set; }
+    public int CountVersions { get; set; }
 
     public List<ReviewMessage> ReviewMessages { get; set; }
 

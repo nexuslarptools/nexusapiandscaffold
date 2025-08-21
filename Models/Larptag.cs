@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class Larptag
+public partial class Larptag
 {
     public int Id { get; set; }
 

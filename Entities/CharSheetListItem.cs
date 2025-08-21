@@ -72,7 +72,7 @@ public class CharSheetListItem
         readyforapproval = false;
     }
 
-    public CharSheetListItem(CharacterSheetApprovedDO charSheet, NexusLarpLocalContext _context)
+    public CharSheetListItem(CharacterSheetApprovedDO charSheet)
     {
         var tagslist = new JsonElement();
         tags = new List<TagOut>();
@@ -162,7 +162,7 @@ public class CharSheetListItem
         readyforapproval = charSheet.Readyforapproval;
     }
 
-    public CharSheetListItem(CharacterSheetDO charSheet, NexusLarpLocalContext _context)
+    public CharSheetListItem(CharacterSheetDO charSheet)
     {
         var tagslist = new JsonElement();
         tags = new List<TagOut>();
@@ -190,6 +190,7 @@ public class CharSheetListItem
         editbyUser = charSheet.EditbyUser == null ? null : charSheet.EditbyUser.Preferredname;
         hasreview = charSheet.CharacterSheetReviewMessages.Count > 0 ? true : false;
         readyforapproval = charSheet.Sheet.Readyforapproval;
+        isactive = charSheet.Sheet.Isactive;
     }
 
     public Guid guid { get; set; }
@@ -207,6 +208,8 @@ public class CharSheetListItem
     public bool readyforapproval { get; set; }
     public List<TagOut> tags { get; set; }
     public bool hasreview { get; set; }
+    public bool isactive { get; set; }
+    public bool wasapproved { get; set; }
 
     public bool IsNullOrEmpty(Guid? input)
     {

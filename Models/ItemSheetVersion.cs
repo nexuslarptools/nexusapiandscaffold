@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class ItemSheetVersion
+public partial class ItemSheetVersion
 {
     public int Id { get; set; }
 
@@ -19,7 +20,7 @@ public class ItemSheetVersion
 
     public JsonDocument Fields { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
 
     public DateTime Createdate { get; set; }
 

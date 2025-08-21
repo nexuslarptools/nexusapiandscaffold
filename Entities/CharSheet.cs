@@ -15,10 +15,15 @@ public class CharSheet
     {
     }
 
-    public CharSheet(CharacterSheetApproved input, NexusLarpLocalContext _context)
+    public CharSheet(CharacterSheetApproved input, List<Series> seriesList,
+        List<ItemSheetApproved> appItemList, List<ItemSheet> itemList,
+        List<User> usersList, List<CharacterSheet> listCharSheets, 
+        List<CharacterSheetReviewMessage> listCSRM, List<ItemType> listItemTypes
+        )
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
 
+        Id = input.Id;
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
         Name = input.Name;
@@ -37,8 +42,9 @@ public class CharSheet
         Reason4edit = input.Reason4edit;
         Version = input.Version;
         Readyforapproval = false;
+        HasReview = false;
 
-        var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
+        var assocSeries = seriesList.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
             .FirstOrDefault();
 
         SeriesTitle = assocSeries.Title;
@@ -48,19 +54,19 @@ public class CharSheet
 
         if (sheet_item_guid != null)
         {
-            if (_context.ItemSheetApproveds
+            if (appItemList
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                     .FirstOrDefault() != null)
-                Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
+                Sheet_Item = Item.CreateItem(appItemList
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
-                    _context);
+                     usersList, listItemTypes);
 
-            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+            else if (itemList.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                          .FirstOrDefault() !=
                      null)
-                Sheet_Item = Item.CreateItem(_context.ItemSheets
+                Sheet_Item = Item.CreateItem(itemList
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
-                    _context);
+                    usersList, listItemTypes);
         }
 
         var Start_Items = new List<IteSheet>();
@@ -68,35 +74,35 @@ public class CharSheet
         var StartIguids = Fields["Starting_Items"].ToList();
 
         foreach (var iGuid in StartIguids)
-            if (_context.ItemSheetApproveds
+            if (appItemList
                     .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault() != null)
             {
-                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
+                var starting_I = appItemList.Where(issh => issh.Isactive == true &&
                                                                            issh.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault();
 
 
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
+                Start_Items.Add(Item.CreateItem(starting_I, usersList, listItemTypes));
             }
-            else if (_context.ItemSheets
+            else if (itemList
                          .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                          .FirstOrDefault() != null)
             {
                 //Start_Items.Add(JObject.Parse(_context.ItemSheet.Where(isa => isa.Isactive == true
                 //&& isa.Guid.ToString() == iGuid.ToString()).FirstOrDefault().Fields.RootElement.ToString()));
-                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
+                var starting_I = itemList.Where(issh => issh.Isactive == true &&
                                                                    issh.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault();
 
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
+                Start_Items.Add(Item.CreateItem(starting_I, usersList, listItemTypes));
             }
 
         if (Start_Items != null) Starting_Items = Start_Items;
 
         if (CreatedbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == CreatedbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == CreatedbyUserGuid)
                 .FirstOrDefault();
 
             createdby = lookupuser.Preferredname;
@@ -106,7 +112,7 @@ public class CharSheet
 
         if (FirstapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == FirstapprovalbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == FirstapprovalbyUserGuid)
                 .FirstOrDefault();
             Firstapprovalby = lookupuser.Preferredname;
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
@@ -115,7 +121,7 @@ public class CharSheet
 
         if (SecondapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == SecondapprovalbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == SecondapprovalbyUserGuid)
                 .FirstOrDefault();
             Secondapprovalby = lookupuser.Preferredname;
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
@@ -124,7 +130,7 @@ public class CharSheet
 
         if (EditbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == EditbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == EditbyUserGuid)
                 .FirstOrDefault();
             Editby = lookupuser.Preferredname;
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
@@ -133,17 +139,24 @@ public class CharSheet
 
         ReviewMessages = new List<ReviewMessage>();
 
-        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                               && isrm.CharactersheetId == input.Id)
-            .ToList();
+        var ListId = listCharSheets.Where(ish => ish.Guid == input.Guid).Select(x => x.Id).ToList();
+        var ListMessages = listCSRM.Where(isrm => isrm.Isactive == true
+            && ListId.Contains(isrm.CharactersheetId)).ToList();
 
-        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+        if (ListMessages.Count() > 0)
+        {
+            HasReview = true;
+        }
     }
 
-    public CharSheet(CharacterSheet input, NexusLarpLocalContext _context)
+    public CharSheet(CharacterSheet input, List<Series> seriesList,
+        List<ItemSheetApproved> appItemList, List<ItemSheet> itemList,
+        List<User> usersList, List<CharacterSheet> listCharSheets,
+        List<CharacterSheetReviewMessage> listCSRM, List<ItemType> listItemTypes)
     {
         var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(input.Fields.RootElement.ToString()));
 
+        Id = input.Id;
         Guid = input.Guid;
         Seriesguid = input.Seriesguid;
         Name = input.Name;
@@ -163,7 +176,7 @@ public class CharSheet
         Version = input.Version;
         Readyforapproval = input.Readyforapproval;
 
-        var assocSeries = _context.Series.Where(s => s.Isactive == true && s.Guid == input.Seriesguid)
+        var assocSeries = seriesList.Where(s => s.Guid == input.Seriesguid)
             .FirstOrDefault();
 
         SeriesTitle = assocSeries.Title;
@@ -172,19 +185,19 @@ public class CharSheet
 
         if (sheet_item_guid != null)
         {
-            if (_context.ItemSheetApproveds
+            if (appItemList
                     .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                     .FirstOrDefault() != null)
-                Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
+                Sheet_Item = Item.CreateItem(appItemList
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
-                    _context);
+                    usersList, listItemTypes);
 
-            else if (_context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+            else if (itemList.Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                          .FirstOrDefault() !=
                      null)
-                Sheet_Item = Item.CreateItem(_context.ItemSheets
+                Sheet_Item = Item.CreateItem(itemList
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true).FirstOrDefault(),
-                    _context);
+                    usersList, listItemTypes);
         }
 
         var Start_Items = new List<IteSheet>();
@@ -192,33 +205,33 @@ public class CharSheet
         var StartIguids = Fields["Starting_Items"].ToList();
 
         foreach (var iGuid in StartIguids)
-            if (_context.ItemSheetApproveds
+            if (appItemList
                     .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault() != null)
             {
-                var starting_I = _context.ItemSheetApproveds.Where(issh => issh.Isactive == true &&
+                var starting_I = appItemList.Where(issh => issh.Isactive == true &&
                                                                            issh.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault();
 
 
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
+                Start_Items.Add(Item.CreateItem(starting_I, usersList, listItemTypes));
             }
-            else if (_context.ItemSheets
+            else if (itemList
                          .Where(isa => isa.Isactive == true && isa.Guid.ToString() == iGuid.ToString())
                          .FirstOrDefault() != null)
             {
-                var starting_I = _context.ItemSheets.Where(issh => issh.Isactive == true &&
+                var starting_I = itemList.Where(issh => issh.Isactive == true &&
                                                                    issh.Guid.ToString() == iGuid.ToString())
                     .FirstOrDefault();
 
-                Start_Items.Add(Item.CreateItem(starting_I, _context));
+                Start_Items.Add(Item.CreateItem(starting_I, usersList, listItemTypes));
             }
 
         if (Start_Items != null) Starting_Items = Start_Items;
 
         if (CreatedbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == CreatedbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == CreatedbyUserGuid)
                 .FirstOrDefault();
 
             createdby = lookupuser.Preferredname;
@@ -228,7 +241,7 @@ public class CharSheet
 
         if (FirstapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == FirstapprovalbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == FirstapprovalbyUserGuid)
                 .FirstOrDefault();
             Firstapprovalby = lookupuser.Preferredname;
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
@@ -237,7 +250,7 @@ public class CharSheet
 
         if (SecondapprovalbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == SecondapprovalbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == SecondapprovalbyUserGuid)
                 .FirstOrDefault();
             Secondapprovalby = lookupuser.Preferredname;
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
@@ -246,7 +259,7 @@ public class CharSheet
 
         if (EditbyUserGuid != null)
         {
-            var lookupuser = _context.Users.Where(u => u.Guid == EditbyUserGuid)
+            var lookupuser = usersList.Where(u => u.Guid == EditbyUserGuid)
                 .FirstOrDefault();
             Editby = lookupuser.Preferredname;
             if (lookupuser.Preferredname == null || lookupuser.Preferredname == string.Empty)
@@ -255,13 +268,16 @@ public class CharSheet
 
         ReviewMessages = new List<ReviewMessage>();
 
-        var ListMessages = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
-                                                                               && isrm.CharactersheetId == input.Id)
-            .ToList();
+        var ListId = listCharSheets.Where(ish => ish.Guid == input.Guid).Select(x => x.Id).ToList();
+        var ListMessages = listCSRM.Where(isrm => isrm.Isactive == true
+            && ListId.Contains(isrm.CharactersheetId)).ToList();
 
-        foreach (var message in ListMessages) ReviewMessages.Add(new ReviewMessage(message, _context));
+        if (ListMessages.Count() > 0)
+        {
+            HasReview = true;
+        }
     }
-
+    public int Id { get; set; }
     public Guid Guid { get; set; }
     public Guid? Seriesguid { get; set; }
     public string SeriesTitle { get; set; }
@@ -288,8 +304,10 @@ public class CharSheet
     public List<TagOut> Tags { get; set; }
     public Guid? EditbyUserGuid { get; set; }
     public string Editby { get; set; }
+    public bool HasReview { get; set; }
     public List<ReviewMessage> ReviewMessages { get; set; }
     public bool Readyforapproval { get; set; }
+
 
     public CharacterSheet OutputToCharacterSheet()
     {
@@ -301,7 +319,7 @@ public class CharSheet
             Img1 = Img1,
             Img2 = Img2,
             Fields = JsonDocument.Parse(Fields.ToString()),
-            Isactive = Isactive,
+            Isactive = Isactive == null || (bool)Isactive,
             Createdate = Createdate,
             EditbyUserGuid = EditbyUserGuid,
             CreatedbyuserGuid = CreatedbyUserGuid,

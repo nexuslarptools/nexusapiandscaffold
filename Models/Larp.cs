@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace NEXUSDataLayerScaffold.Models;
 
-public class Larp
+public partial class Larp
 {
     public Guid Guid { get; set; }
 
@@ -13,28 +13,23 @@ public class Larp
 
     public string Location { get; set; }
 
-    public bool? Isactive { get; set; }
+    public bool Isactive { get; set; }
 
-    public virtual ICollection<LarpplayerCharacterSheetAllowed> LarpplayerCharacterSheetAlloweds { get; } =
-        new List<LarpplayerCharacterSheetAllowed>();
+    public virtual ICollection<LarpplayerCharacterSheetAllowed> LarpplayerCharacterSheetAlloweds { get; set; } = new List<LarpplayerCharacterSheetAllowed>();
 
-    public virtual ICollection<LarpplayerCharacterSheetDisllowed> LarpplayerCharacterSheetDislloweds { get; } =
-        new List<LarpplayerCharacterSheetDisllowed>();
+    public virtual ICollection<LarpplayerCharacterSheetDisllowed> LarpplayerCharacterSheetDislloweds { get; set; } = new List<LarpplayerCharacterSheetDisllowed>();
 
-    public virtual ICollection<LarpplayerSeriesAllowed> LarpplayerSeriesAlloweds { get; } =
-        new List<LarpplayerSeriesAllowed>();
+    public virtual ICollection<LarpplayerSeriesAllowed> LarpplayerSeriesAlloweds { get; set; } = new List<LarpplayerSeriesAllowed>();
 
-    public virtual ICollection<LarpplayerSeriesDisllowed> LarpplayerSeriesDislloweds { get; } =
-        new List<LarpplayerSeriesDisllowed>();
+    public virtual ICollection<LarpplayerSeriesDisllowed> LarpplayerSeriesDislloweds { get; set; } = new List<LarpplayerSeriesDisllowed>();
 
-    public virtual ICollection<LarpplayerTagAllowed> LarpplayerTagAlloweds { get; } = new List<LarpplayerTagAllowed>();
+    public virtual ICollection<LarpplayerTagAllowed> LarpplayerTagAlloweds { get; set; } = new List<LarpplayerTagAllowed>();
 
-    public virtual ICollection<LarpplayerTagDisllowed> LarpplayerTagDislloweds { get; } =
-        new List<LarpplayerTagDisllowed>();
+    public virtual ICollection<LarpplayerTagDisllowed> LarpplayerTagDislloweds { get; set; } = new List<LarpplayerTagDisllowed>();
 
-    public virtual ICollection<Larprun> Larpruns { get; } = new List<Larprun>();
+    public virtual ICollection<Larprun> Larpruns { get; set; } = new List<Larprun>();
 
-    public virtual ICollection<Larptag> Larptags { get; } = new List<Larptag>();
+    public virtual ICollection<Larptag> Larptags { get; set; } = new List<Larptag>();
 
-    public virtual ICollection<UserLarprole> UserLarproles { get; } = new List<UserLarprole>();
+    public virtual ICollection<UserLarprole> UserLarproles { get; set; } = new List<UserLarprole>();
 }

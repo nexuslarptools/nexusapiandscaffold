@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NEXUSDataLayerScaffold.Entities;
+using NEXUSDataLayerScaffold.Extensions;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
 
@@ -35,7 +36,9 @@ public class CharacterSheetReviewMessageController : ControllerBase
 
             var output = new List<ReviewMessage>();
 
-            foreach (var message in isheetReviews) output.Add(new ReviewMessage(message, _context));
+            var usersList = _context.Users.Select(x => x).ToList();
+
+            foreach (var message in isheetReviews) output.Add(new ReviewMessage(message, usersList));
 
             return Ok(output);
         }
@@ -58,7 +61,13 @@ public class CharacterSheetReviewMessageController : ControllerBase
 
             var output = new List<ReviewMessage>();
 
-            foreach (var message in csheetReviews) output.Add(new ReviewMessage(message, _context));
+            var usersList = _context.Users.Select(x => x).ToList();
+
+
+            foreach (var message in csheetReviews)
+            {
+                output.Add(new ReviewMessage(message, usersList));
+            }
 
             return Ok(output);
         }
