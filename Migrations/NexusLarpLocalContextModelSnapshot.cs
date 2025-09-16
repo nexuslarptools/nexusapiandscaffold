@@ -313,9 +313,9 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Id")
                         .HasName("charactersheetmessageacks_id");
 
-                    b.HasIndex("CharactersheetreviewmessagesId");
+                    b.HasIndex(new[] { "CharactersheetreviewmessagesId" }, "IX_CharacterSheetMessageAcks_charactersheetreviewmessages_id");
 
-                    b.HasIndex("UserGuid");
+                    b.HasIndex(new[] { "UserGuid" }, "IX_CharacterSheetMessageAcks_user_guid");
 
                     b.ToTable("CharacterSheetMessageAcks");
                 });
@@ -392,7 +392,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Id")
                         .HasName("charactersheetreviewsubscriptions_id");
 
-                    b.HasIndex("UserGuid");
+                    b.HasIndex(new[] { "UserGuid" }, "IX_CharacterSheetReviewSubscriptions_user_guid");
 
                     b.ToTable("CharacterSheetReviewSubscriptions");
                 });
@@ -842,9 +842,9 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Id")
                         .HasName("itemsheetmessageacks_id");
 
-                    b.HasIndex("ItemsheetreviewmessagesId");
+                    b.HasIndex(new[] { "ItemsheetreviewmessagesId" }, "IX_ItemSheetMessageAcks_itemsheetreviewmessages_id");
 
-                    b.HasIndex("UserGuid");
+                    b.HasIndex(new[] { "UserGuid" }, "IX_ItemSheetMessageAcks_user_guid");
 
                     b.ToTable("ItemSheetMessageAcks");
                 });
@@ -921,7 +921,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Id")
                         .HasName("itemsheetreviewsubscriptions_id");
 
-                    b.HasIndex("UserGuid");
+                    b.HasIndex(new[] { "UserGuid" }, "IX_ItemSheetReviewSubscriptions_user_guid");
 
                     b.ToTable("ItemSheetReviewSubscriptions");
                 });
@@ -1531,13 +1531,13 @@ namespace NEXUSDataLayerScaffold.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("charactersheet_registered_approvedsheet");
 
-                    b.Property<DateTime>("Createdate")
+                    b.Property<DateTime?>("Createdate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("createdate")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<bool>("Isactive")
+                    b.Property<bool?>("Isactive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)
@@ -1749,6 +1749,47 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.ToTable("SheetUsers_Contacts", (string)null);
                 });
 
+            modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ShipCrewList", b =>
+                {
+                    b.Property<Guid>("Guid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("guid")
+                        .HasDefaultValueSql("uuid_generate_v1()");
+
+                    b.Property<DateTime>("Createdate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("createdate")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(100000)
+                        .HasColumnType("character varying(100000)")
+                        .HasColumnName("details");
+
+                    b.Property<bool>("Isactive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("isactive");
+
+                    b.Property<int>("Ord")
+                        .HasColumnType("integer")
+                        .HasColumnName("ord");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("position");
+
+                    b.HasKey("Guid")
+                        .HasName("shipcrewlist_guid");
+
+                    b.ToTable("ShipCrewList", (string)null);
+                });
+
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.Tag", b =>
                 {
                     b.Property<Guid>("Guid")
@@ -1784,8 +1825,6 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasKey("Guid")
                         .HasName("tags_guid");
-
-                    b.HasIndex("ApprovedbyUserGuid");
 
                     b.HasIndex("Tagtypeguid");
 
@@ -2492,19 +2531,19 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasOne("NEXUSDataLayerScaffold.Models.User", "CharactersheetRegisteredApprovedbyUserNavigation")
                         .WithMany("LarprunPreRegCharactersheetRegisteredApprovedbyUserNavigations")
                         .HasForeignKey("CharactersheetRegisteredApprovedbyUser")
-                        .HasConstraintName("LARPRunPreReg_charactersheet_registered_approvedby_user_fkey");
+                        .HasConstraintName("larprunprereg_charactersheet_registered_approvedby_user_fkey");
 
                     b.HasOne("NEXUSDataLayerScaffold.Models.Larprun", "Larprun")
                         .WithMany("LarprunPreRegs")
                         .HasForeignKey("LarprunGuid")
                         .IsRequired()
-                        .HasConstraintName("LARPRunPreReg_larprun_guid_fkey");
+                        .HasConstraintName("larprunprereg_larprun_guid_fkey");
 
                     b.HasOne("NEXUSDataLayerScaffold.Models.User", "User")
                         .WithMany("LarprunPreRegUsers")
                         .HasForeignKey("UserGuid")
                         .IsRequired()
-                        .HasConstraintName("LARPRunPreReg_user_guid_fkey");
+                        .HasConstraintName("larprunprereg_user_guid_fkey");
 
                     b.Navigation("CharactersheetRegisteredApprovedbyUserNavigation");
 
@@ -2570,18 +2609,11 @@ namespace NEXUSDataLayerScaffold.Migrations
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.Tag", b =>
                 {
-                    b.HasOne("NEXUSDataLayerScaffold.Models.User", "ApprovedbyUser")
-                        .WithMany("Tags")
-                        .HasForeignKey("ApprovedbyUserGuid")
-                        .HasConstraintName("Tags_approvedby_fkey");
-
                     b.HasOne("NEXUSDataLayerScaffold.Models.TagType", "Tagtype")
                         .WithMany("Tags")
                         .HasForeignKey("Tagtypeguid")
                         .IsRequired()
                         .HasConstraintName("fk_tagtype_guid_tags");
-
-                    b.Navigation("ApprovedbyUser");
 
                     b.Navigation("Tagtype");
                 });
@@ -2611,7 +2643,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasOne("NEXUSDataLayerScaffold.Models.User", "User")
                         .WithMany("UserLarproles")
                         .HasForeignKey("Userguid")
-                        .HasConstraintName("UserLARPRoles_userguid_fkey");
+                        .HasConstraintName("userlarproles_users_guid_fk");
 
                     b.Navigation("Larp");
 
@@ -2825,8 +2857,6 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.Navigation("SheetUsersContactCreatedbyusers");
 
                     b.Navigation("SheetUsersContactUsers");
-
-                    b.Navigation("Tags");
 
                     b.Navigation("UserLarproles");
                 });

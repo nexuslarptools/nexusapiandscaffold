@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using System.Diagnostics;
 
 namespace NEXUSDataLayerScaffold;
 
@@ -10,6 +11,10 @@ public class Program
 
     public static void Main(string[] args)
     {
+        // Ensure W3C Trace Context is used and recognized
+        Activity.DefaultIdFormat = ActivityIdFormat.W3C;
+        Activity.ForceDefaultIdFormat = true;
+
         CreateHostBuilder(args).Build().Run();
     }
 

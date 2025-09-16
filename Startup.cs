@@ -22,6 +22,7 @@ using NEXUSDataLayerScaffold.Models;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
 
 namespace NEXUSDataLayerScaffold;
 
@@ -49,7 +50,19 @@ public class Startup
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         });
-        services.AddOpenTelemetry().WithTracing(configure =>
+        // Health checks for liveness and readiness
+        services.AddHealthChecks();
+        services.AddOpenTelemetry().ConfigureResource(rb =>
+            {
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                var version = typeof(Startup).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+                rb.AddService(serviceName: "NEXUSDataLayerScaffold", serviceVersion: version);
+                rb.AddAttributes(new []
+                {
+                    new KeyValuePair<string, object>("deployment.environment", env)
+                });
+            })
+            .WithTracing(configure =>
             {
                 configure.UseGrafana();
             })
@@ -59,11 +72,19 @@ public class Startup
             });
 
         services.AddLogging(configure =>
-            configure.AddOpenTelemetry(options =>
+            {
+                // Keep OpenTelemetry logging exporter (Grafana / OTLP via Grafana.OpenTelemetry)
+                configure.AddOpenTelemetry(options =>
                 {
+                    options.IncludeFormattedMessage = true;
+                    options.IncludeScopes = true;
+                    options.ParseStateValues = true;
                     options.UseGrafana();
-                })
-            );
+                });
+                // Enable console logging for local troubleshooting
+                configure.AddConsole();
+            }
+        );
 
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -189,6 +210,16 @@ public class Startup
         services.AddMvc();
         services.AddRazorPages();
 
+        // HTTP request logging
+        services.AddHttpLogging(options =>
+        {
+            options.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPropertiesAndHeaders |
+                                     Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponsePropertiesAndHeaders;
+            options.MediaTypeOptions.AddText("application/json");
+            options.RequestHeaders.Add("traceparent");
+            options.ResponseHeaders.Add("traceparent");
+        });
+
 
         //var builder = new NpgsqlConnectionStringBuilder(_config.GetValue<string>("ConnectionSrings:NexusDBConnectionString"));
 
@@ -223,11 +254,10 @@ public class Startup
 
         
         
-        //connstring = "Host=localhost;Port=5433;Database=NexusLarp_Local_FromNick2;Username=postgres;Password=L4RPEverywhere!";
-        accesskey = "S6epybsl7DRwSNmstqaq";
-        secretkey = "UCMzYZCJ1pXG5AQ9eAEsDmfAYkeeCPr4vWjba9EM";
+        //connstring = "Host=localhost;Port=5433;Database=NexusLarp_Local_FromNick2;Username=postgres;Password=******";
+        // NOTE: Use environment variables or configuration to provide MinIO access/secret keys. Removed hardcoded overrides for security.
         // LOCAL DOCKER CONNSTTRING
-        //connstring = "Host=LARPpi;Port=32775;Database=NexusLARP;Username=postgres;Password=L4RPEverywhere!";
+        //connstring = "Host=LARPpi;Port=32775;Database=NexusLARP;Username=postgres;Password=******";
 
         //if (host != _config.GetValue<string>("ConnectionSrings:Host"))
         //    connstring += ";SslMode=allow;Trust Server Certificate=true;";
@@ -235,7 +265,7 @@ public class Startup
         // string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
         services.AddDbContext<NexusLarpLocalContext>(options => options.UseNpgsql(connstring)
         );
-        services.AddMvc(x => x.EnableEndpointRouting = false);
+        services.AddMvc();
         services.AddMinio(configure =>
         {
         configure.WithEndpoint("decade.kylebrighton.com:9000")
@@ -244,7 +274,7 @@ public class Startup
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
     {
         if (env.IsDevelopment())
             app.UseDeveloperExceptionPage();
@@ -262,6 +292,7 @@ public class Startup
                 //.AllowCredentials()
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
+                .WithExposedHeaders("traceparent", "tracestate")
             );
 
             //app.UseCors(builder => builder
@@ -277,7 +308,8 @@ public class Startup
                 .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .AllowCredentials());
+                .AllowCredentials()
+                .WithExposedHeaders("traceparent", "tracestate"));
         }
 
         // Enable middleware to serve generated Swagger as a JSON endpoint.
@@ -292,23 +324,81 @@ public class Startup
             c.RoutePrefix = string.Empty;
         });
 
+        // Global exception handling to log and return ProblemDetails
+        app.Use(async (context, next) =>
+        {
+            try
+            {
+                await next();
+            }
+            catch (Exception ex)
+            {
+                var activity = System.Diagnostics.Activity.Current;
+                var traceId = activity?.TraceId.ToString() ?? context.TraceIdentifier;
+                logger.LogError(ex, "Unhandled exception for {Path} TraceId={TraceId}", context.Request.Path, traceId);
+
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.Clear();
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    context.Response.ContentType = "application/problem+json";
+                    var problem = new
+                    {
+                        type = "https://httpstatuses.com/500",
+                        title = "An unexpected error occurred.",
+                        status = 500,
+                        traceId
+                    };
+                    var json = Newtonsoft.Json.JsonConvert.SerializeObject(problem);
+                    await context.Response.WriteAsync(json);
+                }
+            }
+        });
+
         //app.UseHttpsRedirection();
         //app.UseStaticFiles();
         app.UseRouting();
+        // Emit structured request logs
+        app.UseHttpLogging();
         //app.UseCertificateForwarding();
         //app.UseCookiePolicy();
+        // Add a simple logging scope that carries correlation info and expose trace headers for frontend
+        app.Use(async (context, next) =>
+        {
+            var activity = System.Diagnostics.Activity.Current;
+            var traceId = activity?.TraceId.ToString() ?? context.TraceIdentifier;
+
+            // Ensure response includes current trace context so browsers can correlate
+            context.Response.OnStarting(() =>
+            {
+                if (activity != null)
+                {
+                    // Per W3C spec, traceparent is the Activity Id in W3C format
+                    context.Response.Headers["traceparent"] = activity.Id;
+                    if (!string.IsNullOrEmpty(activity.TraceStateString))
+                    {
+                        context.Response.Headers["tracestate"] = activity.TraceStateString;
+                    }
+                }
+                return System.Threading.Tasks.Task.CompletedTask;
+            });
+
+            using (logger.BeginScope(new Dictionary<string, object>
+            {
+                ["TraceId"] = traceId,
+                ["RequestPath"] = context.Request.Path.ToString(),
+            }))
+            {
+                await next();
+            }
+        });
         app.UseAuthentication();
         app.UseAuthorization();
-        // app.UseEndpoints(endpoints =>
-        // {
-        //     endpoints.MapControllers();
-
-        // });
-        app.UseMvc(routes =>
+        app.UseEndpoints(endpoints =>
         {
-            routes.MapRoute(
-                "default",
-                "{controller=Home}/{action=Index}/{id?}");
+            endpoints.MapControllers();
+            endpoints.MapHealthChecks("/health");
+            endpoints.MapHealthChecks("/health/ready");
         });
 
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
