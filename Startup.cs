@@ -305,7 +305,7 @@ public class Startup
         {
             app.UseCors(builder => builder
                 //.SetIsOriginAllowed(origin => true) // allow any origin
-                .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000","https://databasedev.kylebrighton.com")
+                .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000","https://databasebackenddev.kylebrighton.com")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials()
