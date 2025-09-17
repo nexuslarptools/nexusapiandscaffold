@@ -298,7 +298,7 @@ public class Startup
                 //.AllowCredentials()
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
-                .WithExposedHeaders("traceparent", "tracestate")
+                .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
             );
 
             //app.UseCors(builder => builder
@@ -315,7 +315,7 @@ public class Startup
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials()
-                .WithExposedHeaders("traceparent", "tracestate"));
+                .WithExposedHeaders("traceparent", "tracestate", "Server-Timing"));
         }
 
         // Enable middleware to serve generated Swagger as a JSON endpoint.
@@ -368,15 +368,17 @@ public class Startup
         app.UseHttpLogging();
         //app.UseCertificateForwarding();
         //app.UseCookiePolicy();
-        // Add a simple logging scope that carries correlation info and expose trace headers for frontend
+        // Add a simple logging scope that carries correlation info and expose trace and server-timing headers for frontend
         app.Use(async (context, next) =>
         {
             var activity = System.Diagnostics.Activity.Current;
             var traceId = activity?.TraceId.ToString() ?? context.TraceIdentifier;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            // Ensure response includes current trace context so browsers can correlate
+            // Ensure response includes current trace context and server-timing so browsers can correlate
             context.Response.OnStarting(() =>
             {
+                sw.Stop();
                 if (activity != null)
                 {
                     // Per W3C spec, traceparent is the Activity Id in W3C format
@@ -385,7 +387,11 @@ public class Startup
                     {
                         context.Response.Headers["tracestate"] = activity.TraceStateString;
                     }
+                    // Add trace context to Server-Timing as descriptor (helps browser devtools link traces)
+                    context.Response.Headers.Append("Server-Timing", $"traceparent;desc=\"{activity.Id}\"");
                 }
+                // Always add app processing duration in milliseconds
+                context.Response.Headers.Append("Server-Timing", $"app;dur={sw.Elapsed.TotalMilliseconds:0.###}");
                 return System.Threading.Tasks.Task.CompletedTask;
             });
 
