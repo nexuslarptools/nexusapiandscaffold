@@ -32,39 +32,11 @@ public class Program
 
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
-        return Host.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((hostingContext, config) =>
-            {
-                // Map standard AUTH0_* environment variables into the hierarchical Auth0:* configuration keys
-                var map = new Dictionary<string, string?>();
-
-                void Map(string key, string env)
-                {
-                    var value = Environment.GetEnvironmentVariable(env);
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        map[$"Auth0:{key}"] = value;
-                    }
-                }
-
-                Map("Domain", "AUTH0_DOMAIN");
-                Map("Audience", "AUTH0_AUDIENCE");
-                Map("ApiIdentifier", "AUTH0_API_IDENTIFIER");
-                Map("ClientId", "AUTH0_CLIENT_ID");
-                Map("Secret", "AUTH0_CLIENT_SECRET");
-                Map("UserInfoEndpoint", "AUTH0_USERINFO_ENDPOINT");
-
-                if (map.Count > 0)
-                {
-                    // Values from this provider will override appsettings.json placeholders
-                    config.AddInMemoryCollection(map);
-                }
-            })
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                //-- never undo this
-                //webBuilder.UseStartup<Startup>().UseUrls("https://192.168.254.11:6001", "http://192.168.254.11:6002");
-                webBuilder.UseStartup<Startup>().UseUrls("http://*:80;http://*:443");
-            });
+        return Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
+        {
+            //-- never undo this
+            //webBuilder.UseStartup<Startup>().UseUrls("https://192.168.254.11:6001", "http://192.168.254.11:6002");
+            webBuilder.UseStartup<Startup>().UseUrls("http://*:80;http://*:443");
+        });
     }
 }
