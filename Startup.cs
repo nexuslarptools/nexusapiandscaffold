@@ -64,6 +64,12 @@ public class Startup
             })
             .WithTracing(configure =>
             {
+                // Ensure incoming traceparent is honored and outgoing contexts are propagated
+                configure.AddAspNetCoreInstrumentation(options =>
+                {
+                    options.RecordException = true;
+                });
+                configure.AddHttpClientInstrumentation();
                 configure.UseGrafana();
             })
             .WithMetrics(configure =>
