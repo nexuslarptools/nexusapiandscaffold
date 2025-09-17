@@ -104,8 +104,7 @@ public class Startup
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles",
-                ValidIssuer = domain
+                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles"
             };
             //options.Events = new JwtBearerEvents
             // {
