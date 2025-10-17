@@ -50,6 +50,9 @@ Note: Minimal, low-risk code/config changes were applied as part of this review:
 
 ## 4) Authentication & Authorization
 
+- For detailed setup of Auth0 in this project, see docs/AUTH0.md.
+- Auth0 audience vs. UserInfo: The API requires the audience (called ApiIdentifier in config) for JWT validation; the UserInfo endpoint is not used by this backend since it doesn’t perform interactive OIDC flows.
+
 - Policies & roles
   - Replace direct role claim type strings with a centralized authorization configuration. Define policy-based authorization with named policies.
 - Minimal token surface
