@@ -426,12 +426,6 @@ public class Startup
         {
             endpoints.MapControllers();
 
-            // Allow OPTIONS requests globally and require authorization to align with secured endpoints.
-            endpoints.MapMethods("{*path}", new[] { "OPTIONS" }, async context =>
-            {
-                context.Response.StatusCode = StatusCodes.Status204NoContent;
-                await System.Threading.Tasks.Task.CompletedTask;
-            }).RequireAuthorization();
 
             endpoints.MapHealthChecks("/health");
             endpoints.MapHealthChecks("/health/ready");
