@@ -147,6 +147,10 @@ public class Startup
             options.Audience = auth0.ApiIdentifier;
             options.SaveToken = false;
 
+            var apiId = auth0.ApiIdentifier?.Trim();
+            var apiIdNoSlash = apiId?.TrimEnd('/');
+            var apiIdWithSlash = string.IsNullOrEmpty(apiIdNoSlash) ? apiId : apiIdNoSlash + "/";
+
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
@@ -155,10 +159,10 @@ public class Startup
                 ValidateIssuerSigningKey = true,
                 NameClaimType = "name",
                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles",
-                // Explicitly set valid issuer/audience to avoid IDX10204 when metadata isn't used
+                // Explicitly set valid issuer/audience to avoid IDX10204/IDX10214 when metadata isn't used
                 ValidIssuer = $"https://{auth0.Domain}/",
                 ValidIssuers = new[] { $"https://{auth0.Domain}/", $"https://{auth0.Domain}" },
-                ValidAudience = auth0.ApiIdentifier
+                ValidAudiences = new[] { apiIdWithSlash, apiIdNoSlash }
             };
             //options.Events = new JwtBearerEvents
             // {
