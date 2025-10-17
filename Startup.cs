@@ -117,9 +117,10 @@ public class Startup
                 }
             }
 
-            // In Development, if no proxies provided, allow all forwarded headers (do NOT use this in Production)
+            // Optionally trust all forwarders when running behind managed ingress with dynamic IPs (e.g., Traefik)
             var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-            if (knownProxyStrings.Length == 0 && string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase))
+            var trustAllForwarders = _config.GetValue<bool>("ReverseProxy:TrustAllForwarders");
+            if (trustAllForwarders || (knownProxyStrings.Length == 0 && string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase)))
             {
                 options.KnownNetworks.Clear();
                 options.KnownProxies.Clear();
@@ -137,10 +138,14 @@ public class Startup
             .ValidateOnStart();
         var auth0 = _config.GetSection("Auth0").Get<Auth0Options>();
 
-        var domain = $"https://{auth0.Domain}/";
+        var auth0DomainHost = (auth0.Domain ?? string.Empty)
+            .Trim()
+            .TrimEnd('/')
+            .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase);
         services.AddAuth0WebAppAuthentication(options =>
             {
-                options.Domain = domain;
+                options.Domain = auth0DomainHost;
                 options.ClientId = auth0.ClientId;
                 options.ClientSecret = auth0.ClientSecret;
             }
