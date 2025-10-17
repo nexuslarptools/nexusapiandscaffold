@@ -138,23 +138,35 @@ public class Startup
             .ValidateOnStart();
         var auth0 = _config.GetSection("Auth0").Get<Auth0Options>();
 
-        var auth0DomainHost = (auth0.Domain ?? string.Empty)
-            .Trim()
-            .TrimEnd('/')
-            .Replace("https://", string.Empty, StringComparison.OrdinalIgnoreCase)
-            .Replace("http://", string.Empty, StringComparison.OrdinalIgnoreCase);
-        services.AddAuth0WebAppAuthentication(options =>
-            {
-                options.Domain = auth0DomainHost;
-                options.ClientId = auth0.ClientId;
-                options.ClientSecret = auth0.ClientSecret;
-            }
-        );
-
-        services.ConfigureApplicationCookie(options =>
+        // Configure JWT Bearer authentication for Auth0-issued access tokens
+        services.AddAuthentication(options =>
         {
-            options.Cookie.SameSite = SameSiteMode.None;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            var issuer = $"https://{(auth0.Domain ?? string.Empty).Trim().TrimEnd('/')}/";
+            options.Authority = issuer;
+            options.Audience = auth0.ApiIdentifier;
+            options.RequireHttpsMetadata = true;
+            options.RefreshOnIssuerKeyNotFound = true;
+            options.MapInboundClaims = false;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+                ValidIssuers = new[] { issuer, issuer.TrimEnd('/') },
+                ValidateAudience = true,
+                ValidAudience = auth0.ApiIdentifier,
+                ValidAudiences = new[] { auth0.ApiIdentifier, auth0.ApiIdentifier.TrimEnd('/') },
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ClockSkew = TimeSpan.FromMinutes(2),
+                NameClaimType = "name",
+                RoleClaimType = "roles",
+                ValidTypes = new[] { "JWT", "at+jwt" }
+            };
         });
 
 
