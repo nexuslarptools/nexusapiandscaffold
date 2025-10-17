@@ -11,6 +11,7 @@
         <Nullable>enable</Nullable>
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>latest</AnalysisLevel>
+        <ContainerUser>appuser</ContainerUser>
     </PropertyGroup>
 
     <ItemGroup>
