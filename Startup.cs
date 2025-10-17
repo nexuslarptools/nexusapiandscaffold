@@ -154,7 +154,11 @@ public class Startup
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
                 NameClaimType = "name",
-                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles"
+                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles",
+                // Explicitly set valid issuer/audience to avoid IDX10204 when metadata isn't used
+                ValidIssuer = $"https://{auth0.Domain}/",
+                ValidIssuers = new[] { $"https://{auth0.Domain}/", $"https://{auth0.Domain}" },
+                ValidAudience = auth0.ApiIdentifier
             };
             //options.Events = new JwtBearerEvents
             // {
