@@ -5,7 +5,7 @@ on:
   pull_request: {}
   workflow_dispatch: {}
   push:
-    branches: ["main", "develop", "master"]
+    branches: ["main", "development", "master"]
 
 permissions:
   contents: read
