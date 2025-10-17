@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,7 +60,9 @@ public class Startup
                 rb.AddService(serviceName: "NEXUSDataLayerScaffold", serviceVersion: version);
                 rb.AddAttributes(new []
                 {
-                    new KeyValuePair<string, object>("deployment.environment", env)
+                    new KeyValuePair<string, object>("deployment.environment", env),
+                    new KeyValuePair<string, object>("service.instance.id", Environment.MachineName),
+                    new KeyValuePair<string, object>("service.namespace", "NEXUS")
                 });
             })
             .WithTracing(configure =>
@@ -87,17 +90,51 @@ public class Startup
                     options.ParseStateValues = true;
                     options.UseGrafana();
                 });
-                // Enable console logging for local troubleshooting
-                configure.AddConsole();
+                // Enable console logging for local troubleshooting (Development only)
+                var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                if (string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase))
+                {
+                    configure.AddConsole();
+                }
             }
         );
 
+        // Honor reverse-proxy headers (e.g., Traefik) for original client IP and scheme
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+            // Allow specifying known proxy IPs via configuration/env: ReverseProxy:KnownProxies=["10.0.0.10","192.168.1.2"]
+            var knownProxyStrings = _config.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+            foreach (var proxy in knownProxyStrings)
+            {
+                if (IPAddress.TryParse(proxy, out var ip))
+                {
+                    options.KnownProxies.Add(ip);
+                }
+            }
+
+            // In Development, if no proxies provided, allow all forwarded headers (do NOT use this in Production)
+            var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+            if (knownProxyStrings.Length == 0 && string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase))
+            {
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+            }
+        });
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
         var tok = new BearerToken();
 
-        var domain = $"https://{_config["Auth0:Domain"]}/";
+        // Bind and validate Auth0 options; fail fast on missing values
+        services.AddOptions<Auth0Options>()
+            .Bind(_config.GetSection("Auth0"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        var auth0 = _config.GetSection("Auth0").Get<Auth0Options>();
+
+        var domain = $"https://{auth0.Domain}/";
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -105,11 +142,16 @@ public class Startup
         }).AddJwtBearer(options =>
         {
             options.Authority = domain;
-            options.Audience = _config["Auth0:ApiIdentifier"];
-            options.SaveToken = true;
+            options.Audience = auth0.ApiIdentifier;
+            options.SaveToken = false;
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                NameClaimType = "name",
                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles"
             };
             //options.Events = new JwtBearerEvents
@@ -134,10 +176,6 @@ public class Startup
         });
 
 
-        //services.AddSwaggerGen(c =>
-        //{
-        //    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexus API V1", Version = "v1" });
-        //});
 
 
         services.AddSwaggerGen(c =>
@@ -146,13 +184,12 @@ public class Startup
             c.OperationFilter<OpenApiParameterIgnoreFilter>();
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
-                      Enter 'Bearer' [space] and then your token in the text input below.
-                      \r\n\r\nExample: 'Bearer 12345abcdef'",
+                Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'",
                 Name = "Authorization",
                 In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT"
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -164,57 +201,22 @@ public class Startup
                         {
                             Type = ReferenceType.SecurityScheme,
                             Id = "Bearer"
-                        },
-                        Scheme = "oauth2",
-                        Name = "Bearer",
-                        In = ParameterLocation.Header
+                        }
                     },
-                    new List<string>()
+                    Array.Empty<string>()
                 }
             });
-            //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            //c.IncludeXmlComments(xmlPath);
+            // Enable XML comments if the documentation file is generated in the project
+            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (System.IO.File.Exists(xmlPath))
+            {
+                c.IncludeXmlComments(xmlPath);
+            }
         });
 
 
-        // Add authentication services
-        //            services.AddAuthentication(options => {
-        //                options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        //                options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        //            })
-        //            .AddCookie()
-        //            .AddOpenIdConnect("Auth0", options =>
-        //            {
-        // Set the authority to your Auth0 domain
-        //                options.Authority = $"https://{Configuration["Auth0:Domain"]}";
 
-        // Configure the Auth0 Client ID and Client Secret
-        //                options.ClientId = Configuration["Auth0:ClientId"];
-        //                options.ClientSecret = Configuration["Auth0:ClientSecret"];
-
-        // Set response type to code
-        //                options.ResponseType = "code";
-
-        // Configure the scope
-        //                options.Scope.Clear();
-        //                options.Scope.Add("openid");
-        //                options.Scope.Add("email");
-
-        // Set the callback path, so Auth0 will call back to http://localhost:5555/callback
-        // Also ensure that you have added the URL as an Allowed Callback URL in your Auth0 dashboard
-        //options.CallbackPath = new PathString("/callback");
-
-        // Configure the Claims Issuer to be Auth0
-        //                options.ClaimsIssuer = "Auth0";
-
-        // Saves tokens to the AuthenticationProperties
-        //                options.SaveTokens = true;
-
-        //            });
-
-        services.AddMvc();
-        services.AddRazorPages();
 
         // HTTP request logging
         services.AddHttpLogging(options =>
@@ -271,7 +273,6 @@ public class Startup
         // string connstring = _config.GetValue<string>("ConnectionSrings:NexusDBConnectionString");
         services.AddDbContext<NexusLarpLocalContext>(options => options.UseNpgsql(connstring)
         );
-        services.AddMvc();
         services.AddMinio(configure =>
         {
         configure.WithEndpoint("decade.kylebrighton.com:9000")
@@ -282,6 +283,9 @@ public class Startup
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
     {
+        // Process X-Forwarded-* headers from Traefik BEFORE anything else (important for HTTPS redirection and auth)
+        app.UseForwardedHeaders();
+
         if (env.IsDevelopment())
             app.UseDeveloperExceptionPage();
         else
@@ -361,7 +365,7 @@ public class Startup
             }
         });
 
-        //app.UseHttpsRedirection();
+        app.UseHttpsRedirection();
         //app.UseStaticFiles();
         app.UseRouting();
         // Emit structured request logs

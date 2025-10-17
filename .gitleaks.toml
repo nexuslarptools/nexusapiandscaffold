@@ -1,0 +1,11 @@
+﻿title = "Gitleaks config for nexusapiandscaffold"
+
+[allowlist]
+# Reduce noise from generated/binary or non-source directories.
+paths = [
+  '''^bin/''',
+  '''^obj/''',
+  '''^images/''',
+  '''^\.idea/''',
+  '''^docs/RECOMMENDATIONS\.md$'''
+]

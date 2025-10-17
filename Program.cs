@@ -34,9 +34,7 @@ public class Program
     {
         return Host.CreateDefaultBuilder(args).ConfigureWebHostDefaults(webBuilder =>
         {
-            //-- never undo this
-            //webBuilder.UseStartup<Startup>().UseUrls("https://192.168.254.11:6001", "http://192.168.254.11:6002");
-            webBuilder.UseStartup<Startup>().UseUrls("http://*:80;http://*:443");
+            webBuilder.UseStartup<Startup>();
         });
     }
 }
