@@ -26,7 +26,13 @@ namespace NEXUSDataLayerScaffold.Logic
             // Load token from store. check expy, if it's not fresh, grab new token.
             _managementBearer = GetToken().Result;
 
-            _client = new ManagementApiClient(_managementBearer.Token, new Uri("https://dev-3xazewbu.auth0.com/api/v2"));
+            var domain = Environment.GetEnvironmentVariable("Auth0__Domain");
+            if (string.IsNullOrWhiteSpace(domain))
+            {
+                throw new InvalidOperationException("Auth0 domain is not configured. Set Auth0__Domain.");
+            }
+
+            _client = new ManagementApiClient(_managementBearer.Token, new Uri($"https://{domain}/api/v2"));
         }
 
         public async Task<IList<User>> GetAllUsersByEmail(string email)
@@ -60,24 +66,44 @@ namespace NEXUSDataLayerScaffold.Logic
 
         private async Task<ManagementToken> GetToken()
         {
-            var _httpClient = new HttpClient();
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://dev-3xazewbu.auth0.com/oauth/token");
-            var contentHeader = new MediaTypeHeaderValue("application/json") { CharSet = Encoding.UTF8.WebName };
-            var content = new ManagementTokenRequestContent()
+            var domain = Environment.GetEnvironmentVariable("Auth0__Domain");
+            var clientId = Environment.GetEnvironmentVariable("Auth0__ClientId");
+            var clientSecret = Environment.GetEnvironmentVariable("Auth0__ClientSecret");
+
+            if (string.IsNullOrWhiteSpace(domain))
+                throw new InvalidOperationException("Auth0__Domain is required for Management API token.");
+            if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
+                throw new InvalidOperationException("Auth0__ClientId and Auth0__ClientSecret are required for Management API token.");
+
+            using var httpClient = new HttpClient();
+            var request = new HttpRequestMessage(HttpMethod.Post, $"https://{domain}/oauth/token");
+
+            var form = new Dictionary<string, string>
             {
-                client_id = "DOctic0k94km5UB0Mnvxduk6wuvZUZ9q",
-                client_secret = "5nH9ypMlFrZvXmr__Hgm85yoFI9yRUm4yC_ssu3_kgYaT2E443XIjeunktWS5pF5",
-                audience = "https://dev-3xazewbu.auth0.com/api/v2/",
-                grant_type = "client_credentials"
+                ["grant_type"] = "client_credentials",
+                ["client_id"] = clientId!,
+                ["client_secret"] = clientSecret!,
+                ["audience"] = $"https://{domain}/api/v2/"
             };
 
-            request.Content = JsonContent.Create(content, contentHeader);
-            var response = await _httpClient.SendAsync(request);
+            request.Content = new FormUrlEncodedContent(form);
+
+            var response = await httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException($"Failed to obtain Auth0 management token. Status {(int)response.StatusCode} {response.ReasonPhrase}.");
+            }
+
             var token = await response.Content.ReadFromJsonAsync<ManagementTokenResponse>();
-            var managementToken = new ManagementToken()
+            if (token == null || string.IsNullOrWhiteSpace(token.Token))
+                throw new InvalidOperationException("Auth0 management token response was empty.");
+
+            var expiresIn = token.ExpiresIn > 0 ? token.ExpiresIn : 24 * 60 * 60;
+            var managementToken = new ManagementToken
             {
                 Token = token.Token,
-                ExpirationTime = DateTime.UtcNow.AddHours(23),
+                ExpirationTime = DateTime.UtcNow.AddSeconds(Math.Max(0, expiresIn - 60))
             };
             return managementToken;
         }
@@ -103,8 +129,12 @@ namespace NEXUSDataLayerScaffold.Logic
         {
             [JsonPropertyName("access_token")]
             public string Token { get; set; } = string.Empty;
+
             [JsonPropertyName("token_type")]
             public string TokenType { get; set; } = string.Empty;
+
+            [JsonPropertyName("expires_in")]
+            public int ExpiresIn { get; set; }
         }
 
     }
