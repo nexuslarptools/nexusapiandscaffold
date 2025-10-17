@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Auth0.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 using Minio;
 using Newtonsoft.Json;
@@ -137,47 +138,13 @@ public class Startup
         var auth0 = _config.GetSection("Auth0").Get<Auth0Options>();
 
         var domain = $"https://{auth0.Domain}/";
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(options =>
-        {
-            options.Authority = domain;
-            options.Audience = auth0.ApiIdentifier;
-            options.SaveToken = false;
-
-            var apiId = auth0.ApiIdentifier?.Trim();
-            var apiIdNoSlash = apiId?.TrimEnd('/');
-            var apiIdWithSlash = string.IsNullOrEmpty(apiIdNoSlash) ? apiId : apiIdNoSlash + "/";
-
-            options.TokenValidationParameters = new TokenValidationParameters
+        services.AddAuth0WebAppAuthentication(options =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                NameClaimType = "name",
-                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles",
-                // Explicitly set valid issuer/audience to avoid IDX10204/IDX10214 when metadata isn't used
-                ValidIssuer = $"https://{auth0.Domain}/",
-                ValidIssuers = new[] { $"https://{auth0.Domain}/", $"https://{auth0.Domain}" },
-                ValidAudiences = new[] { apiIdWithSlash, apiIdNoSlash }
-            };
-            //options.Events = new JwtBearerEvents
-            // {
-            //     OnMessageReceived = context =>
-            //     {
-            //         var accessToken = context.Request.Query["access_token"];
-
-            //         tok.Token = accessToken.ToString();
-
-
-            //         return Task.CompletedTask;
-
-            //     }
-            // };
-        });
+                options.Domain = domain;
+                options.ClientId = auth0.ClientId;
+                options.ClientSecret = auth0.ClientSecret;
+            }
+        );
 
         services.ConfigureApplicationCookie(options =>
         {
