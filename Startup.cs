@@ -426,12 +426,12 @@ public class Startup
         {
             endpoints.MapControllers();
 
-            // Allow preflight OPTIONS requests globally (useful for CORS). Returns 204 and does not require auth.
+            // Allow OPTIONS requests globally and require authorization to align with secured endpoints.
             endpoints.MapMethods("{*path}", new[] { "OPTIONS" }, async context =>
             {
                 context.Response.StatusCode = StatusCodes.Status204NoContent;
                 await System.Threading.Tasks.Task.CompletedTask;
-            }).AllowAnonymous();
+            }).RequireAuthorization();
 
             endpoints.MapHealthChecks("/health");
             endpoints.MapHealthChecks("/health/ready");
