@@ -357,7 +357,6 @@ public class Startup
             }
         });
 
-        app.UseHttpsRedirection();
         //app.UseStaticFiles();
         app.UseRouting();
         // Emit structured request logs
