@@ -14,6 +14,6 @@ public class PullSheet
     public Guid? SecondapprovalbyuserGuid { get; set; }
     public DateTime? Secondapprovaldate { get; set; }
     public Guid? EditbyUserGuid { get; set; }
-    public string Taglists { get; set; }
+    public string? Taglists { get; set; }
     public bool Readyforapproval { get; set; }
 }

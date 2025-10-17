@@ -22,6 +22,10 @@ namespace NEXUSDataLayerScaffold.Logic
         private ManagementToken _managementBearer = new ManagementToken();
         private ManagementApiClient _client;
 
+        // Static, process-wide cache for the Auth0 Management API token to avoid frequent token requests
+        private static readonly object _tokenLock = new object();
+        private static ManagementToken? _cachedToken;
+
         public AuthLogic() {
             // Load token from store. check expy, if it's not fresh, grab new token.
             _managementBearer = GetToken().Result;
@@ -66,6 +70,15 @@ namespace NEXUSDataLayerScaffold.Logic
 
         private async Task<ManagementToken> GetToken()
         {
+            // Serve from cache if valid for at least 60 more seconds
+            lock (_tokenLock)
+            {
+                if (_cachedToken != null && _cachedToken.ExpirationTime > DateTime.UtcNow.AddSeconds(60))
+                {
+                    return _cachedToken;
+                }
+            }
+
             var domain = Environment.GetEnvironmentVariable("Auth0__Domain");
             var clientId = Environment.GetEnvironmentVariable("Auth0__ClientId");
             var clientSecret = Environment.GetEnvironmentVariable("Auth0__ClientSecret");
@@ -91,7 +104,7 @@ namespace NEXUSDataLayerScaffold.Logic
             var response = await httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                var body = await response.Content.ReadAsStringAsync();
+                // Intentionally avoid logging sensitive data
                 throw new InvalidOperationException($"Failed to obtain Auth0 management token. Status {(int)response.StatusCode} {response.ReasonPhrase}.");
             }
 
@@ -105,7 +118,13 @@ namespace NEXUSDataLayerScaffold.Logic
                 Token = token.Token,
                 ExpirationTime = DateTime.UtcNow.AddSeconds(Math.Max(0, expiresIn - 60))
             };
-            return managementToken;
+
+            // Update cache atomically
+            lock (_tokenLock)
+            {
+                _cachedToken = managementToken;
+                return _cachedToken;
+            }
         }
 
         public class ManagementTokenRequestContent

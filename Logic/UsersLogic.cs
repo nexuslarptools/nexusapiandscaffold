@@ -199,7 +199,51 @@ public class UsersLogic
             var client = new HttpClient();
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken2);
 
-            var responseMessage = await client.GetAsync("https://dev-3xazewbu.auth0.com/userinfo");
+            // Dynamically resolve the Auth0 UserInfo endpoint instead of using a hardcoded tenant.
+            string? auth0Domain = Environment.GetEnvironmentVariable("Auth0__Domain");
+            string userInfoUrl;
+            if (!string.IsNullOrWhiteSpace(auth0Domain))
+            {
+                userInfoUrl = $"https://{auth0Domain.Trim().TrimEnd('/')}/userinfo";
+            }
+            else
+            {
+                // Fallback: derive from the token's issuer (iss) claim
+                try
+                {
+                    var parts = accessToken2?.Split('.');
+                    if (parts != null && parts.Length >= 2)
+                    {
+                        string s = parts[1].Replace('-', '+').Replace('_', '/');
+                        switch (s.Length % 4)
+                        {
+                            case 2: s += "=="; break;
+                            case 3: s += "="; break;
+                        }
+                        string payloadJson = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(s));
+                        using var payloadDoc = JsonDocument.Parse(payloadJson);
+                        if (payloadDoc.RootElement.TryGetProperty("iss", out var issProp))
+                        {
+                            var iss = issProp.GetString() ?? string.Empty;
+                            userInfoUrl = $"{iss.TrimEnd('/')}/userinfo";
+                        }
+                        else
+                        {
+                            userInfoUrl = "https://localhost/userinfo"; // last-resort fallback
+                        }
+                    }
+                    else
+                    {
+                        userInfoUrl = "https://localhost/userinfo"; // last-resort fallback
+                    }
+                }
+                catch
+                {
+                    userInfoUrl = "https://localhost/userinfo"; // last-resort fallback
+                }
+            }
+
+            var responseMessage = await client.GetAsync(userInfoUrl);
             if (responseMessage.IsSuccessStatusCode)
             {
                 var responseData = await responseMessage.Content.ReadAsStringAsync();

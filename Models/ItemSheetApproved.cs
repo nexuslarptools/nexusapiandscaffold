@@ -42,7 +42,7 @@ public partial class ItemSheetApproved
 
     public Guid? EditbyUserGuid { get; set; }
 
-    public string Taglists { get; set; }
+    public string? Taglists { get; set; }
 
     public bool? Isdoubleside { get; set; }
 

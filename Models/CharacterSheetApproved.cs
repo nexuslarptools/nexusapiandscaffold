@@ -44,7 +44,7 @@ public partial class CharacterSheetApproved
 
     public Guid? EditbyUserGuid { get; set; }
 
-    public string Taglists { get; set; }
+    public string? Taglists { get; set; }
 
     public virtual ICollection<CharacterSheetApprovedTag> CharacterSheetApprovedTags { get; set; } = new List<CharacterSheetApprovedTag>();
 

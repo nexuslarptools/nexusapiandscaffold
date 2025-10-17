@@ -44,7 +44,7 @@ public partial class CharacterSheet
 
     public bool Readyforapproval { get; set; }
 
-    public string Taglists { get; set; }
+    public string? Taglists { get; set; }
 
     public virtual ICollection<CharacterSheetApproved> CharacterSheetApproveds { get; set; } = new List<CharacterSheetApproved>();
 

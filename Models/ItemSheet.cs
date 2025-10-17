@@ -42,7 +42,7 @@ public partial class ItemSheet
 
     public bool Readyforapproval { get; set; }
 
-    public string Taglists { get; set; }
+    public string? Taglists { get; set; }
 
     public bool? Isdoubleside { get; set; }
 
