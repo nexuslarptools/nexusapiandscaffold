@@ -51,6 +51,8 @@ public class Startup
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         });
+        // CORS policies configured via configuration (Cors:AllowedOrigins)
+        services.AddCors();
         // Health checks for liveness and readiness
         services.AddHealthChecks();
         services.AddOpenTelemetry().ConfigureResource(rb =>
@@ -291,35 +293,45 @@ public class Startup
         else
             app.UseHsts();
 
+        // Configure CORS using configuration-driven allowlist
+        var allowedOrigins = _config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
-            app.UseCors(policy => policy
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                //.SetIsOriginAllowed(origin => true) // allow any origin
-                //.WithOrigins("http://localhost:3000", "http://localhost:8080", "http://10.0.0.175:8080", "http://10.0.0.175:3000")
-                //.AllowCredentials()
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
-            );
-
-            //app.UseCors(builder => builder
-            //   .AllowAnyOrigin()
-            //   .AllowAnyMethod()
-            //   .AllowAnyHeader()
-            //   .AllowCredentials());
+            if (allowedOrigins.Length == 0)
+            {
+                // In Development, allow any origin if none configured to simplify local testing
+                app.UseCors(policy => policy
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowAnyOrigin()
+                    .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
+                );
+            }
+            else
+            {
+                app.UseCors(policy => policy
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials()
+                    .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
+                );
+            }
         }
         else
         {
-            app.UseCors(builder => builder
-                //.SetIsOriginAllowed(origin => true) // allow any origin
-                .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000","https://databasebackenddev.kylebrighton.com","https://databasedev.kylebrighton.com")
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials()
-                .WithExposedHeaders("traceparent", "tracestate", "Server-Timing"));
+            // In non-Development, only enable CORS if an allowlist is provided via configuration
+            if (allowedOrigins.Length > 0)
+            {
+                app.UseCors(policy => policy
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials()
+                    .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
+                );
+            }
         }
 
         // Enable middleware to serve generated Swagger as a JSON endpoint.
