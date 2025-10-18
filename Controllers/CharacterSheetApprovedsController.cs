@@ -44,8 +44,13 @@ public class CharacterSheetApprovedsController : ControllerBase
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
         var userData = UsersLogic.GetUserAuth0Info(authId);
-        if (userData.isAuthed("Reader"))
-        //if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        var isReader = userData?.isAuthed("Reader") ?? false;
+        if (!isReader)
+        {
+            // Fallback to legacy DB role check when metadata is unavailable
+            isReader = UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context);
+        }
+        if (isReader)
         {
             //var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
             //    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();

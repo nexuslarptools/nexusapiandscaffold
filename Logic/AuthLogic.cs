@@ -14,6 +14,7 @@ using System.Net;
 using NEXUSDataLayerScaffold.Entities;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Xml.Linq;
+using Microsoft.Extensions.Configuration;
 
 namespace NEXUSDataLayerScaffold.Logic
 {
@@ -26,17 +27,36 @@ namespace NEXUSDataLayerScaffold.Logic
         private static readonly object _tokenLock = new object();
         private static ManagementToken? _cachedToken;
 
+        private static string? GetConfigValue(string key)
+        {
+            try
+            {
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: true)
+                    .AddJsonFile($"appsettings.{env}.json", optional: true)
+                    .AddEnvironmentVariables()
+                    .Build();
+                return config[key];
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public AuthLogic() {
             // Load token from store. check expy, if it's not fresh, grab new token.
-            _managementBearer = GetToken().Result;
+            _managementBearer = GetToken().GetAwaiter().GetResult();
 
-            var domain = Environment.GetEnvironmentVariable("Auth0__Domain");
+            var domain = GetConfigValue("Auth0:Domain") ?? Environment.GetEnvironmentVariable("Auth0__Domain");
             if (string.IsNullOrWhiteSpace(domain))
             {
-                throw new InvalidOperationException("Auth0 domain is not configured. Set Auth0__Domain.");
+                throw new InvalidOperationException("Auth0 domain is not configured. Provide Auth0:Domain or Auth0__Domain.");
             }
 
-            _client = new ManagementApiClient(_managementBearer.Token, new Uri($"https://{domain}/api/v2"));
+            _client = new ManagementApiClient(_managementBearer.Token, new Uri($"https://{domain.Trim().TrimEnd('/')}/api/v2"));
         }
 
         public async Task<IList<User>> GetAllUsersByEmail(string email)
@@ -79,14 +99,14 @@ namespace NEXUSDataLayerScaffold.Logic
                 }
             }
 
-            var domain = Environment.GetEnvironmentVariable("Auth0__Domain");
-            var clientId = Environment.GetEnvironmentVariable("Auth0__ClientId");
-            var clientSecret = Environment.GetEnvironmentVariable("Auth0__ClientSecret");
+            var domain = GetConfigValue("Auth0:Domain") ?? Environment.GetEnvironmentVariable("Auth0__Domain");
+            var clientId = GetConfigValue("Auth0:ClientId") ?? Environment.GetEnvironmentVariable("Auth0__ClientId");
+            var clientSecret = GetConfigValue("Auth0:ClientSecret") ?? Environment.GetEnvironmentVariable("Auth0__ClientSecret");
 
             if (string.IsNullOrWhiteSpace(domain))
-                throw new InvalidOperationException("Auth0__Domain is required for Management API token.");
+                throw new InvalidOperationException("Auth0:Domain/Auth0__Domain is required for Management API token.");
             if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
-                throw new InvalidOperationException("Auth0__ClientId and Auth0__ClientSecret are required for Management API token.");
+                throw new InvalidOperationException("Auth0:ClientId/Auth0__ClientId and Auth0:ClientSecret/Auth0__ClientSecret are required for Management API token.");
 
             using var httpClient = new HttpClient();
             var request = new HttpRequestMessage(HttpMethod.Post, $"https://{domain}/oauth/token");
@@ -104,6 +124,10 @@ namespace NEXUSDataLayerScaffold.Logic
             var response = await httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
+                if (response.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    throw new InvalidOperationException("Failed to obtain Auth0 management token (403 Forbidden). Ensure the configured ClientId/ClientSecret belong to a Machine-to-Machine application that is authorized to the Auth0 Management API with the correct audience (https://{domain}/api/v2/). No sensitive details were logged.");
+                }
                 // Intentionally avoid logging sensitive data
                 throw new InvalidOperationException($"Failed to obtain Auth0 management token. Status {(int)response.StatusCode} {response.ReasonPhrase}.");
             }
