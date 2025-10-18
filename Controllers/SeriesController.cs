@@ -163,8 +163,7 @@ public class SeriesController : ControllerBase
     // GET: api/v1/Series/ShortList
     [HttpGet("ShortList")]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<Series>>> GetSeriesList(
-        [FromQuery] PagingParameterModel pagingParameterModel)
+    public async Task<IActionResult> GetSeriesList()
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
@@ -185,13 +184,15 @@ public class SeriesController : ControllerBase
                 .Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
                 .OrderBy(x => x.Title).ToListAsync();
 
-            ser.Insert(0, none);
+            if (none != null)
+            {
+                ser.Insert(0, none);
+            }
 
             return Ok(ser.OrderBy(x => StringLogic.IgnorePunct(x.Title)));
         }
 
         return Unauthorized();
-
 
         //return await _context.Series.ToListAsync();
     }
