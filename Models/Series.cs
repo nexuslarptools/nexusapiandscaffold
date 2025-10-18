@@ -12,7 +12,7 @@ public partial class Series
 
     public string Titlejpn { get; set; }
 
-    public JsonDocument Tags { get; set; }
+    public JsonDocument? Tags { get; set; }
 
     public bool Isactive { get; set; }
 
