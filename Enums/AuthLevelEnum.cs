@@ -1,4 +1,4 @@
-﻿namespace NEXUSDataLayerScaffold.Enums;
+namespace NEXUSDataLayerScaffold.Enums;
 
 public enum AuthLevelEnum
 {

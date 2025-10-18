@@ -1,4 +1,4 @@
-﻿using NEXUSDataLayerScaffold.Models;
+using NEXUSDataLayerScaffold.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
@@ -26,10 +26,7 @@ namespace NEXUSDataLayerScaffold.Logic
                     .Where(isrm => isrm.Id == id).FirstOrDefault();
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<CharacterSheetMessageAck> GetCharacterMessageAck(int id)
@@ -40,10 +37,7 @@ namespace NEXUSDataLayerScaffold.Logic
                     .Where(isrm => isrm.Id == id).FirstOrDefault();
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<MessageAck>> GetAllItemMessageAcksForMessage(int id)
@@ -55,10 +49,7 @@ namespace NEXUSDataLayerScaffold.Logic
                     .Select(x => new MessageAck(x, _context)).ToList();
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<MessageAck>> GetAllCharacterMessageAcksForMessage(int id)
@@ -70,10 +61,7 @@ namespace NEXUSDataLayerScaffold.Logic
                     .Select(x => new MessageAck(x, _context)).ToList();
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<MessageAck>> GetAllItemMessageAcksForMessageByUser(int id, Guid uGuid)
@@ -92,10 +80,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 return output;
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<MessageAck>> GetAllCharacterMessageAcksForMessageByUser(int id, Guid uGuid)
@@ -115,10 +100,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 return output;
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<MessageAck>> GetAllUnseenItemMessageAcksForUser(Guid uGuid)
@@ -136,10 +118,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 return output;
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<MessageAck>> GetAllUnseenCharacterMessageAcksForUser(Guid uGuid)
@@ -157,10 +136,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 return output;
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         //Create
@@ -175,10 +151,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 returnnum = ma.Id;
                 return returnnum;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<int> AddCharacterMessageAck(MessageAck ma)
@@ -192,10 +165,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 returnnum = ma.Id;
                 return returnnum;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         //Update
@@ -219,10 +189,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -246,10 +213,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<bool> MarkSeenItemMessageAck(MessageAck ma)
@@ -269,10 +233,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -293,10 +254,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         //Softremove
@@ -317,10 +275,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -341,10 +296,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         //HardRemove
@@ -364,10 +316,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -387,10 +336,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
     }
 }

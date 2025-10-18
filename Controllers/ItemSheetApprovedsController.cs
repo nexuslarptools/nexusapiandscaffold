@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -33,7 +33,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -67,7 +67,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -137,7 +137,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -268,7 +268,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -302,7 +302,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -391,7 +391,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -506,7 +506,7 @@ public class ItemSheetApprovedsController : ControllerBase
 
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -586,7 +586,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             try
             {
@@ -669,7 +669,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             try
             {
@@ -742,7 +742,7 @@ public class ItemSheetApprovedsController : ControllerBase
 
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -980,7 +980,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
@@ -1085,7 +1085,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1162,7 +1162,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1230,7 +1230,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1252,7 +1252,7 @@ public class ItemSheetApprovedsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))

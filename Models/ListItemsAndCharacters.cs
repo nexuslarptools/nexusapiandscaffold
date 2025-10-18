@@ -1,4 +1,4 @@
-﻿namespace NEXUSDataLayerScaffold.Models;
+namespace NEXUSDataLayerScaffold.Models;
 
 public class ListItemsAndCharacters
 {

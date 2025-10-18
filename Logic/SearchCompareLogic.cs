@@ -1,4 +1,4 @@
-﻿using Google.Protobuf.Compiler;
+using Google.Protobuf.Compiler;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;

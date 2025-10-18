@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
@@ -31,7 +31,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CrewRolesDO>> GetShipCrewList()
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
@@ -61,7 +61,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<CrewRole>> AddShipCrew([FromBody] CrewRole input)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
@@ -87,7 +87,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> PutCrewPosition(Guid guid, CrewRole input)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
@@ -124,7 +124,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> DeactivateCrewPosition(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
@@ -153,7 +153,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> ReactivateCrewPosition(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
@@ -183,7 +183,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<IActionResult> FullDeleteCrewPosition(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
             // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))

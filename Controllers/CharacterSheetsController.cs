@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -51,7 +51,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
@@ -130,7 +130,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -222,7 +222,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -441,7 +441,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -620,7 +620,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -682,7 +682,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -760,7 +760,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -837,7 +837,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1005,7 +1005,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1093,7 +1093,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {
@@ -1157,7 +1157,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1265,7 +1265,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1398,7 +1398,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             try
             {
@@ -1480,7 +1480,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1687,7 +1687,7 @@ public class CharacterSheetsController : ControllerBase
 
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -1862,7 +1862,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -2053,7 +2053,7 @@ public class CharacterSheetsController : ControllerBase
     [HttpPost("dumpin")]
     public async Task<ActionResult<CharSheet>> PostCharacterSheetDump([FromBody] CharSheet charSheet)
     {
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (accessToken != "IAmABanana!")
         {
@@ -2100,7 +2100,7 @@ public class CharacterSheetsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))

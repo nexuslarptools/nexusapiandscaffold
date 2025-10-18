@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using NEXUSDataLayerScaffold.Entities;
@@ -30,7 +30,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
@@ -66,7 +66,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
@@ -103,7 +103,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -141,7 +141,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -182,7 +182,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -250,7 +250,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -317,7 +317,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == itemReview.Id)
             {
@@ -349,7 +349,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == characterReview.Id)
             {
@@ -381,7 +381,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -412,7 +412,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -442,7 +442,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == itemReview.Id)
             {
@@ -473,7 +473,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == characterReview.Id)
             {
@@ -504,7 +504,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) && id == itemReview.Id)
             {
@@ -527,7 +527,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) && id == characterReview.Id)
             {

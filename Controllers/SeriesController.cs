@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -38,7 +38,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -97,7 +97,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -167,7 +167,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -210,7 +210,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -283,7 +283,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -344,7 +344,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -403,7 +403,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -444,7 +444,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -531,7 +531,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -592,7 +592,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -632,7 +632,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -672,7 +672,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -711,7 +711,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -749,7 +749,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -797,7 +797,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -879,7 +879,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -933,7 +933,7 @@ public class SeriesController : ControllerBase
     [HttpPost("dumpin")]
     public async Task<ActionResult<Series>> PostSeriesDump([FromBody] SeriInput input)
     {
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (accessToken != "IAmABanana!")
         {
@@ -960,7 +960,7 @@ public class SeriesController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))

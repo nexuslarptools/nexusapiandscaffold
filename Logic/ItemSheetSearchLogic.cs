@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Logic;
 using System.Collections.Generic;
 using System;

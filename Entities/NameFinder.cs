@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http.HttpResults;
 using NEXUSDataLayerScaffold.Models;
 using System;
 using System.Linq;
@@ -22,10 +22,7 @@ namespace NEXUSDataLayerScaffold.Entities
                 }
                 return null;
             }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+            catch { throw; }
         }
 
         public static string GetCharacterName(Guid cGuid, NexusLarpLocalContext _context)
@@ -51,10 +48,7 @@ namespace NEXUSDataLayerScaffold.Entities
 
                 return null;
             }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+            catch { throw; }
         }
 
 
@@ -82,10 +76,7 @@ namespace NEXUSDataLayerScaffold.Entities
 
                 return null;
             }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
+            catch { throw; }
 
         }
 

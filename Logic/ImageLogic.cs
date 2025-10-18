@@ -1,4 +1,4 @@
-﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 
 namespace NEXUSDataLayerScaffold.Logic;

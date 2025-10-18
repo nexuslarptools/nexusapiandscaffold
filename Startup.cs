@@ -56,6 +56,7 @@ public class Startup
         services.AddCors();
         // Health checks for liveness and readiness
         services.AddHealthChecks();
+        services.AddHttpClient();
         services.AddOpenTelemetry().ConfigureResource(rb =>
             {
                 var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
@@ -412,7 +413,7 @@ public class Startup
                 if (activity != null)
                 {
                     // Per W3C spec, traceparent is the Activity Id in W3C format
-                    context.Response.Headers["traceparent"] = activity.Id;
+                    context.Response.Headers.TraceParent = activity.Id;
                     if (!string.IsNullOrEmpty(activity.TraceStateString))
                     {
                         context.Response.Headers["tracestate"] = activity.TraceStateString;

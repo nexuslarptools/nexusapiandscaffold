@@ -1,4 +1,4 @@
-﻿using Auth0.ManagementApi;
+using Auth0.ManagementApi;
 using Azure.Core;
 using System;
 using System.Net.Http.Headers;

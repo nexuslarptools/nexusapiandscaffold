@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -38,7 +38,7 @@ public class LarpsController : ControllerBase
     public async Task<ActionResult<List<LARPOut>>> GetCurrUserLarps()
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         var larpList = await _context.Larps.Where(l => l.Isactive == true
                                                        && l.UserLarproles.Any(ulr => ulr.Isactive == true &&
@@ -58,7 +58,7 @@ public class LarpsController : ControllerBase
     public async Task<ActionResult<List<LARPOut>>> GetLarpsWithGMAccess()
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             return await _context.Larps.Where(l =>
@@ -142,7 +142,7 @@ public class LarpsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -192,7 +192,7 @@ public class LarpsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -211,7 +211,7 @@ public class LarpsController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))

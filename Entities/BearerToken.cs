@@ -1,4 +1,4 @@
-﻿namespace NEXUSDataLayerScaffold.Entities;
+namespace NEXUSDataLayerScaffold.Entities;
 
 public class BearerToken
 {

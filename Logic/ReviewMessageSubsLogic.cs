@@ -1,4 +1,4 @@
-﻿using NEXUSDataLayerScaffold.Models;
+using NEXUSDataLayerScaffold.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
@@ -25,10 +25,7 @@ namespace NEXUSDataLayerScaffold.Logic
                     .Where(isrs => isrs.Id == id).FirstOrDefault();
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<CharacterSheetReviewSubscription> GetCharacterMessageSub(int id)
@@ -39,10 +36,7 @@ namespace NEXUSDataLayerScaffold.Logic
                     .Where(isrs => isrs.Id == id).FirstOrDefault();
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<ReviewMessageSubscription>> GetItemMessageSubsByuser(Guid uGuid)
@@ -54,10 +48,7 @@ namespace NEXUSDataLayerScaffold.Logic
                     .Select(x => new ReviewMessageSubscription(x, _context)).ToList();
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<ReviewMessageSubscription>> GetCharacterMessageSubsByUser(Guid uGuid)
@@ -75,10 +66,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 return output;
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<ReviewMessageSubscription>> GetItemMessageSubsByItem(Guid iGuid)
@@ -97,10 +85,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<List<ReviewMessageSubscription>> GetCharacterMessageSubsByCharacter(Guid cGuid)
@@ -118,10 +103,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 return output;
 
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         //Create
@@ -136,10 +118,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 returnnum = rms.Id;
                 return returnnum;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
         public async Task<int> AddCharacterMessageSub(ReviewMessageSubscription rms)
@@ -153,10 +132,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 returnnum = rms.Id;
                 return returnnum;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
         //Update
 
@@ -180,10 +156,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -207,10 +180,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -233,10 +203,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -258,10 +225,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -282,10 +246,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
 
         }
 
@@ -305,10 +266,7 @@ namespace NEXUSDataLayerScaffold.Logic
 
                 return true;
             }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            catch { throw; }
         }
 
     }

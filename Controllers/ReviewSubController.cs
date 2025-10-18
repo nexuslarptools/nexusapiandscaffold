@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Logic;
@@ -28,7 +28,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ReviewMessageSubscription>> GetIsItemSubscribed(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -54,7 +54,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ReviewMessageSubscription>> GetIsCharacterSubscribed(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
@@ -82,7 +82,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ReviewMessageSubscription>> GetItemSubscription(int id)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
@@ -100,7 +100,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ReviewMessageSubscription>> GetCharacterSubscription(int id)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
@@ -119,7 +119,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<List<ReviewMessageSubscription>>> GetItemAllSubscriptions()
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -137,7 +137,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<ReviewMessageSubscription>> GetAllCharacterSubscriptions()
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
             {
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -156,7 +156,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<List<ReviewMessageSubscription>>> GetSubscriptionsForItem(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -174,7 +174,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<List<ReviewMessageSubscription>>> GetSubscriptionsForCharacter(Guid guid)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -193,7 +193,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             [FromBody] ReviewMessageSubscription itemSub)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
                 itemSub.Createdate = DateTime.Now;
@@ -216,7 +216,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                         [FromBody] ReviewMessageSubscription characterSub)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -239,7 +239,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<bool>> StopSubscriptionForItem(int id)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -261,7 +261,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<bool>> StopSubscriptionForCharacter(int id)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
             {
 
@@ -286,7 +286,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<bool>> DeleteSubscriptionForItem(int id)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
 
@@ -303,7 +303,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         public async Task<ActionResult<bool>> DeleteSubscriptionForCharacter(int id)
         {
             var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+            var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
             if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
             {
                 var rmsl = new ReviewMessageSubsLogic(_context);

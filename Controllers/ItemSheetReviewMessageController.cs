@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +28,7 @@ public class ItemSheetReviewMessageController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
         {
@@ -50,7 +50,7 @@ public class ItemSheetReviewMessageController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
         {
@@ -76,7 +76,7 @@ public class ItemSheetReviewMessageController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
         {
@@ -101,7 +101,7 @@ public class ItemSheetReviewMessageController : ControllerBase
 
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
         {
@@ -130,7 +130,7 @@ public class ItemSheetReviewMessageController : ControllerBase
     {
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var accessToken = HttpContext.Request.Headers.Authorization.ToString().Remove(0, 7);
 
         if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
         {

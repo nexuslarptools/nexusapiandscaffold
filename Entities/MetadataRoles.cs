@@ -1,4 +1,4 @@
-﻿using NEXUSDataLayerScaffold.Enums;
+using NEXUSDataLayerScaffold.Enums;
 using NEXUSDataLayerScaffold.Models;
 using System;
 using System.Collections.Generic;

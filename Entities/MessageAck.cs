@@ -1,4 +1,4 @@
-﻿using NEXUSDataLayerScaffold.Models;
+using NEXUSDataLayerScaffold.Models;
 using System;
 
 namespace NEXUSDataLayerScaffold.Entities
