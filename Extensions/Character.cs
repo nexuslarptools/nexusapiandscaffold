@@ -103,7 +103,7 @@ public class Character
 
         newCharSheet.Id = cSheet.Id;
         newCharSheet.Guid = cSheet.Guid;
-        newCharSheet.Seriesguid = cSheet.Seriesguid;
+        newCharSheet.Seriesguid = cSheet.Seriesguid ?? System.Guid.Empty;
         newCharSheet.Fields = FeildsWInit;
         newCharSheet.Name = cSheet.Name;
         newCharSheet.Img1 = cSheet.Img1;
@@ -185,7 +185,7 @@ public class Character
 
         newCharSheet.Id = cSheet.Id;
         newCharSheet.Guid = cSheet.Guid;
-        newCharSheet.Seriesguid = cSheet.Seriesguid;
+        newCharSheet.Seriesguid = cSheet.Seriesguid ?? System.Guid.Empty;
         newCharSheet.Fields = FeildsWInit;
         newCharSheet.Name = cSheet.Name;
         newCharSheet.Img1 = cSheet.Img1;

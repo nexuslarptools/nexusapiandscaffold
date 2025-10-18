@@ -25,7 +25,7 @@ public class CharSheet
 
         Id = input.Id;
         Guid = input.Guid;
-        Seriesguid = input.Seriesguid;
+        Seriesguid = input.Seriesguid ?? Guid.Empty;
         Name = input.Name;
         Img1 = input.Img1;
         Img2 = input.Img2;
@@ -279,33 +279,33 @@ public class CharSheet
     }
     public int Id { get; set; }
     public Guid Guid { get; set; }
-    public Guid? Seriesguid { get; set; }
-    public string SeriesTitle { get; set; }
+    public Guid Seriesguid { get; set; }
+    public string? SeriesTitle { get; set; }
     public string Name { get; set; }
-    public string Img1 { get; set; }
-    public string Img2 { get; set; }
-    public JObject Fields { get; set; }
-    public IteSheet Sheet_Item { get; set; }
-    public List<IteSheet> Starting_Items { get; set; }
-    public List<IteSheet> Upgrade_Items { get; set; }
-    public bool? Isactive { get; set; }
+    public string? Img1 { get; set; }
+    public string? Img2 { get; set; }
+    public JObject? Fields { get; set; }
+    public IteSheet? Sheet_Item { get; set; }
+    public List<IteSheet>? Starting_Items { get; set; }
+    public List<IteSheet>? Upgrade_Items { get; set; }
+    public bool Isactive { get; set; }
     public DateTime Createdate { get; set; }
     public Guid? CreatedbyUserGuid { get; set; }
-    public string createdby { get; set; }
+    public string? createdby { get; set; }
     public Guid? FirstapprovalbyUserGuid { get; set; }
-    public string Firstapprovalby { get; set; }
+    public string? Firstapprovalby { get; set; }
     public DateTime? Firstapprovaldate { get; set; }
     public Guid? SecondapprovalbyUserGuid { get; set; }
-    public string Secondapprovalby { get; set; }
+    public string? Secondapprovalby { get; set; }
     public DateTime? Secondapprovaldate { get; set; }
-    public string Gmnotes { get; set; }
-    public string Reason4edit { get; set; }
+    public string? Gmnotes { get; set; }
+    public string? Reason4edit { get; set; }
     public int Version { get; set; }
-    public List<TagOut> Tags { get; set; }
+    public List<TagOut>? Tags { get; set; }
     public Guid? EditbyUserGuid { get; set; }
-    public string Editby { get; set; }
+    public string? Editby { get; set; }
     public bool HasReview { get; set; }
-    public List<ReviewMessage> ReviewMessages { get; set; }
+    public List<ReviewMessage>? ReviewMessages { get; set; }
     public bool Readyforapproval { get; set; }
 
 
@@ -314,12 +314,12 @@ public class CharSheet
         var Charsheet = new CharacterSheet
         {
             Guid = Guid,
-            Seriesguid = (Guid)Seriesguid,
+            Seriesguid = Seriesguid,
             Name = Name,
             Img1 = Img1,
             Img2 = Img2,
-            Fields = JsonDocument.Parse(Fields.ToString()),
-            Isactive = Isactive == null || (bool)Isactive,
+            Fields = Fields != null ? JsonDocument.Parse(Fields.ToString()) : null,
+            Isactive = Isactive,
             Createdate = Createdate,
             EditbyUserGuid = EditbyUserGuid,
             CreatedbyuserGuid = CreatedbyUserGuid,
