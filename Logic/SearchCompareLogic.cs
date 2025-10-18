@@ -89,7 +89,7 @@ namespace NEXUSDataLayerScaffold.Logic
                 //Extract Special Skills
 
                 var SpecialSkills2 = sheets.Where(ts =>
-                 ts.Fields.RootElement.TryGetProperty("Special_Skills", out var value)
+                 ts.Fields != null && ts.Fields.RootElement.TryGetProperty("Special_Skills", out var value)
                  && ts.Fields.RootElement.GetProperty("Special_Skills").ValueKind == JsonValueKind.Array
                  ).Select(s => new
                  {

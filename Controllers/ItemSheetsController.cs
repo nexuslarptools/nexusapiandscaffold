@@ -311,7 +311,7 @@ public class ItemSheetsController : ControllerBase
 
                     outputItem = Item.CreateItem(itemSheet, usersList, listItemTypes);
 
-                    if (itemSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
+                    if (itemSheet.Fields != null && itemSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
                         && tagsElement.ValueKind == JsonValueKind.Array)
                     {
                         foreach (var tag in tagsElement.EnumerateArray())

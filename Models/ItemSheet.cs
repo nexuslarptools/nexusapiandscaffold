@@ -14,9 +14,9 @@ public partial class ItemSheet
 
     public string Name { get; set; }
 
-    public string Img1 { get; set; }
+    public string? Img1 { get; set; }
 
-    public JsonDocument Fields { get; set; }
+    public JsonDocument? Fields { get; set; }
 
     public bool Isactive { get; set; }
 
@@ -32,9 +32,9 @@ public partial class ItemSheet
 
     public DateTime? Secondapprovaldate { get; set; }
 
-    public string Gmnotes { get; set; }
+    public string? Gmnotes { get; set; }
 
-    public string Reason4edit { get; set; }
+    public string? Reason4edit { get; set; }
 
     public int? Version { get; set; }
 
@@ -46,7 +46,7 @@ public partial class ItemSheet
 
     public bool? Isdoubleside { get; set; }
 
-    public JsonDocument Fields2ndside { get; set; }
+    public JsonDocument? Fields2ndside { get; set; }
 
     public Guid? ItemtypeGuid { get; set; }
 

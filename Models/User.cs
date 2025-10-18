@@ -17,7 +17,7 @@ public partial class User
 
     public Guid? Pronounsguid { get; set; }
 
-    public string Discordname { get; set; }
+    public string? Discordname { get; set; }
 
     public string Authid { get; set; }
 

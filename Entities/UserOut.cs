@@ -13,7 +13,7 @@ public class UserOut
 
     public UserOut(Guid guid, string firstname, string lastname, string preferedName, string email, Guid? pronounsguid,
         string pronouns,
-        string discordName
+        string? discordName
         , RoleOut userRoles)
     {
         EffectiveRole = userRoles;
@@ -34,7 +34,7 @@ public class UserOut
     public string Email { get; set; }
     public Guid? Pronounsguid { get; set; }
     public string Pronouns { get; set; }
-    public string Discordname { get; set; }
+    public string? Discordname { get; set; }
 
     public List<UserLarpRoleOut> LarpRoles { get; set; }
     public RoleOut EffectiveRole { get; set; }

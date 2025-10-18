@@ -476,7 +476,7 @@ public class TagsController : ControllerBase
 
                     foreach (var itemSheet in itemList)
                     {
-                        if (itemSheet.Fields.RootElement.TryGetProperty("Tags", out var tagList)
+                        if (itemSheet.Fields != null && itemSheet.Fields.RootElement.TryGetProperty("Tags", out var tagList)
                             && tagList.ValueKind == JsonValueKind.Array)
                         {
                             foreach (var listtag in tagList.EnumerateArray())
@@ -489,7 +489,7 @@ public class TagsController : ControllerBase
 
                     foreach (var itemSheet in approvitemList)
                     {
-                        if (itemSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
+                        if (itemSheet.Fields != null && itemSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
                             && startitemsList.ValueKind == JsonValueKind.Array)
                         {
                             foreach (var listtag in startitemsList.EnumerateArray())
@@ -506,7 +506,7 @@ public class TagsController : ControllerBase
 
                     foreach (var characterSheet in charList)
                     {
-                        if (characterSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
+                        if (characterSheet.Fields != null && characterSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
                             && startitemsList.ValueKind == JsonValueKind.Array)
                         {
                             foreach (var listtag in startitemsList.EnumerateArray())
@@ -519,7 +519,7 @@ public class TagsController : ControllerBase
 
                     foreach (var characterSheet in approvcharList)
                     {
-                        if (characterSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
+                        if (characterSheet.Fields != null && characterSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
                             && startitemsList.ValueKind == JsonValueKind.Array)
                         {
                             foreach (var listtag in startitemsList.EnumerateArray())
@@ -537,7 +537,8 @@ public class TagsController : ControllerBase
                     foreach (var characterSheet in charList)
                     {
                         var startitemsList = new JsonElement();
-                        characterSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+                        if (characterSheet.Fields != null)
+                            characterSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
 
                         if (startitemsList.ValueKind.ToString() != "Undefined")
                         {
@@ -564,7 +565,8 @@ public class TagsController : ControllerBase
                     foreach (var characterSheet in approvcharList)
                     {
                         var startitemsList = new JsonElement();
-                        characterSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+                        if (characterSheet.Fields != null)
+                            characterSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
 
                         if (startitemsList.ValueKind.ToString() != "Undefined")
                         {
@@ -594,7 +596,8 @@ public class TagsController : ControllerBase
                     foreach (var itemSheet in itemList)
                     {
                         var startitemsList = new JsonElement();
-                        itemSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+                        if (itemSheet.Fields != null)
+                            itemSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
 
                         if (startitemsList.ValueKind.ToString() != "Undefined")
                         {
@@ -624,7 +627,8 @@ public class TagsController : ControllerBase
                     foreach (var itemSheet in approvitemList)
                     {
                         var startitemsList = new JsonElement();
-                        itemSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
+                        if (itemSheet.Fields != null)
+                            itemSheet.Fields.RootElement.TryGetProperty("Special_Skills", out startitemsList);
 
                         if (startitemsList.ValueKind.ToString() != "Undefined")
                         {

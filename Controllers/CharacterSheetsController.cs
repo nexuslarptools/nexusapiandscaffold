@@ -259,7 +259,7 @@ public class CharacterSheetsController : ControllerBase
             var listItemTypes =  _context.ItemTypes.Select(x => x).ToList();
             var outputSheet = Character.CreateCharSheet(characterSheet, usersList, crsm);
 
-            if (characterSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
+            if (characterSheet.Fields != null && characterSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
                 && tagsElement.ValueKind == JsonValueKind.Array)
             {
                 foreach (var tag in tagsElement.EnumerateArray())

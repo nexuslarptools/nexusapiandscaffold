@@ -34,7 +34,7 @@ public class Users
     public string Preferredname { get; set; }
     public string Email { get; set; }
     public Guid? Pronounsguid { get; set; }
-    public string Discordname { get; set; }
+    public string? Discordname { get; set; }
     public string Authid { get; set; }
     public bool? Isactive { get; set; }
 

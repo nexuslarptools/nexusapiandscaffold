@@ -197,7 +197,7 @@ public class CharacterSheetApprovedsController : ControllerBase
 
             var outputSheet = Character.CreateCharSheet(characterSheet, usersList, crsm);
 
-            if (characterSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
+            if (characterSheet.Fields != null && characterSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
                 && tagsElement.ValueKind == JsonValueKind.Array)
             {
                 foreach (var tag in tagsElement.EnumerateArray())
@@ -761,7 +761,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 .Where(c => c.Isactive == true && allowedSheets.Contains(c.Guid)).ToListAsync();
 
             foreach (var sheet in allSheets)
-                if (sheet.Fields.RootElement.TryGetProperty("Special_Skills", out var sSkilsJsonFields))
+                if (sheet.Fields != null && sheet.Fields.RootElement.TryGetProperty("Special_Skills", out var sSkilsJsonFields))
                 {
                     var TestJsonFeilds = sSkilsJsonFields.EnumerateArray();
 
