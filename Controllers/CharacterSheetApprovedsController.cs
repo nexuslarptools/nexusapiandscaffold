@@ -58,9 +58,11 @@ public class CharacterSheetApprovedsController : ControllerBase
             //    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
             //    .ToList();
 
-            var disAllowedTags = _context.Larptags.Where(lt =>
-                !(userData.GetAllowedLARPGuid().Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
-                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+            var allowedLarps = userData?.GetAllowedLARPGuid() ?? new List<Guid>();
+            var disAllowedTags = _context.Larptags
+                .Where(lt => lt.Isactive == true && lt.Larpguid != null && !allowedLarps.Contains((Guid)lt.Larpguid))
+                .Select(lt => lt.Tagguid)
+                .ToList();
 
             var csrs = _context.CharacterSheetReviewMessages
                   .Where(csr => csr.Isactive == true).AsEnumerable();
@@ -92,7 +94,7 @@ public class CharacterSheetApprovedsController : ControllerBase
 })
                 .OrderBy(x =>x.Sheet.Name).ToListAsync();
 
-            if (!(userData.isAuthed("Wizard")))
+            if (!(userData?.isAuthed("Wizard") ?? false))
                 allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat)))
                     .ToList();
 
