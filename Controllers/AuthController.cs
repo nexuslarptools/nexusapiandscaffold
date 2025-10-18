@@ -72,13 +72,25 @@ namespace NEXUSDataLayerScaffold.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ExchangeCode([FromBody] CodeExchangeRequest request)
         {
+            var traceId = System.Diagnostics.Activity.Current?.TraceId.ToString() ?? HttpContext.TraceIdentifier;
+            _logger.LogInformation("ExchangeCode called. redirectUri={RedirectUri} code_present={CodePresent} code_verifier_present={CodeVerifierPresent} audience_present={AudiencePresent} TraceId={TraceId}",
+                request?.redirectUri,
+                !string.IsNullOrWhiteSpace(request?.code),
+                !string.IsNullOrWhiteSpace(request?.codeVerifier),
+                !string.IsNullOrWhiteSpace(request?.audience),
+                traceId);
+
             if (request == null || string.IsNullOrWhiteSpace(request.code) || string.IsNullOrWhiteSpace(request.redirectUri))
             {
+                _logger.LogWarning("ExchangeCode invalid request. redirectUri_present={RedirectUriPresent} code_present={CodePresent} TraceId={TraceId}",
+                    !string.IsNullOrWhiteSpace(request?.redirectUri), !string.IsNullOrWhiteSpace(request?.code), traceId);
                 return BadRequest(new { error = "invalid_request", error_description = "code and redirectUri are required" });
             }
 
             if (string.IsNullOrWhiteSpace(_auth0.Domain) || string.IsNullOrWhiteSpace(_auth0.ClientId) || string.IsNullOrWhiteSpace(_auth0.ClientSecret))
             {
+                _logger.LogError("Auth0 configuration missing. DomainSet={DomainSet} ClientIdSet={ClientIdSet} ClientSecretSet={ClientSecretSet} TraceId={TraceId}",
+                    !string.IsNullOrWhiteSpace(_auth0.Domain), !string.IsNullOrWhiteSpace(_auth0.ClientId), !string.IsNullOrWhiteSpace(_auth0.ClientSecret), traceId);
                 return StatusCode(500, new { error = "server_configuration_error", error_description = "Auth0 Domain, ClientId, and ClientSecret must be configured." });
             }
 
@@ -86,6 +98,8 @@ namespace NEXUSDataLayerScaffold.Controllers
             {
                 var issuer = $"https://{_auth0.Domain.Trim().TrimEnd('/')}/";
                 var http = _httpClientFactory.CreateClient();
+                _logger.LogInformation("Auth0 token request prepared. Issuer={Issuer} AudienceOverride={AudienceOverride} TraceId={TraceId}",
+                    issuer, string.IsNullOrWhiteSpace(request.audience) ? null : "provided", traceId);
 
                 // Prepare the token request
                 var form = new Dictionary<string, string>
@@ -121,6 +135,9 @@ namespace NEXUSDataLayerScaffold.Controllers
                     return BadRequest(new { error = "invalid_token_response", error_description = tokenPayload });
                 }
 
+                _logger.LogInformation("Auth0 token exchange succeeded. token_type={TokenType} expires_in={ExpiresIn} has_refresh={HasRefresh} has_id_token={HasId} TraceId={TraceId}",
+                    tokens.token_type, tokens.expires_in, !string.IsNullOrWhiteSpace(tokens.refresh_token), !string.IsNullOrWhiteSpace(tokens.id_token), traceId);
+
                 object? user = null;
                 try
                 {
@@ -131,10 +148,11 @@ namespace NEXUSDataLayerScaffold.Controllers
                     if (userResp.IsSuccessStatusCode)
                     {
                         user = JsonSerializer.Deserialize<object>(userBody, options);
+                        _logger.LogInformation("Auth0 userinfo succeeded: {Status} TraceId={TraceId}", (int)userResp.StatusCode, traceId);
                     }
                     else
                     {
-                        _logger.LogWarning("Auth0 userinfo failed: {Status} {Body}", (int)userResp.StatusCode, userBody);
+                        _logger.LogWarning("Auth0 userinfo failed: {Status} {Body} TraceId={TraceId}", (int)userResp.StatusCode, userBody, traceId);
                     }
                 }
                 catch (Exception ex)
@@ -152,6 +170,8 @@ namespace NEXUSDataLayerScaffold.Controllers
                     user = user
                 };
 
+                _logger.LogInformation("ExchangeCode succeeded. Returning tokens (no secrets). expires_in={ExpiresIn} has_refresh={HasRefresh} has_id_token={HasId} TraceId={TraceId}",
+                    response.expires_in, !string.IsNullOrWhiteSpace(response.refresh_token), !string.IsNullOrWhiteSpace(response.id_token), traceId);
                 return Ok(response);
             }
             catch (HttpRequestException ex)
@@ -200,12 +220,20 @@ namespace NEXUSDataLayerScaffold.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
+            var traceId = System.Diagnostics.Activity.Current?.TraceId.ToString() ?? HttpContext.TraceIdentifier;
+            _logger.LogInformation("Logout called. returnTo={ReturnTo} clientId_provided={ClientIdProvided} refreshToken_present={RefreshPresent} TraceId={TraceId}",
+                request?.returnTo,
+                !string.IsNullOrWhiteSpace(request?.clientId),
+                !string.IsNullOrWhiteSpace(request?.refreshToken),
+                traceId);
             try
             {
                 var domain = _auth0.Domain?.Trim().TrimEnd('/') ?? string.Empty;
                 var clientId = !string.IsNullOrWhiteSpace(request?.clientId) ? request!.clientId! : _auth0.ClientId;
                 if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(clientId))
                 {
+                    _logger.LogError("Logout configuration error. DomainSet={DomainSet} ClientIdSet={ClientIdSet} TraceId={TraceId}",
+                        !string.IsNullOrWhiteSpace(domain), !string.IsNullOrWhiteSpace(clientId), traceId);
                     return StatusCode(500, new { error = "server_configuration_error", error_description = "Auth0 Domain and ClientId must be configured." });
                 }
 
@@ -221,6 +249,8 @@ namespace NEXUSDataLayerScaffold.Controllers
                 var logoutUriBuilder = new UriBuilder(logoutBase) { Query = query };
 
                 var response = new LogoutResponse { logoutUrl = logoutUriBuilder.Uri.ToString(), revoked = false };
+
+                _logger.LogInformation("Built logout URL. Issuer={Issuer} LogoutUrl={LogoutUrl} TraceId={TraceId}", issuer, response.logoutUrl, traceId);
 
                 // Optionally revoke refresh token
                 if (!string.IsNullOrWhiteSpace(request?.refreshToken))
@@ -248,10 +278,11 @@ namespace NEXUSDataLayerScaffold.Controllers
                             if (revokeResp.IsSuccessStatusCode)
                             {
                                 response.revoked = true;
+                                _logger.LogInformation("Refresh token revoked successfully. TraceId={TraceId}", traceId);
                             }
                             else
                             {
-                                _logger.LogWarning("Auth0 revoke failed: {Status} {Body}", (int)revokeResp.StatusCode, body);
+                                _logger.LogWarning("Auth0 revoke failed: {Status} {Body} TraceId={TraceId}", (int)revokeResp.StatusCode, body, traceId);
                                 response.revoke_error = body;
                             }
                         }
