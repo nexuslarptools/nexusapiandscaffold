@@ -7,8 +7,12 @@ namespace NEXUSDataLayerScaffold.Models
         [Required]
         public string Domain { get; set; } = string.Empty;
 
+        // Primary audience (backward compatible). Additional audiences can be provided via ApiIdentifiers.
         [Required]
         public string ApiIdentifier { get; set; } = string.Empty;
+
+        // Optional list of additional audiences that should be accepted.
+        public string[]? ApiIdentifiers { get; set; }
 
         // Optional: Only needed for Management API or client credentials flows (not required for JWT validation)
         public string? ClientId { get; set; }

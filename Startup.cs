@@ -138,6 +138,28 @@ public class Startup
             .ValidateOnStart();
         var auth0 = _config.GetSection("Auth0").Get<Auth0Options>();
 
+        // Build the accepted audiences list (supports multiple audiences)
+        var audienceSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void AddAudienceVariants(string? a)
+        {
+            if (string.IsNullOrWhiteSpace(a)) return;
+            var norm = a.Trim();
+            audienceSet.Add(norm);
+            audienceSet.Add(norm.TrimEnd('/'));
+        }
+        // Primary audience (backward compatible)
+        AddAudienceVariants(auth0.ApiIdentifier);
+        // Additional audiences (optional)
+        if (auth0.ApiIdentifiers != null)
+        {
+            foreach (var a in auth0.ApiIdentifiers)
+            {
+                AddAudienceVariants(a);
+            }
+        }
+        var audiences = audienceSet.Count > 0 ? new List<string>(audienceSet) : new List<string>();
+        var primaryAudience = audiences.Count > 0 ? audiences[0] : auth0.ApiIdentifier;
+
         // Configure JWT Bearer authentication for Auth0-issued access tokens
         services.AddAuthentication(options =>
         {
@@ -148,7 +170,8 @@ public class Startup
         {
             var issuer = $"https://{(auth0.Domain ?? string.Empty).Trim().TrimEnd('/')}/";
             options.Authority = issuer;
-            options.Audience = auth0.ApiIdentifier;
+            // Keep Audience set for compatibility (ignored when ValidAudiences provided)
+            options.Audience = primaryAudience;
             options.RequireHttpsMetadata = true;
             options.RefreshOnIssuerKeyNotFound = true;
             options.MapInboundClaims = false;
@@ -158,8 +181,8 @@ public class Startup
                 ValidIssuer = issuer,
                 ValidIssuers = new[] { issuer, issuer.TrimEnd('/') },
                 ValidateAudience = true,
-                ValidAudience = auth0.ApiIdentifier,
-                ValidAudiences = new[] { auth0.ApiIdentifier, auth0.ApiIdentifier.TrimEnd('/') },
+                ValidAudience = primaryAudience,
+                ValidAudiences = audiences,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
                 ClockSkew = TimeSpan.FromMinutes(2),
