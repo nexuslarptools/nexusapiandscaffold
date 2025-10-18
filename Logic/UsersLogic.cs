@@ -196,8 +196,12 @@ public class UsersLogic
 
         try
         {
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken2);
+            // Ensure we send a proper Bearer token and do not accidentally double-prefix
+            var token = accessToken2?.Trim() ?? string.Empty;
+            if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = token.Substring("Bearer ".Length).Trim();
+            }
 
             // Dynamically resolve the Auth0 UserInfo endpoint instead of using a hardcoded tenant.
             string? auth0Domain = Environment.GetEnvironmentVariable("Auth0__Domain");
@@ -211,8 +215,8 @@ public class UsersLogic
                 // Fallback: derive from the token's issuer (iss) claim
                 try
                 {
-                    var parts = accessToken2?.Split('.');
-                    if (parts != null && parts.Length >= 2)
+                    var parts = token.Split('.');
+                    if (parts.Length >= 2)
                     {
                         string s = parts[1].Replace('-', '+').Replace('_', '/');
                         switch (s.Length % 4)
@@ -243,7 +247,12 @@ public class UsersLogic
                 }
             }
 
-            var responseMessage = await client.GetAsync(userInfoUrl);
+            using var client = new HttpClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, userInfoUrl);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            var responseMessage = await client.SendAsync(request);
             if (responseMessage.IsSuccessStatusCode)
             {
                 var responseData = await responseMessage.Content.ReadAsStringAsync();
