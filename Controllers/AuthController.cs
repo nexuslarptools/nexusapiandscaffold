@@ -170,5 +170,116 @@ namespace NEXUSDataLayerScaffold.Controllers
                 return StatusCode(500, new { error = "server_error", error_description = ex.Message });
             }
         }
+
+        public class LogoutRequest
+        {
+            public string? returnTo { get; set; }
+            public string? clientId { get; set; }
+            public string? refreshToken { get; set; }
+        }
+
+        public class LogoutResponse
+        {
+            public string logoutUrl { get; set; } = string.Empty;
+            public bool revoked { get; set; }
+            public string? revoke_error { get; set; }
+        }
+
+        /// <summary>
+        /// Generates an Auth0 logout URL and optionally revokes a refresh token.
+        /// </summary>
+        /// <remarks>
+        /// Body example:
+        /// {
+        ///   "returnTo": "https://yourapp/home",
+        ///   "clientId": "optional_override",
+        ///   "refreshToken": "optional_refresh_token_to_revoke"
+        /// }
+        /// </remarks>
+        [HttpPost("Logout")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            try
+            {
+                var domain = _auth0.Domain?.Trim().TrimEnd('/') ?? string.Empty;
+                var clientId = !string.IsNullOrWhiteSpace(request?.clientId) ? request!.clientId! : _auth0.ClientId;
+                if (string.IsNullOrWhiteSpace(domain) || string.IsNullOrWhiteSpace(clientId))
+                {
+                    return StatusCode(500, new { error = "server_configuration_error", error_description = "Auth0 Domain and ClientId must be configured." });
+                }
+
+                var issuer = $"https://{domain}/";
+
+                // Build logout URL
+                var logoutBase = new Uri(new Uri(issuer), "v2/logout");
+                var query = $"client_id={Uri.EscapeDataString(clientId!)}";
+                if (!string.IsNullOrWhiteSpace(request?.returnTo))
+                {
+                    query += $"&returnTo={Uri.EscapeDataString(request!.returnTo!)}";
+                }
+                var logoutUriBuilder = new UriBuilder(logoutBase) { Query = query };
+
+                var response = new LogoutResponse { logoutUrl = logoutUriBuilder.Uri.ToString(), revoked = false };
+
+                // Optionally revoke refresh token
+                if (!string.IsNullOrWhiteSpace(request?.refreshToken))
+                {
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(_auth0.ClientSecret))
+                        {
+                            // Cannot revoke without client secret
+                            response.revoke_error = "client_secret_not_configured";
+                        }
+                        else
+                        {
+                            var http = _httpClientFactory.CreateClient();
+                            var form = new Dictionary<string, string>
+                            {
+                                ["client_id"] = clientId!,
+                                ["client_secret"] = _auth0.ClientSecret!,
+                                ["token"] = request!.refreshToken!,
+                                ["token_type_hint"] = "refresh_token"
+                            };
+                            using var content = new FormUrlEncodedContent(form);
+                            using var revokeResp = await http.PostAsync(new Uri(new Uri(issuer), "oauth/revoke"), content);
+                            var body = await revokeResp.Content.ReadAsStringAsync();
+                            if (revokeResp.IsSuccessStatusCode)
+                            {
+                                response.revoked = true;
+                            }
+                            else
+                            {
+                                _logger.LogWarning("Auth0 revoke failed: {Status} {Body}", (int)revokeResp.StatusCode, body);
+                                response.revoke_error = body;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to revoke refresh token");
+                        response.revoke_error = ex.Message;
+                    }
+                }
+
+                return Ok(response);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP error during logout");
+                return StatusCode(502, new { error = "upstream_http_error", error_description = ex.Message });
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, "HTTP timeout during logout");
+                return StatusCode(504, new { error = "upstream_timeout", error_description = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during logout");
+                return StatusCode(500, new { error = "server_error", error_description = ex.Message });
+            }
+        }
     }
 }
