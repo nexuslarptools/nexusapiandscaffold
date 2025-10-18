@@ -476,15 +476,11 @@ public class TagsController : ControllerBase
 
                     foreach (var itemSheet in itemList)
                     {
-                        var tagList = new JsonElement();
-                        itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagList);
-
-                        if (tagList.ValueKind.ToString() != "Undefined")
+                        if (itemSheet.Fields.RootElement.TryGetProperty("Tags", out var tagList)
+                            && tagList.ValueKind == JsonValueKind.Array)
                         {
-                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                            foreach (var listtag in TestJsonFeilds)
-                                if (listtag.ToString() == guid.ToString())
+                            foreach (var listtag in tagList.EnumerateArray())
+                                if (listtag.GetString() == guid.ToString())
                                     output.ItemLists.AddUnapproved(itemSheet);
                         }
                     }
@@ -493,15 +489,11 @@ public class TagsController : ControllerBase
 
                     foreach (var itemSheet in approvitemList)
                     {
-                        var startitemsList = new JsonElement();
-                        itemSheet.Fields.RootElement.TryGetProperty("Tags", out startitemsList);
-
-                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        if (itemSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
+                            && startitemsList.ValueKind == JsonValueKind.Array)
                         {
-                            var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                            foreach (var listtag in TestJsonFeilds)
-                                if (listtag.ToString() == guid.ToString())
+                            foreach (var listtag in startitemsList.EnumerateArray())
+                                if (listtag.GetString() == guid.ToString())
                                     output.ItemLists.AddApproved(itemSheet);
                         }
                     }
@@ -514,15 +506,11 @@ public class TagsController : ControllerBase
 
                     foreach (var characterSheet in charList)
                     {
-                        var startitemsList = new JsonElement();
-                        characterSheet.Fields.RootElement.TryGetProperty("Tags", out startitemsList);
-
-                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        if (characterSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
+                            && startitemsList.ValueKind == JsonValueKind.Array)
                         {
-                            var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                            foreach (var listtag in TestJsonFeilds)
-                                if (listtag.ToString() == guid.ToString())
+                            foreach (var listtag in startitemsList.EnumerateArray())
+                                if (listtag.GetString() == guid.ToString())
                                     output.CharacterLists.AddUnapproved(characterSheet);
                         }
                     }
@@ -531,15 +519,11 @@ public class TagsController : ControllerBase
 
                     foreach (var characterSheet in approvcharList)
                     {
-                        var startitemsList = new JsonElement();
-                        characterSheet.Fields.RootElement.TryGetProperty("Tags", out startitemsList);
-
-                        if (startitemsList.ValueKind.ToString() != "Undefined")
+                        if (characterSheet.Fields.RootElement.TryGetProperty("Tags", out var startitemsList)
+                            && startitemsList.ValueKind == JsonValueKind.Array)
                         {
-                            var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                            foreach (var listtag in TestJsonFeilds)
-                                if (listtag.ToString() == guid.ToString())
+                            foreach (var listtag in startitemsList.EnumerateArray())
+                                if (listtag.GetString() == guid.ToString())
                                     output.CharacterLists.AddApproved(characterSheet);
                         }
                     }
@@ -561,10 +545,8 @@ public class TagsController : ControllerBase
 
                             foreach (var skill in TestJsonFeilds)
                             {
-                                var skilltaglist = new JsonElement();
-                                skill.TryGetProperty("Tags", out skilltaglist);
-
-                                if (skilltaglist.ValueKind.ToString() != "Undefined")
+                                if (skill.TryGetProperty("Tags", out var skilltaglist)
+                                    && skilltaglist.ValueKind == JsonValueKind.Array)
                                 {
                                     var listSkillTags = skilltaglist.EnumerateArray();
 

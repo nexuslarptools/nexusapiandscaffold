@@ -259,20 +259,20 @@ public class CharacterSheetsController : ControllerBase
             var listItemTypes =  _context.ItemTypes.Select(x => x).ToList();
             var outputSheet = Character.CreateCharSheet(characterSheet, usersList, crsm);
 
-            var tagslist = new JsonElement();
-
-            characterSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-            if (tagslist.ValueKind.ToString() != "Undefined")
+            if (characterSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
+                && tagsElement.ValueKind == JsonValueKind.Array)
             {
-                var TestJsonFeilds = characterSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                foreach (var tag in TestJsonFeilds)
+                foreach (var tag in tagsElement.EnumerateArray())
                 {
+                    var tagStr = tag.GetString();
+                    if (string.IsNullOrWhiteSpace(tagStr)) continue;
                     var fullTag = await _context.Tags
-                        .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString())).Include("Tagtype")
+                        .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tagStr)).Include("Tagtype")
                         .FirstOrDefaultAsync();
-                    outputSheet.Tags.Add(new TagOut(fullTag));
+                    if (fullTag != null)
+                    {
+                        outputSheet.Tags.Add(new TagOut(fullTag));
+                    }
                 }
             }
 

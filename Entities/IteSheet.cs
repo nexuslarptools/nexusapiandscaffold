@@ -188,18 +188,20 @@ public class IteSheet
             {
                 var FeildsWInit = FieldsLogic.AddInitative(JObject.Parse(sheet.Fields.RootElement.ToString()));
                 Fields = FeildsWInit;
-                sheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined")
+                if (sheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
+                    && tagsElement.ValueKind == JsonValueKind.Array)
                 {
-                    var TestJsonFeilds = sheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
+                    foreach (var tag in tagsElement.EnumerateArray())
                     {
+                        var tagStr = tag.GetString();
+                        if (string.IsNullOrWhiteSpace(tagStr)) continue;
                         var fullTag = _context.Tags
-                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                            .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tagStr))
                             .Include("Tagtype").FirstOrDefault();
-                        Tags.Add(new TagOut(fullTag));
+                        if (fullTag != null)
+                        {
+                            Tags.Add(new TagOut(fullTag));
+                        }
                     }
                 }
             }

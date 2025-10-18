@@ -17,19 +17,24 @@ public class TagScanner
         foreach (var sheet in allSheets)
         {
             var okay = true;
-            var tagslist = new JsonElement();
 
             if (sheet.TagsField != null)
             {
-                sheet.TagsField.RootElement.TryGetProperty("Tags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined")
+                if (sheet.TagsField.RootElement.TryGetProperty("Tags", out var tagsElement)
+                    && tagsElement.ValueKind == JsonValueKind.Array)
                 {
-                    var TestJsonFeilds = sheet.TagsField.RootElement.GetProperty("Tags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
-                        if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
-                            okay = false;
+                    foreach (var tag in tagsElement.EnumerateArray())
+                    {
+                        var tagStr = tag.GetString();
+                        if (!string.IsNullOrWhiteSpace(tagStr))
+                        {
+                            if (!allowedTags.Contains(Guid.Parse(tagStr)))
+                            {
+                                okay = false;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -46,19 +51,24 @@ public class TagScanner
         foreach (var sheet in allSheets)
         {
             var okay = true;
-            var tagslist = new JsonElement();
 
             if (sheet.TagsField != null)
             {
-                sheet.TagsField.RootElement.TryGetProperty("SeriesTags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined")
+                if (sheet.TagsField.RootElement.TryGetProperty("SeriesTags", out var tagsElement)
+                    && tagsElement.ValueKind == JsonValueKind.Array)
                 {
-                    var TestJsonFeilds = sheet.TagsField.RootElement.GetProperty("SeriesTags").EnumerateArray();
-
-                    foreach (var tag in TestJsonFeilds)
-                        if (!allowedTags.Contains(Guid.Parse(tag.GetString())))
-                            okay = false;
+                    foreach (var tag in tagsElement.EnumerateArray())
+                    {
+                        var tagStr = tag.GetString();
+                        if (!string.IsNullOrWhiteSpace(tagStr))
+                        {
+                            if (!allowedTags.Contains(Guid.Parse(tagStr)))
+                            {
+                                okay = false;
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -74,13 +84,13 @@ public class TagScanner
 
         foreach (var sheet in allSheets)
         {
-            var tagslist = new JsonElement();
-
             if (sheet.TagsField != null)
             {
-                sheet.TagsField.RootElement.TryGetProperty("Tags", out tagslist);
-
-                if (tagslist.ValueKind.ToString() != "Undefined") output.Add(sheet.Guid, tagslist);
+                if (sheet.TagsField.RootElement.TryGetProperty("Tags", out var tagsElement)
+                    && tagsElement.ValueKind == JsonValueKind.Array)
+                {
+                    output.Add(sheet.Guid, tagsElement);
+                }
             }
         }
 
@@ -97,7 +107,10 @@ public class TagScanner
             foreach (var tag in jsontags)
             {
                 var tagVal = fulltaglist.Where(t => t.Guid == (Guid)tag).FirstOrDefault();
-                tagsout.Add(tagVal);
+                if (tagVal != null)
+                {
+                    tagsout.Add(tagVal);
+                }
             }
 
             return tagsout;

@@ -311,20 +311,20 @@ public class ItemSheetsController : ControllerBase
 
                     outputItem = Item.CreateItem(itemSheet, usersList, listItemTypes);
 
-                    var tagslist = new JsonElement();
-
-                    itemSheet.Fields.RootElement.TryGetProperty("Tags", out tagslist);
-
-                    if (tagslist.ValueKind.ToString() != "Undefined")
+                    if (itemSheet.Fields.RootElement.TryGetProperty("Tags", out var tagsElement)
+                        && tagsElement.ValueKind == JsonValueKind.Array)
                     {
-                        var TestJsonFeilds = itemSheet.Fields.RootElement.GetProperty("Tags").EnumerateArray();
-
-                        foreach (var tag in TestJsonFeilds)
+                        foreach (var tag in tagsElement.EnumerateArray())
                         {
+                            var tagStr = tag.GetString();
+                            if (string.IsNullOrWhiteSpace(tagStr)) continue;
                             var fullTag = await _context.Tags
-                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tag.GetString()))
+                                .Where(t => t.Isactive == true && t.Guid == Guid.Parse(tagStr))
                                 .Include("Tagtype").FirstOrDefaultAsync();
-                            outputItem.Tags.Add(new TagOut(fullTag));
+                            if (fullTag != null)
+                            {
+                                outputItem.Tags.Add(new TagOut(fullTag));
+                            }
                         }
                     }
 
