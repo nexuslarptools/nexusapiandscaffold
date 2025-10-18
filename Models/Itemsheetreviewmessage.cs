@@ -11,13 +11,13 @@ public partial class ItemSheetReviewMessage
 
     public bool? Isactive { get; set; }
 
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     public DateTime Createdate { get; set; }
 
     public Guid? CreatedbyuserGuid { get; set; }
 
-    public virtual User Createdbyuser { get; set; }
+    public virtual User? Createdbyuser { get; set; }
 
     public virtual ICollection<ItemSheetMessageAck> ItemSheetMessageAcks { get; set; } = new List<ItemSheetMessageAck>();
 }

@@ -52,13 +52,13 @@ public partial class CharacterSheet
 
     public virtual ICollection<CharacterSheetVersion> CharacterSheetVersions { get; set; } = new List<CharacterSheetVersion>();
 
-    public virtual User Createdbyuser { get; set; }
+    public virtual User? Createdbyuser { get; set; }
 
-    public virtual User EditbyUser { get; set; }
+    public virtual User? EditbyUser { get; set; }
 
-    public virtual User Firstapprovalbyuser { get; set; }
+    public virtual User? Firstapprovalbyuser { get; set; }
 
-    public virtual User Secondapprovalbyuser { get; set; }
+    public virtual User? Secondapprovalbyuser { get; set; }
 
     public virtual Series Series { get; set; }
 }

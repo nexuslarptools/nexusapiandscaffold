@@ -11,7 +11,7 @@ public partial class CharacterSheetReviewMessage
 
     public bool? Isactive { get; set; }
 
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     public DateTime Createdate { get; set; }
 
@@ -19,5 +19,5 @@ public partial class CharacterSheetReviewMessage
 
     public virtual ICollection<CharacterSheetMessageAck> CharacterSheetMessageAcks { get; set; } = new List<CharacterSheetMessageAck>();
 
-    public virtual User Createdbyuser { get; set; }
+    public virtual User? Createdbyuser { get; set; }
 }

@@ -10,7 +10,7 @@ public partial class Series
 
     public string Title { get; set; }
 
-    public string Titlejpn { get; set; }
+    public string? Titlejpn { get; set; }
 
     public JsonDocument? Tags { get; set; }
 

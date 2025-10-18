@@ -50,13 +50,13 @@ public partial class CharacterSheetApproved
 
     public virtual CharacterSheet Charactersheet { get; set; }
 
-    public virtual User Createdbyuser { get; set; }
+    public virtual User? Createdbyuser { get; set; }
 
-    public virtual User EditbyUser { get; set; }
+    public virtual User? EditbyUser { get; set; }
 
-    public virtual User Firstapprovalbyuser { get; set; }
+    public virtual User? Firstapprovalbyuser { get; set; }
 
-    public virtual User Secondapprovalbyuser { get; set; }
+    public virtual User? Secondapprovalbyuser { get; set; }
 
-    public virtual Series Series { get; set; }
+    public virtual Series? Series { get; set; }
 }

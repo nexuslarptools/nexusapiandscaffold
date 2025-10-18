@@ -50,17 +50,17 @@ public partial class ItemSheet
 
     public Guid? ItemtypeGuid { get; set; }
 
-    public virtual User Createdbyuser { get; set; }
+    public virtual User? Createdbyuser { get; set; }
 
-    public virtual User EditbyUser { get; set; }
+    public virtual User? EditbyUser { get; set; }
 
-    public virtual User Firstapprovalbyuser { get; set; }
+    public virtual User? Firstapprovalbyuser { get; set; }
 
     public virtual ICollection<ItemSheetTag> ItemSheetTags { get; set; } = new List<ItemSheetTag>();
 
-    public virtual ItemType Itemtype { get; set; }
+    public virtual ItemType? Itemtype { get; set; }
 
-    public virtual User Secondapprovalbyuser { get; set; }
+    public virtual User? Secondapprovalbyuser { get; set; }
 
-    public virtual Series Series { get; set; }
+    public virtual Series? Series { get; set; }
 }
