@@ -26,7 +26,11 @@ namespace NEXUSDataLayerScaffold.Logic
             // Load token from store. check expy, if it's not fresh, grab new token.
             _managementBearer = GetToken().Result;
 
-            _client = new ManagementApiClient(_managementBearer.Token, new Uri("https://dev-3xazewbu.auth0.com/api/v2"));
+            var domain = GetEnvironmentValue(
+                new[] { "Auth0__Domain", "AUTH0_DOMAIN" },
+                required: true);
+            var managementBase = $"https://{domain}/api/v2";
+            _client = new ManagementApiClient(_managementBearer.Token, new Uri(managementBase));
         }
 
         public async Task<IList<User>> GetAllUsersByEmail(string email)
@@ -50,33 +54,56 @@ namespace NEXUSDataLayerScaffold.Logic
                 var results = await _client.Users.UpdateAsync(auth, updateRequest);
                 return results;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return null;
             }
         }
 
-
+        private static string GetEnvironmentValue(string[] keys, bool required = false, string? defaultValue = null)
+        {
+            foreach (var key in keys)
+            {
+                var v = Environment.GetEnvironmentVariable(key);
+                if (!string.IsNullOrWhiteSpace(v))
+                {
+                    return v;
+                }
+            }
+            if (defaultValue != null) return defaultValue;
+            if (required)
+            {
+                throw new InvalidOperationException($"Missing required environment variable. Tried: {string.Join(", ", keys)}");
+            }
+            return string.Empty;
+        }
 
         private async Task<ManagementToken> GetToken()
         {
+            var domain = GetEnvironmentValue(new[] { "Auth0__Domain", "AUTH0_DOMAIN" }, required: true);
+            var tokenUrl = $"https://{domain}/oauth/token";
+            var audience = GetEnvironmentValue(new[] { "Auth0__ManagementAudience", "AUTH0_MANAGEMENT_AUDIENCE" }, defaultValue: $"https://{domain}/api/v2/");
+            var clientId = GetEnvironmentValue(new[] { "Auth0__ManagementClientId", "AUTH0_MANAGEMENT_CLIENT_ID", "Auth0__ClientId", "AUTH0_CLIENT_ID" }, required: true);
+            var clientSecret = GetEnvironmentValue(new[] { "Auth0__ManagementClientSecret", "AUTH0_MANAGEMENT_CLIENT_SECRET", "Auth0__ClientSecret", "AUTH0_CLIENT_SECRET" }, required: true);
+
             var _httpClient = new HttpClient();
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "https://dev-3xazewbu.auth0.com/oauth/token");
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, tokenUrl);
             var contentHeader = new MediaTypeHeaderValue("application/json") { CharSet = Encoding.UTF8.WebName };
             var content = new ManagementTokenRequestContent()
             {
-                client_id = "DOctic0k94km5UB0Mnvxduk6wuvZUZ9q",
-                client_secret = "5nH9ypMlFrZvXmr__Hgm85yoFI9yRUm4yC_ssu3_kgYaT2E443XIjeunktWS5pF5",
-                audience = "https://dev-3xazewbu.auth0.com/api/v2/",
+                client_id = clientId,
+                client_secret = clientSecret,
+                audience = audience,
                 grant_type = "client_credentials"
             };
 
             request.Content = JsonContent.Create(content, contentHeader);
             var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
             var token = await response.Content.ReadFromJsonAsync<ManagementTokenResponse>();
             var managementToken = new ManagementToken()
             {
-                Token = token.Token,
+                Token = token?.Token ?? string.Empty,
                 ExpirationTime = DateTime.UtcNow.AddHours(23),
             };
             return managementToken;

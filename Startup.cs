@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Grafana.OpenTelemetry;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -12,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Minio;
@@ -127,23 +131,71 @@ public class Startup
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-        var tok = new BearerToken();
-
         // Bind and validate Auth0 options; fail fast on missing values
         services.AddOptions<Auth0Options>()
             .Bind(_config.GetSection("Auth0"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        var auth0 = _config.GetSection("Auth0").Get<Auth0Options>();
+        services.AddOptions<FrontendOptions>().Bind(_config.GetSection("Frontend"));
+        services.AddOptions<SecurityOptions>().Bind(_config.GetSection("Security"));
 
-        var domain = $"https://{auth0.Domain}/";
+        var auth0 = _config.GetSection("Auth0").Get<Auth0Options>() ?? new Auth0Options();
+        var authority = $"https://{auth0.Domain}";
+
+        services.AddHttpClient();
+
         services.AddAuthentication(options =>
         {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(options =>
+            options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+        })
+        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
-            options.Authority = domain;
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        })
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+        {
+            options.Authority = authority;
+            options.ClientId = auth0.ClientId ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(auth0.ClientSecret))
+            {
+                options.ClientSecret = auth0.ClientSecret;
+            }
+            options.ResponseType = OpenIdConnectResponseType.Code;
+            options.CallbackPath = "/oauth2/callback";
+            if (!string.IsNullOrWhiteSpace(auth0.RedirectUri))
+            {
+                options.CallbackPath = new PathString(new Uri(auth0.RedirectUri).AbsolutePath);
+            }
+            options.SaveTokens = true;
+            options.GetClaimsFromUserInfoEndpoint = true;
+            options.UsePkce = true;
+
+            // Request API audience so an access token for the API is minted
+            options.Events = new OpenIdConnectEvents
+            {
+                OnRedirectToIdentityProvider = context =>
+                {
+                    var audience = auth0.ApiIdentifier;
+                    if (!string.IsNullOrEmpty(audience))
+                    {
+                        context.ProtocolMessage.SetParameter("audience", audience);
+                    }
+                    return System.Threading.Tasks.Task.CompletedTask;
+                }
+            };
+
+            options.Scope.Clear();
+            options.Scope.Add("openid");
+            options.Scope.Add("profile");
+            options.Scope.Add("email");
+            options.Scope.Add("offline_access");
+        })
+        .AddJwtBearer(options =>
+        {
+            options.Authority = authority;
             options.Audience = auth0.ApiIdentifier;
             options.SaveToken = false;
 
@@ -156,19 +208,6 @@ public class Startup
                 NameClaimType = "name",
                 RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles"
             };
-            //options.Events = new JwtBearerEvents
-            // {
-            //     OnMessageReceived = context =>
-            //     {
-            //         var accessToken = context.Request.Query["access_token"];
-
-            //         tok.Token = accessToken.ToString();
-
-
-            //         return Task.CompletedTask;
-
-            //     }
-            // };
         });
 
         services.ConfigureApplicationCookie(options =>
@@ -421,6 +460,20 @@ public class Startup
             }
         });
         app.UseAuthentication();
+        // Bridge: if authenticated via cookie and no Authorization header, inject the saved access_token as Bearer
+        app.Use(async (context, next) =>
+        {
+            if (context.User?.Identity?.IsAuthenticated == true && !context.Request.Headers.ContainsKey("Authorization"))
+            {
+                // Try to read access_token saved by OIDC middleware or our ExchangeCode sign-in
+                var token = await context.GetTokenAsync("access_token");
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    context.Request.Headers["Authorization"] = $"Bearer {token}";
+                }
+            }
+            await next();
+        });
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {
