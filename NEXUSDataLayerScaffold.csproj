@@ -9,14 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Auth0.AuthenticationApi" Version="7.37.0" />
-        <PackageReference Include="Auth0.Core" Version="7.37.0" />
-        <PackageReference Include="Auth0.ManagementApi" Version="7.37.0" />
         <PackageReference Include="Grafana.OpenTelemetry" Version="1.1.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="9.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">

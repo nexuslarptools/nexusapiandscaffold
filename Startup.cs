@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using Grafana.OpenTelemetry;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -11,7 +10,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Minio;
 using Newtonsoft.Json;
@@ -68,37 +66,8 @@ public class Startup
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-        var tok = new BearerToken();
-
-        var domain = $"https://{_config["Auth0:Domain"]}/";
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(options =>
-        {
-            options.Authority = domain;
-            options.Audience = _config["Auth0:ApiIdentifier"];
-            options.SaveToken = true;
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles"
-            };
-            //options.Events = new JwtBearerEvents
-            // {
-            //     OnMessageReceived = context =>
-            //     {
-            //         var accessToken = context.Request.Query["access_token"];
-
-            //         tok.Token = accessToken.ToString();
-
-
-            //         return Task.CompletedTask;
-
-            //     }
-            // };
-        });
+        // Authentication removed: no Auth0/OIDC/JWT Bearer configuration is registered.
+        // All endpoints are now accessible without authentication and may implement their own checks.
 
         services.ConfigureApplicationCookie(options =>
         {
@@ -117,37 +86,7 @@ public class Startup
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexus API V1", Version = "v1" });
             c.OperationFilter<OpenApiParameterIgnoreFilter>();
-            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
-                      Enter 'Bearer' [space] and then your token in the text input below.
-                      \r\n\r\nExample: 'Bearer 12345abcdef'",
-                Name = "Authorization",
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
-            });
-
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        },
-                        Scheme = "oauth2",
-                        Name = "Bearer",
-                        In = ParameterLocation.Header
-                    },
-                    new List<string>()
-                }
-            });
-            //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            //c.IncludeXmlComments(xmlPath);
+            // Authentication has been removed; no security schemes are defined.
         });
 
 
@@ -297,12 +236,11 @@ public class Startup
         app.UseRouting();
         //app.UseCertificateForwarding();
         //app.UseCookiePolicy();
-        app.UseAuthentication();
-        app.UseAuthorization();
+        // Authentication/Authorization removed
         // app.UseEndpoints(endpoints =>
         // {
         //     endpoints.MapControllers();
-
+        
         // });
         app.UseMvc(routes =>
         {

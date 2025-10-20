@@ -618,32 +618,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("UpdateAuth0")]
-    [Authorize]
-    public async Task<IActionResult> UpdateAuth0Users()
+    [AllowAnonymous]
+    public IActionResult UpdateAuth0Users()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var payload = new
         {
-
-            var UserList = await _context.Users.Where(u => u.Isactive == true)
-                .Include(u => u.UserLarproles)
-                .ThenInclude(ulr => ulr.Larp)
-                .Include(u => u.UserLarproles)
-                .ThenInclude(ulr => ulr.Role).ToListAsync();
-
-            foreach (var u in UserList)
-            {
-                MetadataRoles mdateroles = new MetadataRoles(u);
-                var aLogic = new AuthLogic();
-                var usr = aLogic.UpdateUserRoles(u.Authid, mdateroles);
-                bool stophere = true;
-            }
-
-            return Ok();
-        }
-        return Unauthorized();
+            path = HttpContext.Request.Path.ToString(),
+            query = HttpContext.Request.Query.ToDictionary(k => k.Key, v => v.Value.ToString()),
+            headers = HttpContext.Request.Headers.ToDictionary(k => k.Key, v => v.Value.ToString())
+        };
+        Console.WriteLine($"[AUTH STUB] UpdateAuth0 called: {Newtonsoft.Json.JsonConvert.SerializeObject(payload)}");
+        return Ok(new { message = "Auth stub: UpdateAuth0", payload });
     }
 }

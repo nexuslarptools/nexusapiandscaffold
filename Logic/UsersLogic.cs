@@ -25,20 +25,8 @@ public class UsersLogic
 
     public static MetadataRoles GetUserAuth0Info(string authIdValue)
     {
-        var curruser = GetUserInfoByAuth(authIdValue).Result;
-
-        var a0 = new AuthLogic();
-        var auth0user = a0.GetUserByAuthID(authIdValue).Result;
-
-        if (auth0user != null)
-        {
-            var metad = auth0user.AppMetadata.ToString();
-            if (metad != null)
-            {
-                return JsonConvert.DeserializeObject<MetadataRoles>(metad);
-            }
-        }
-        return null;
+        // Auth0 removed: return an empty MetadataRoles stub. Callers should not rely on external IdP.
+        return new MetadataRoles();
     }
 
     public static bool IsUserAuthed(string authIdValue, string accessToken, string authLevel,
@@ -155,45 +143,9 @@ public class UsersLogic
 
     public static async Task<AuthUser> GetUserInfo(string accessToken2, NexusLarpLocalContext _context)
     {
-        // Get the access token.
-
-        var returnuser = new AuthUser();
-
-        var client = new HttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken2);
-
-        var responseMessage = await client.GetAsync("https://dev-3xazewbu.auth0.com/userinfo");
-        if (responseMessage.IsSuccessStatusCode)
-        {
-            var responseData = responseMessage.Content.ReadAsStringAsync().Result;
-            var JsonHoldingCell = JsonDocument.Parse(responseData);
-
-            if (JsonHoldingCell.RootElement.GetProperty("email_verified").ToString().ToLower() != "true")
-                return returnuser;
-
-            returnuser.name = JsonHoldingCell.RootElement.GetProperty("name").ToString();
-            returnuser.authid = JsonHoldingCell.RootElement.GetProperty("sub").ToString();
-            returnuser.email = JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/email").ToString();
-
-
-            var permissionsholder = new List<string>();
-            for (var i = 0;
-                 i < JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/permissions").GetArrayLength();
-                 i++)
-                permissionsholder.Add(JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/permissions")[i]
-                    .ToString());
-            returnuser.permissions = permissionsholder;
-
-            permissionsholder = new List<string>();
-            for (var i = 0;
-                 i < JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/roles").GetArrayLength();
-                 i++)
-                permissionsholder.Add(JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/roles")[i]
-                    .ToString());
-            returnuser.roles = permissionsholder;
-        }
-
-        return returnuser;
+        // Auth0 removed: return a minimal stub user. In this stub, no external calls are made.
+        await Task.CompletedTask;
+        return new AuthUser();
     }
 
     public static List<Guid?> GetUserTagsList(string authIdValue, NexusLarpLocalContext _context, string level,
@@ -224,19 +176,15 @@ public class UsersLogic
 
     public static async void UpdateAuth0User(string email, MetadataRoles roles)
     {
-        var aLogic = new AuthLogic();
-        var usersemail = aLogic.GetAllUsersByEmail(email);
-
-        foreach (var u in usersemail.Result)
-        {
-            var usr = aLogic.UpdateUserRoles(u.UserId, roles);
-        }
+        // Auth0 removed: stub method does nothing.
+        await Task.CompletedTask;
     }
 
-    public static async Task<Auth0.ManagementApi.Models.User> GetUserInfoByAuth(string authIdValue)
+    public static async Task<object> GetUserInfoByAuth(string authIdValue)
     {
-        var aLogic = new AuthLogic();
-        return await aLogic.GetUserByAuthID(authIdValue);
+        // Auth0 removed: no user info available.
+        await Task.CompletedTask;
+        return null;
     }
 
 }
