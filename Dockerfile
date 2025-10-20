@@ -43,7 +43,7 @@ ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
 
 # Healthcheck for container
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -fsS http://localhost/health || exit 1
+  CMD curl -fsS http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll"]
 #ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
