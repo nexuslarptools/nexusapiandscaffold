@@ -1,4 +1,5 @@
-﻿using NEXUSDataLayerScaffold.Models;
+﻿using Auth0.ManagementApi.Models;
+using NEXUSDataLayerScaffold.Models;
 using System.Collections.Generic;
 using System.Text.Json;
 using System;
