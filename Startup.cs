@@ -56,7 +56,29 @@ public class Startup
             options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         });
         // CORS policies configured via configuration (Cors:AllowedOrigins)
-        services.AddCors();
+        var corsAllowedOrigins = _config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        var corsEnvName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+        services.AddCors(options =>
+        {
+            options.AddPolicy("ConfiguredCors", policy =>
+            {
+                policy.AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .WithExposedHeaders("traceparent", "tracestate", "Server-Timing");
+
+                if (corsAllowedOrigins.Length == 0 && string.Equals(corsEnvName, "Development", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Development fallback: allow any origin (no credentials) to simplify local testing
+                    policy.SetIsOriginAllowed(_ => true);
+                    // Important: do NOT call AllowCredentials() with a wildcard origin
+                }
+                else
+                {
+                    policy.WithOrigins(corsAllowedOrigins)
+                          .AllowCredentials();
+                }
+            });
+        });
         // Health checks for liveness and readiness
         services.AddHealthChecks();
         services.AddOpenTelemetry().ConfigureResource(rb =>
@@ -332,46 +354,8 @@ public class Startup
         else
             app.UseHsts();
 
-        // Configure CORS using configuration-driven allowlist
-        var allowedOrigins = _config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-        if (env.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
-            if (allowedOrigins.Length == 0)
-            {
-                // In Development, allow any origin if none configured to simplify local testing
-                app.UseCors(policy => policy
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowAnyOrigin()
-                    .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
-                );
-            }
-            else
-            {
-                app.UseCors(policy => policy
-                    .WithOrigins(allowedOrigins)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials()
-                    .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
-                );
-            }
-        }
-        else
-        {
-            // In non-Development, only enable CORS if an allowlist is provided via configuration
-            if (allowedOrigins.Length > 0)
-            {
-                app.UseCors(policy => policy
-                    .WithOrigins(allowedOrigins)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials()
-                    .WithExposedHeaders("traceparent", "tracestate", "Server-Timing")
-                );
-            }
-        }
+        // CORS is configured via the named policy defined in ConfigureServices
+        // Note: The correct middleware order is UseRouting -> UseCors -> UseAuthentication -> UseAuthorization -> UseEndpoints
 
         // Enable middleware to serve generated Swagger as a JSON endpoint.
         app.UseSwagger();
@@ -419,6 +403,7 @@ public class Startup
         app.UseHttpsRedirection();
         //app.UseStaticFiles();
         app.UseRouting();
+        app.UseCors("ConfiguredCors");
         // Emit structured request logs
         app.UseHttpLogging();
         //app.UseCertificateForwarding();
