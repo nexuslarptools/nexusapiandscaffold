@@ -127,10 +127,11 @@ public class Startup
             }
         );
 
-        // Honor reverse-proxy headers (e.g., Traefik) for original client IP and scheme
+        // Honor reverse-proxy headers (e.g., Traefik, nginx, ALB) for original client IP, scheme, and host
         services.Configure<ForwardedHeadersOptions>(options =>
         {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            // Include X-Forwarded-Host so link generation and callbacks use the external host
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
 
             // Allow specifying known proxy IPs via configuration/env: ReverseProxy:KnownProxies=["10.0.0.10","192.168.1.2"]
             var knownProxyStrings = _config.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
@@ -142,9 +143,30 @@ public class Startup
                 }
             }
 
+            // Allow specifying known networks via CIDR: ReverseProxy:KnownNetworks=["10.0.0.0/8","192.168.0.0/16"]
+            var knownNetworks = _config.GetSection("ReverseProxy:KnownNetworks").Get<string[]>() ?? Array.Empty<string>();
+            foreach (var net in knownNetworks)
+            {
+                var parts = net.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (parts.Length == 2 && IPAddress.TryParse(parts[0], out var baseIp) && int.TryParse(parts[1], out var prefix))
+                {
+                    try
+                    {
+                        options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(baseIp, prefix));
+                    }
+                    catch
+                    {
+                        // ignore invalid CIDR entries
+                    }
+                }
+            }
+
+            // Many reverse proxies send a full chain of X-Forwarded-* headers
+            options.ForwardLimit = null; // accept all forwards
+
             // In Development, if no proxies provided, allow all forwarded headers (do NOT use this in Production)
             var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-            if (knownProxyStrings.Length == 0 && string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase))
+            if (knownProxyStrings.Length == 0 && knownNetworks.Length == 0 && string.Equals(envName, "Development", StringComparison.OrdinalIgnoreCase))
             {
                 options.KnownNetworks.Clear();
                 options.KnownProxies.Clear();
