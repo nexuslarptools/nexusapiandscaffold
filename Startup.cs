@@ -190,9 +190,23 @@ public class Startup
 
         services.AddAuthentication(options =>
         {
-            options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            // Use a policy scheme to decide between Bearer and Cookies at runtime
+            options.DefaultAuthenticateScheme = "Smart";
             options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+            // Challenge with Bearer to avoid OIDC redirects in BFF/middleware scenario
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddPolicyScheme("Smart", "Smart selector between Bearer and Cookies", opt =>
+        {
+            opt.ForwardDefaultSelector = context =>
+            {
+                var hasAuthHeader = context.Request.Headers.ContainsKey("Authorization");
+                if (hasAuthHeader)
+                {
+                    return JwtBearerDefaults.AuthenticationScheme;
+                }
+                return CookieAuthenticationDefaults.AuthenticationScheme;
+            };
         })
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
@@ -201,6 +215,7 @@ public class Startup
         })
         .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
         {
+            // Keep OIDC registration available but not used as default; middleware in front performs the flow
             options.Authority = authority;
             options.ClientId = auth0.ClientId ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(auth0.ClientSecret))
@@ -217,7 +232,7 @@ public class Startup
             options.GetClaimsFromUserInfoEndpoint = true;
             options.UsePkce = true;
 
-            // Request API audience so an access token for the API is minted
+            // Always include audience if this handler is used (not default in BFF scenario)
             options.Events = new OpenIdConnectEvents
             {
                 OnRedirectToIdentityProvider = context =>
