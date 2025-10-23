@@ -61,6 +61,14 @@ namespace NEXUSDataLayerScaffold.Controllers
             string? state = body?.state;
             string? redirectUri = body?.redirect_uri;
             string? codeVerifier = body?.code_verifier;
+            // Optional frontend return URL to redirect after establishing session
+            string? returnUrl = Request.Query["returnUrl"].FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(returnUrl))
+            {
+                // accept both camelCase and snake_case keys if sent in JSON body
+                returnUrl = (Request.HasFormContentType ? null : HttpContext.Request.Headers["X-Return-Url"].FirstOrDefault())
+                           ?? (body as dynamic)?.returnUrl;
+            }
 
             if (string.IsNullOrWhiteSpace(code) && Request.HasFormContentType)
             {
@@ -69,6 +77,7 @@ namespace NEXUSDataLayerScaffold.Controllers
                 state = form["state"].FirstOrDefault();
                 redirectUri = redirectUri ?? form["redirect_uri"].FirstOrDefault();
                 codeVerifier = codeVerifier ?? form["code_verifier"].FirstOrDefault();
+                returnUrl = returnUrl ?? form["returnUrl"].FirstOrDefault();
             }
 
             if (string.IsNullOrWhiteSpace(code))
@@ -156,6 +165,13 @@ namespace NEXUSDataLayerScaffold.Controllers
                 props.StoreTokens(storedTokens);
 
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props);
+
+                // If a returnUrl is supplied and allowed, redirect to it after saving the session cookie
+                if (!string.IsNullOrWhiteSpace(returnUrl) && IsAllowedReturnUrl(returnUrl))
+                {
+                    // Use 303 See Other to force GET on the frontend URL
+                    return new RedirectResult(returnUrl, permanent: false, preserveMethod: false);
+                }
 
                 // Return session info
                 return await Session();
