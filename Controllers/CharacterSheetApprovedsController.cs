@@ -43,7 +43,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         var accessToken = origin.Remove(0, 7);
         var authId = HttpContext.User.Claims.ToList()[1].Value;
 
-        var userData = UsersLogic.GetUserAuth0Info(authId);
+        var userData = UsersLogic.GetUserAuth0Info(authId, _context);
         if (userData.isAuthed("Reader"))
         //if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Security.Claims;
 using Grafana.OpenTelemetry;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,6 +29,7 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
+using NEXUSDataLayerScaffold.Extensions;
 
 namespace NEXUSDataLayerScaffold;
 
@@ -184,7 +186,20 @@ public class Startup
         services.AddOptions<SecurityOptions>().Bind(_config.GetSection("Security"));
 
         var auth0 = _config.GetSection("Auth0").Get<Auth0Options>() ?? new Auth0Options();
-        var authority = $"https://{auth0.Domain}";
+        // Bind generic OAuth options (preferred when present)
+        var oauth = _config.GetSection("OAuth").Get<OAuthOptions>();
+        string authority;
+        string? audience;
+        if (oauth != null && !string.IsNullOrWhiteSpace(oauth.Authority))
+        {
+            authority = oauth.Authority.TrimEnd('/');
+            audience = oauth.Audience;
+        }
+        else
+        {
+            authority = $"https://{auth0.Domain}";
+            audience = auth0.ApiIdentifier;
+        }
 
         services.AddHttpClient();
 
@@ -255,17 +270,17 @@ public class Startup
         .AddJwtBearer(options =>
         {
             options.Authority = authority;
-            options.Audience = auth0.ApiIdentifier;
+            options.Audience = audience;
             options.SaveToken = false;
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
-                ValidateAudience = true,
+                ValidateAudience = !string.IsNullOrWhiteSpace(audience),
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                NameClaimType = "name",
-                RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/roles"
+                NameClaimType = oauth?.NameClaimType ?? "name",
+                RoleClaimType = oauth?.RoleClaimType ?? ClaimTypes.Role
             };
         });
 
@@ -481,6 +496,8 @@ public class Startup
                 await next();
             }
         });
+        // If Traefik ForwardAuth has authenticated the user, map headers to claims
+        app.UseMiddleware<ForwardAuthClaimsMiddleware>();
         app.UseAuthentication();
         // Bridge: if authenticated via cookie and no Authorization header, inject the saved access_token as Bearer
         app.Use(async (context, next) =>

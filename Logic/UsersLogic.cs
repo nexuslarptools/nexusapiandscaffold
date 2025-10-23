@@ -29,40 +29,33 @@ public class UsersLogic
         _context = context;
     }
 
-    public static MetadataRoles GetUserAuth0Info(string authIdValue)
+    public static MetadataRoles GetUserAuth0Info(string authIdValue, NexusLarpLocalContext context)
     {
-        Logger.LogInformation("GetUserAuth0Info started for authId {AuthId}", authIdValue);
+        Logger.LogInformation("GetUserAuth0Info (DB-backed) started for authId {AuthId}", authIdValue);
         try
         {
-            var curruser = GetUserInfoByAuth(authIdValue).Result;
+            var localUser = context.Users
+                .Include(u => u.UserLarproles)
+                .ThenInclude(ulr => ulr.Role)
+                .Where(u => u.Authid == authIdValue && u.Isactive == true)
+                .FirstOrDefault();
 
-            var a0 = new AuthLogic();
-            var auth0user = a0.GetUserByAuthID(authIdValue).Result;
-
-            if (auth0user != null)
+            if (localUser != null)
             {
-                var metad = auth0user.AppMetadata?.ToString();
-                if (!string.IsNullOrWhiteSpace(metad))
-                {
-                    var roles = JsonConvert.DeserializeObject<MetadataRoles>(metad);
-                    Logger.LogInformation("GetUserAuth0Info parsed roles for {AuthId}", authIdValue);
-                    return roles;
-                }
-                else
-                {
-                    Logger.LogWarning("GetUserAuth0Info: No AppMetadata found for {AuthId}", authIdValue);
-                }
+                var roles = new MetadataRoles(localUser);
+                Logger.LogInformation("GetUserAuth0Info (DB-backed) built roles for {AuthId}", authIdValue);
+                return roles;
             }
             else
             {
-                Logger.LogWarning("GetUserAuth0Info: No user found in Auth0 for {AuthId}", authIdValue);
+                Logger.LogWarning("GetUserAuth0Info (DB-backed): No local user found for {AuthId}", authIdValue);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "GetUserAuth0Info failed for {AuthId}", authIdValue);
+            Logger.LogError(ex, "GetUserAuth0Info (DB-backed) failed for {AuthId}", authIdValue);
         }
-        return null;
+        return new MetadataRoles();
     }
 
     public static bool IsUserAuthed(string authIdValue, string accessToken, string authLevel,
@@ -191,58 +184,68 @@ public class UsersLogic
 
     public static async Task<AuthUser> GetUserInfo(string accessToken2, NexusLarpLocalContext _context)
     {
-        Logger.LogInformation("GetUserInfo called");
+        Logger.LogInformation("GetUserInfo (JWT parse) called");
         var returnuser = new AuthUser();
 
         try
         {
-            var client = new HttpClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken2);
-
-            var responseMessage = await client.GetAsync("https://dev-3xazewbu.auth0.com/userinfo");
-            if (responseMessage.IsSuccessStatusCode)
+            // Try to parse JWT locally (no external calls). This does not validate signature.
+            if (string.IsNullOrWhiteSpace(accessToken2)) return returnuser;
+            var parts = accessToken2.Split('.');
+            if (parts.Length < 2) return returnuser;
+            static string Base64UrlDecode(string s)
             {
-                var responseData = await responseMessage.Content.ReadAsStringAsync();
-                var JsonHoldingCell = JsonDocument.Parse(responseData);
-
-                if (JsonHoldingCell.RootElement.GetProperty("email_verified").ToString().ToLower() != "true")
+                s = s.Replace('-', '+').Replace('_', '/');
+                switch (s.Length % 4)
                 {
-                    Logger.LogWarning("GetUserInfo: email not verified");
-                    return returnuser;
+                    case 2: s += "=="; break;
+                    case 3: s += "="; break;
                 }
-
-                returnuser.name = JsonHoldingCell.RootElement.GetProperty("name").ToString();
-                returnuser.authid = JsonHoldingCell.RootElement.GetProperty("sub").ToString();
-                returnuser.email = JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/email").ToString();
-
-                var permissionsholder = new List<string>();
-                for (var i = 0;
-                     i < JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/permissions").GetArrayLength();
-                     i++)
-                    permissionsholder.Add(JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/permissions")[i]
-                        .ToString());
-                returnuser.permissions = permissionsholder;
-
-                permissionsholder = new List<string>();
-                for (var i = 0;
-                     i < JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/roles").GetArrayLength();
-                     i++)
-                    permissionsholder.Add(JsonHoldingCell.RootElement.GetProperty("https://NexusLarps.com/roles")[i]
-                        .ToString());
-                returnuser.roles = permissionsholder;
-
-                Logger.LogInformation("GetUserInfo success for subject {Sub}", returnuser.authid);
+                var bytes = Convert.FromBase64String(s);
+                return System.Text.Encoding.UTF8.GetString(bytes);
             }
-            else
+            var payload = Base64UrlDecode(parts[1]);
+            using var doc = JsonDocument.Parse(payload);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("sub", out var sub)) returnuser.authid = sub.GetString();
+            if (root.TryGetProperty("name", out var name)) returnuser.name = name.GetString();
+            // Prefer standard email; fallback to custom namespace if present
+            if (root.TryGetProperty("email", out var email)) returnuser.email = email.GetString();
+            else if (root.TryGetProperty("https://NexusLarps.com/email", out var nemail)) returnuser.email = nemail.GetString();
+
+            // Optional roles/permissions arrays: support standard 'roles' and custom namespaces
+            var roles = new List<string>();
+            if (root.TryGetProperty("roles", out var rolesEl) && rolesEl.ValueKind == JsonValueKind.Array)
             {
-                Logger.LogWarning("GetUserInfo HTTP {StatusCode}", (int)responseMessage.StatusCode);
+                foreach (var r in rolesEl.EnumerateArray()) roles.Add(r.GetString() ?? string.Empty);
             }
+            else if (root.TryGetProperty("https://NexusLarps.com/roles", out var nrEl) && nrEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var r in nrEl.EnumerateArray()) roles.Add(r.GetString() ?? string.Empty);
+            }
+            returnuser.roles = roles;
+
+            var perms = new List<string>();
+            if (root.TryGetProperty("permissions", out var pEl) && pEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var p in pEl.EnumerateArray()) perms.Add(p.GetString() ?? string.Empty);
+            }
+            else if (root.TryGetProperty("https://NexusLarps.com/permissions", out var npEl) && npEl.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var p in npEl.EnumerateArray()) perms.Add(p.GetString() ?? string.Empty);
+            }
+            returnuser.permissions = perms;
+
+            Logger.LogInformation("GetUserInfo (JWT parse) success for subject {Sub}", returnuser.authid);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "GetUserInfo failed");
+            Logger.LogError(ex, "GetUserInfo (JWT parse) failed");
         }
 
+        // simulate async signature
+        await Task.CompletedTask;
         return returnuser;
     }
 
