@@ -19,9 +19,11 @@ using NEXUSDataLayerScaffold.Models;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
-    [ApiController]
-    // OIDC endpoints removed: controller kept without routing to avoid exposing any OIDC flows.
-    // External middleware (e.g., ForwardAuth/OIDC proxy) is now responsible for authentication.
+    // Exclude this class from MVC controller discovery to avoid exposing OIDC flows.
+    // External middleware (e.g., ForwardAuth/OIDC proxy) is responsible for authentication.
+    // Using [NonController] prevents ASP.NET Core from treating public methods as actions,
+    // which avoids the runtime error about attribute routing on [ApiController] controllers.
+    [NonController]
     [ApiExplorerSettings(IgnoreApi = true)]
     public class AuthController : ControllerBase
     {
