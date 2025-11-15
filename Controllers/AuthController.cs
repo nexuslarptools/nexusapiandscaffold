@@ -20,7 +20,9 @@ using NEXUSDataLayerScaffold.Models;
 namespace NEXUSDataLayerScaffold.Controllers
 {
     [ApiController]
-    [Route("api/v1/[controller]")]
+    // OIDC endpoints removed: controller kept without routing to avoid exposing any OIDC flows.
+    // External middleware (e.g., ForwardAuth/OIDC proxy) is now responsible for authentication.
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class AuthController : ControllerBase
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -49,11 +51,8 @@ namespace NEXUSDataLayerScaffold.Controllers
         /// Exchanges an authorization code for tokens and establishes a cookie session.
         /// Accepts JSON or x-www-form-urlencoded with at least 'code' and optionally 'state', 'redirect_uri', 'code_verifier'.
         /// </summary>
-        [AllowAnonymous]
-        [HttpPost("ExchangeCode")]
-        [Consumes("application/x-www-form-urlencoded", "application/json")]
-        [Produces("application/json")]
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        // Removed OIDC ExchangeCode endpoint (no longer exposed)
+        // Keeping method body to prevent widespread code deletions; method is no longer an action.
         public async Task<IActionResult> ExchangeCode([FromBody] ExchangeCodeRequest? body)
         {
             // Support both JSON body and form posts
@@ -238,10 +237,7 @@ namespace NEXUSDataLayerScaffold.Controllers
         /// <summary>
         /// Returns basic session information. Useful for checking if the user is logged in.
         /// </summary>
-        [HttpGet("Session")]
-        [AllowAnonymous]
-        [Produces("application/json")]
-        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+        // Removed OIDC Session endpoint (no longer exposed)
         public async Task<IActionResult> Session()
         {
             // Prefer the default (cookie) principal

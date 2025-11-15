@@ -228,45 +228,6 @@ public class Startup
             options.Cookie.SameSite = SameSiteMode.None;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         })
-        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
-        {
-            // Keep OIDC registration available but not used as default; middleware in front performs the flow
-            options.Authority = authority;
-            options.ClientId = auth0.ClientId ?? string.Empty;
-            if (!string.IsNullOrWhiteSpace(auth0.ClientSecret))
-            {
-                options.ClientSecret = auth0.ClientSecret;
-            }
-            options.ResponseType = OpenIdConnectResponseType.Code;
-            options.CallbackPath = "/oauth2/callback";
-            if (!string.IsNullOrWhiteSpace(auth0.RedirectUri))
-            {
-                options.CallbackPath = new PathString(new Uri(auth0.RedirectUri).AbsolutePath);
-            }
-            options.SaveTokens = true;
-            options.GetClaimsFromUserInfoEndpoint = true;
-            options.UsePkce = true;
-
-            // Always include audience if this handler is used (not default in BFF scenario)
-            options.Events = new OpenIdConnectEvents
-            {
-                OnRedirectToIdentityProvider = context =>
-                {
-                    var audience = auth0.ApiIdentifier;
-                    if (!string.IsNullOrEmpty(audience))
-                    {
-                        context.ProtocolMessage.SetParameter("audience", audience);
-                    }
-                    return System.Threading.Tasks.Task.CompletedTask;
-                }
-            };
-
-            options.Scope.Clear();
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
-            options.Scope.Add("email");
-            options.Scope.Add("offline_access");
-        })
         .AddJwtBearer(options =>
         {
             options.Authority = authority;
