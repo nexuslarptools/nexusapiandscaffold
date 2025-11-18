@@ -225,6 +225,8 @@ public class Startup
         })
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
+            // Ensure the authentication cookie uses the required OIDC prefix
+            options.Cookie.Name = "_oidc_raczylo";
             options.Cookie.SameSite = SameSiteMode.None;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         })
@@ -247,6 +249,8 @@ public class Startup
 
         services.ConfigureApplicationCookie(options =>
         {
+            // Mirror the cookie name to keep a single, predictable auth cookie
+            options.Cookie.Name = "_oidc_raczylo";
             options.Cookie.SameSite = SameSiteMode.None;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         });
