@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using NEXUSDataLayerScaffold.Entities;
 using NEXUSDataLayerScaffold.Logic;
 using NEXUSDataLayerScaffold.Models;
+using Microsoft.Extensions.Logging;
 
 namespace NEXUSDataLayerScaffold.Controllers;
 
@@ -19,10 +20,12 @@ namespace NEXUSDataLayerScaffold.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly NexusLarpLocalContext _context;
+    private readonly ILogger<UsersController> _logger;
 
-    public UsersController(NexusLarpLocalContext context)
+    public UsersController(NexusLarpLocalContext context, ILogger<UsersController> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
 
@@ -266,8 +269,16 @@ public class UsersController : ControllerBase
     public ActionResult<string> GetCurrentUserAuth()
     {
         var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        _logger.LogInformation("GetCurrentUserAuth invoked. Subject: {Sub}; IsAuthenticated={IsAuth}",
+            authId,
+            HttpContext.User?.Identity?.IsAuthenticated == true);
 
-        if (!UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context)) return Ok("{\"AuthLevel\":\"NONE\"}");
+        var isReader = UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context);
+        if (!isReader)
+        {
+            _logger.LogInformation("User {Sub} is not authorized with minimum Reader role. Returning AuthLevel NONE.", authId);
+            return Ok("{\"AuthLevel\":\"NONE\"}");
+        }
 
 
         var Rolelist = _context.UserLarproles.Where(u => u.User.Authid == authId && u.Isactive == true)
@@ -278,11 +289,16 @@ public class UsersController : ControllerBase
             if (role.Role.Ord > authlevel)
                 authlevel = (int)role.Role.Ord;
 
-        if (authlevel == 0) return Ok("{\"AuthLevel\":\"None\"}");
+        if (authlevel == 0)
+        {
+            _logger.LogInformation("User {Sub} has no active roles. Returning AuthLevel None.", authId);
+            return Ok("{\"AuthLevel\":\"None\"}");
+        }
 
         var maxrole = _context.Roles.Where(r => r.Ord == authlevel).Select(r => r.Rolename.Replace(" ", ""))
             .FirstOrDefault();
 
+        _logger.LogInformation("Computed highest role for user {Sub}: {Role} (Ord={Ord})", authId, maxrole, authlevel);
         return Ok("{\"AuthLevel\":\"" + maxrole + "\"}");
     }
 
