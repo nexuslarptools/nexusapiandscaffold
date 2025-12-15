@@ -38,3 +38,10 @@ Notes
 - Cookie name: The cookie authentication handler is configured to use the name "_oidc_raczylo" (and the application cookie is mirrored as "_oidc_raczylo_id_0") to align with OIDC cookie naming conventions.
 - Token storage: Access/ID/refresh tokens (when present) are stored inside the encrypted authentication ticket, not as individual cookies. The Auth/Session endpoint (if implemented upstream) should reveal only token presence/expiry, never token values.
 - Reverse proxy: With an upstream OIDC middleware (e.g., Traefik), the API typically receives either a Bearer token or an already-established cookie session. The API itself does not perform the front-channel OIDC redirects in this mode.
+
+Identity and database lookups
+- In this deployment, the application treats the authenticated user's email address as the identity key.
+  - Claim extraction order of precedence: `ClaimTypes.Email` → `"email"` → `"sub"` (Auth0 is configured so `sub` equals the email).
+  - All database queries resolve the current user strictly by `Users.Email`. The legacy `Users.Authid` field is no longer used at runtime.
+- Authorization still uses role claims (normalized by `RoleNormalizationTransform`), while any DB-backed checks (e.g., role thresholds per LARP) look up the user by email.
+- For forward-auth setups, ensure the proxy provides an email via headers (e.g., `X-Forwarded-Email`), or that the token includes an email claim; otherwise, DB-backed authorization will fail with 401/403.

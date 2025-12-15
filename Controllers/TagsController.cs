@@ -693,11 +693,9 @@ public class TagsController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
     [Authorize(Policy = "WizardOrHeadGM")]
-    public async Task<ActionResult<Tags>> PostTags(TagsInput tags)
+    public async Task<ActionResult<Tag>> PostTags(TagsInput tags)
     {
-        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
-                   ?? HttpContext.User.FindFirstValue("email")
-                   ?? HttpContext.User.FindFirstValue("sub");
+        var email = NEXUSDataLayerScaffold.Logic.IdentityHelpers.GetEmail(HttpContext.User);
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
             UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
         {

@@ -6,21 +6,28 @@
     <Nullable>enable</Nullable>
     <EnableDefaultItems>false</EnableDefaultItems>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-  <!-- Keep tests project present but inert to avoid NuGet requirements in CI-lite builds -->
+  <!-- Enable test sources -->
   <ItemGroup>
-    <Compile Remove="**\*.cs" />
-    <None Include="**\*.cs" />
-    <Compile Remove="Infrastructure\CustomWebApplicationFactory.cs" />
-    <Compile Remove="Infrastructure\TestAuthHandler.cs" />
-    <Compile Remove="AuthIntegrationTests.cs" />
-    <None Remove="Dummy.cs" />
-    <Compile Include="Dummy.cs" />
+    <!-- Include all C# files in this test project directory -->
+    <Compile Include="**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NEXUSDataLayerScaffold.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
   </ItemGroup>
 
 </Project>

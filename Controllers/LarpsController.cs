@@ -38,9 +38,7 @@ public class LarpsController : ControllerBase
     [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetCurrUserLarps()
     {
-        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
-                   ?? HttpContext.User.FindFirstValue("email")
-                   ?? HttpContext.User.FindFirstValue("sub");
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         var larpList = await _context.Larps.Where(l => l.Isactive == true
                                                        && l.UserLarproles.Any(ulr => ulr.Isactive == true &&
@@ -59,9 +57,7 @@ public class LarpsController : ControllerBase
     [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetLarpsWithGMAccess()
     {
-        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
-                   ?? HttpContext.User.FindFirstValue("email")
-                   ?? HttpContext.User.FindFirstValue("sub");
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             return await _context.Larps.Where(l =>
@@ -141,7 +137,7 @@ public class LarpsController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
     [Authorize(Policy = "Wizard")]
-    public async Task<ActionResult<Larps>> PutLarps(Guid guid, Larps larps)
+    public async Task<ActionResult<Larp>> PutLarps(Guid guid, Larp larps)
     {
         var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context)) return Unauthorized();

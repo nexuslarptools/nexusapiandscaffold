@@ -57,7 +57,7 @@ public class RolesController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{id}")]
     [Authorize(Policy = "Wizard")]
-    public async Task<IActionResult> PutRoles(int id, [FromBody] Roles role)
+    public async Task<IActionResult> PutRoles(int id, [FromBody] Role role)
     {
         var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))

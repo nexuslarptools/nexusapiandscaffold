@@ -198,13 +198,14 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<UserOut> GetAUser(Guid id)
     {
-        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
-                   ?? HttpContext.User.FindFirstValue("email")
-                   ?? HttpContext.User.FindFirstValue("sub");
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        var currUseGuid = _context.Users.Where(u => u.Email == email && u.Isactive == true).FirstOrDefault().Guid;
+        var currUseGuid = _context.Users
+            .Where(u => u.Email == email && u.Isactive == true)
+            .Select(u => u.Guid)
+            .FirstOrDefault();
 
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
             UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context) ||
@@ -270,9 +271,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<string> GetCurrentUserAuth()
     {
-        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
-                   ?? HttpContext.User.FindFirstValue("email")
-                   ?? HttpContext.User.FindFirstValue("sub");
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
         _logger.LogInformation("GetCurrentUserAuth invoked. Email: {Email}; IsAuthenticated={IsAuth}",
             email,
             HttpContext.User?.Identity?.IsAuthenticated == true);
@@ -315,11 +314,12 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<Guid> GetCurrentUserGuid()
     {
-        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
-                   ?? HttpContext.User.FindFirstValue("email")
-                   ?? HttpContext.User.FindFirstValue("sub");
-
-        return _context.Users.Where(u => u.Email == email && u.Isactive == true).FirstOrDefault().Guid;
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
+        var guid = _context.Users
+            .Where(u => u.Email == email && u.Isactive == true)
+            .Select(u => u.Guid)
+            .FirstOrDefault();
+        return guid;
     }
 
 
@@ -328,11 +328,9 @@ public class UsersController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
     [Authorize]
-    public async Task<IActionResult> PutUser(Guid guid, Users user)
+    public async Task<IActionResult> PutUser(Guid guid, User user)
     {
-        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
-                   ?? HttpContext.User.FindFirstValue("email")
-                   ?? HttpContext.User.FindFirstValue("sub");
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -613,10 +611,9 @@ public class UsersController : ControllerBase
 
             foreach (var u in UserList)
             {
-                MetadataRoles mdateroles = new MetadataRoles(u);
-                var aLogic = new AuthLogic();
-                var usr = aLogic.UpdateUserRoles(u.Authid, mdateroles);
-                bool stophere = true;
+                var mdateroles = new MetadataRoles(u);
+                // Drive Auth0 update by email to avoid reliance on local Authid
+                UsersLogic.UpdateAuth0User(u.Email, mdateroles);
             }
 
             return Ok();

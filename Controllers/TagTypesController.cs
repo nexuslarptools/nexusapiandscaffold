@@ -47,7 +47,7 @@ public class TagTypesController : ControllerBase
     // GET: api/v1/TagTypes/{guid}
     [HttpGet("AllTagsByType/{guid}")]
     [Authorize(Policy = "Reader")]
-    public async Task<ActionResult<TagTypes>> GetTagsByType(Guid guid)
+    public async Task<ActionResult<object>> GetTagsByType(Guid guid)
     {
         var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
@@ -82,7 +82,7 @@ public class TagTypesController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
     [Authorize(Policy = "Wizard")]
-    public async Task<IActionResult> PutTagTypes(Guid guid, [FromBody] TagTypes tagTypes)
+    public async Task<IActionResult> PutTagTypes(Guid guid, [FromBody] TagType tagTypes)
     {
         var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))

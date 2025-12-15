@@ -56,4 +56,16 @@
     <None Include="NEXUSDataLayerScaffold.Tests\**\*.cs" />
   </ItemGroup>
 
+  <!-- Exclude legacy duplicate model types that conflict with canonical EF models -->
+  <ItemGroup>
+    <Compile Remove="Models\Users.cs" />
+    <Compile Remove="Models\Pronouns.cs" />
+    <Compile Remove="Models\Larps.cs" />
+    <Compile Remove="Models\Roles.cs" />
+    <Compile Remove="Models\Tags.cs" />
+    <Compile Remove="Models\Larptags.cs" />
+    <Compile Remove="Models\TagTypes.cs" />
+    <Compile Remove="Models\UserLarproles.cs" />
+  </ItemGroup>
+
 </Project>

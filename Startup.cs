@@ -82,7 +82,8 @@ public class Startup
             });
         });
         // Health checks for liveness and readiness
-        services.AddHealthChecks();
+        services.AddHealthChecks()
+            .AddCheck<NEXUSDataLayerScaffold.HealthChecks.PendingMigrationsHealthCheck>("ef_pending_migrations");
         services.AddOpenTelemetry().ConfigureResource(rb =>
             {
                 var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
@@ -449,6 +450,25 @@ public class Startup
     {
         // Process X-Forwarded-* headers from Traefik BEFORE anything else (important for HTTPS redirection and auth)
         app.UseForwardedHeaders();
+
+        // On startup, warn if there are pending EF Core migrations (model vs DB drift)
+        try
+        {
+            using var scope = app.ApplicationServices.CreateScope();
+            var db = scope.ServiceProvider.GetService<NEXUSDataLayerScaffold.Models.NexusLarpLocalContext>();
+            if (db != null)
+            {
+                var pending = db.Database.GetPendingMigrations();
+                if (pending != null && System.Linq.Enumerable.Any(pending))
+                {
+                    logger.LogWarning("Pending EF migrations detected: {Migrations}", string.Join(", ", pending));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to check pending EF migrations on startup");
+        }
 
         if (env.IsDevelopment())
             app.UseDeveloperExceptionPage();

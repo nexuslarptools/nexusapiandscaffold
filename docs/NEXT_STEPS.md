@@ -2,7 +2,7 @@
 
 This document outlines prioritized, actionable next steps for the Nexus API codebase. It is designed for incremental adoption with minimal disruption. Update owners and due dates as you assign work.
 
-Last updated: 2025-11-15 09:13 local
+Last updated: 2025-12-15 15:35 local
 
 Legend:
 - P0 = Highest priority (security/stability)
@@ -30,6 +30,15 @@ Legend:
     - Confirm authority/audience come from either OAuth or Auth0 sections consistently.
     - Add scope/role checks on sensitive endpoints where applicable.
   - Acceptance criteria: Requests without required scopes are rejected with 403; OpenAPI notes required scopes where applicable.
+  - Target date: YYYY-MM-DD
+
+- [ ] Identity claim and DB lookup hygiene (email as identity)
+  - Owner: TBD
+  - Steps:
+    - Ensure reverse proxy or tokens always provide an email claim (or `sub` equals email).
+    - Confirm all runtime DB lookups use `Users.Email` (never `Users.Authid`).
+    - Add a readiness check/log at startup to warn when email claim is missing on authenticated requests.
+  - Acceptance criteria: No code paths perform DB lookups by `Authid`; authenticated requests without an email fail fast and log a clear warning.
   - Target date: YYYY-MM-DD
 
 ---
@@ -114,6 +123,7 @@ Legend:
       - 1–2 unit tests for new services.
       - 1–2 integration tests for critical endpoints.
     - Update Bitbucket pipeline to run `dotnet restore`, `dotnet build`, `dotnet test` before Docker build.
+    - Ensure the runner discovers xUnit tests for .NET 9 (use recent `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio`).
   - Acceptance criteria: CI fails on test failures; code coverage reported (optional at first pass).
   - Target date: YYYY-MM-DD
 
@@ -138,3 +148,4 @@ Legend:
 ## Change Log
 
 - 2025-11-15: Initial version created.
+- 2025-12-15: Runtime identity standardized to email; DB lookups now use `Users.Email` exclusively. Updated AUTH docs and added integration tests scaffolding.

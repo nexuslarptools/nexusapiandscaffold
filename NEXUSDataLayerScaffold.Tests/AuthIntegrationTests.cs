@@ -18,12 +18,13 @@ public class AuthIntegrationTests : IClassFixture<CustomWebApplicationFactory>
         _factory = factory;
     }
 
-    private HttpClient CreateClient(string? sub = null, string? roles = null, string? rolesNs = null)
+    private HttpClient CreateClient(string? sub = null, string? roles = null, string? rolesNs = null, string? email = null)
     {
         var client = _factory.CreateClient();
         if (!string.IsNullOrWhiteSpace(sub)) client.DefaultRequestHeaders.Add("X-Test-Sub", sub);
         if (!string.IsNullOrWhiteSpace(roles)) client.DefaultRequestHeaders.Add("X-Test-Roles", roles);
         if (!string.IsNullOrWhiteSpace(rolesNs)) client.DefaultRequestHeaders.Add("X-Test-Roles-Namespace", rolesNs);
+        if (!string.IsNullOrWhiteSpace(email)) client.DefaultRequestHeaders.Add("X-Test-Email", email);
         return client;
     }
 
@@ -48,7 +49,7 @@ public class AuthIntegrationTests : IClassFixture<CustomWebApplicationFactory>
     public async Task WizardEndpoint_WithWizardRole_AndDbRole_Returns200()
     {
         // Use the seeded wizard user with DB role assignment
-        var client = CreateClient(sub: "auth0|wizard", roles: "Wizard");
+        var client = CreateClient(sub: "auth0|wizard", roles: "Wizard", email: "wizard@example.com");
         var payload = new { guid = Guid.NewGuid(), pronouns = "ze/zir" };
         var resp = await client.PostAsJsonAsync("/api/v1/Pronouns", payload);
         resp.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -57,7 +58,7 @@ public class AuthIntegrationTests : IClassFixture<CustomWebApplicationFactory>
     [Fact]
     public async Task WizardOrHeadGMPolicy_Allows_HeadGM()
     {
-        var client = CreateClient(sub: "auth0|headgm", roles: "HeadGM");
+        var client = CreateClient(sub: "auth0|headgm", roles: "HeadGM", email: "headgm@example.com");
         var resp = await client.GetAsync("/api/v1/Users");
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
     }

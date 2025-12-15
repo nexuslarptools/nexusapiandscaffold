@@ -28,6 +28,7 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
     {
         // If no test subject is provided, treat as unauthenticated
         var sub = Request.Headers["X-Test-Sub"].ToString();
+        var email = Request.Headers["X-Test-Email"].ToString();
         if (string.IsNullOrWhiteSpace(sub))
         {
             return Task.FromResult(AuthenticateResult.NoResult());
@@ -36,6 +37,13 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
         var identity = new ClaimsIdentity(DefaultScheme);
         identity.AddClaim(new Claim("sub", sub));
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, sub));
+
+        // If an explicit email is provided, add standard and raw email claims
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            identity.AddClaim(new Claim(ClaimTypes.Email, email));
+            identity.AddClaim(new Claim("email", email));
+        }
 
         // Support both claim shapes
         var plainRoles = Request.Headers["X-Test-Roles"].ToString();

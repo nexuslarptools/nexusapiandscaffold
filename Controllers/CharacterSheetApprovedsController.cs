@@ -41,7 +41,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharSheetListItem>>> GetCharacterSheetApproved()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
 
         var userData = UsersLogic.GetUserAuth0Info(authId, _context);
         if (userData.isAuthed("Reader"))
@@ -50,7 +50,7 @@ public class CharacterSheetApprovedsController : ControllerBase
             //var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
             //    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
             //var allowedLARPS = _context.UserLarproles
-            //    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+            //    .Where(ulr => ulr.User.Email == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
             //    .ToList();
 
             var disAllowedTags = _context.Larptags.Where(lt =>
@@ -116,7 +116,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetWithDisabled()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -156,7 +156,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -355,7 +355,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharListWithItemList>> GetMultiCharacterSheetItemGrouped(string guids)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var output = new CharListWithItemList();
@@ -419,7 +419,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheet>> GetCharacterSheetBySeries(Guid guid)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -429,7 +429,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -479,7 +479,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetByAbilites(
         [FromBody] JsonElement input)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -487,7 +487,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -523,7 +523,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetByTag(Guid guid)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -531,7 +531,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -574,7 +574,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Series>> GetApprovedCharacterSearchPartial(string input)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Removed direct access token read; rely on ClaimsPrincipal
 
        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -630,7 +630,7 @@ public class CharacterSheetApprovedsController : ControllerBase
             var wizardauth = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
 
                 var allowedLARPS = _context.UserLarproles
-                    .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
+                    .Where(ulr => ulr.User.Email == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
                     .ToList();
 
                 var disAllowedTags = _context.Larptags.Where(lt =>
@@ -712,7 +712,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetBySpecialSkillsTag(Guid guid)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -720,7 +720,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -777,7 +777,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheet>> GetApprovedCharacterSheetWithSheetItem(Guid guid)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -785,7 +785,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>
@@ -881,7 +881,7 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheet>> GetApprovedCharacterSheetWithAllItems(Guid guid)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        var authId = IdentityHelpers.GetEmail(HttpContext.User);
         // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -889,7 +889,7 @@ public class CharacterSheetApprovedsController : ControllerBase
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
                 .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
             var allowedTags = _context.Larptags.Where(lt =>

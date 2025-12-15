@@ -37,14 +37,14 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<Series>>> GetSeries()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             var ser = await _context.Series
                 .Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
@@ -95,14 +95,14 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<List<SeriWithCharSheets>>> GetSeriesWithApprovedCharList()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
                 .OrderBy(o => StringLogic.IgnorePunct(o.Title))
@@ -165,7 +165,7 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Series>>> GetSeriesList(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -174,7 +174,7 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             var none = await _context.Series.Where(s => s.Isactive == true && s.Title == string.Empty)
                 .Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
@@ -207,7 +207,7 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Series>>> GetSeriesListWithTags(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -216,7 +216,7 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty
                                                                           && allowedSeries.Contains(s.Guid)).Select(
@@ -281,7 +281,7 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<Series>>> GetFullSeriesListWithTags()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -290,7 +290,7 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             var ser = await _context.Series
                 .Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
@@ -343,7 +343,7 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<Series>>> GetFullSeriesListWithTagsAndDeactive()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -402,14 +402,14 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Series>>> GetSeriesListbyTag(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             var foundTag = await _context.Tags
                 .Where(t => t.Isactive == true && (t.Tagtype.Name == "Series") && t.Guid == pagingParameterModel.guid)
@@ -442,7 +442,7 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<Series>> GetSeriesSearchPartial(
         [FromQuery] SeriesPagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -451,7 +451,7 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             var initSeries = await _context.Series.Where(c => c.Isactive == true && allowedSeries.Contains(c.Guid))
                 .ToListAsync();
@@ -530,7 +530,7 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Series>> GetSeries(Guid guid)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -539,7 +539,7 @@ public class SeriesController : ControllerBase
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
@@ -592,7 +592,7 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<object>> GetSeriesWithChars(Guid guid)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
 
         // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
@@ -603,7 +603,7 @@ public class SeriesController : ControllerBase
             //var series = await _context.Series.FindAsync(id);
 
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedSeries = GetAllowedSeries(authId, isWizard);
+            var allowedSeries = GetAllowedSeries(email!, isWizard);
 
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
@@ -796,12 +796,12 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> PutSeries(Guid guid, SeriInput series)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = IdentityHelpers.GetEmail(HttpContext.User);
         // Task/AuthUser... removed token usage; use ClaimsPrincipal
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
             var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
-            var allowedTags = GetAllowedUserTags(authId, isWizard);
+            var allowedTags = GetAllowedUserTags(email!, isWizard);
 
             if (guid != series.Guid) return BadRequest();
             var title = await _context.Series.Where(s => s.Guid == guid).FirstOrDefaultAsync();
@@ -981,11 +981,11 @@ public class SeriesController : ControllerBase
     }
 
 
-    private List<Guid> GetAllowedSeries(string authId, bool isWizard)
+    private List<Guid> GetAllowedSeries(string email, bool isWizard)
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
             .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
-        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == email && ulr.Isactive == true)
             .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
         var allowedTags = _context.Larptags.Where(lt =>
@@ -998,11 +998,11 @@ public class SeriesController : ControllerBase
         return TagScanner.ScanTagsSeries(legalsheets, allowedTags);
     }
 
-    private List<Guid?> GetAllowedUserTags(string authId, bool isWizard)
+    private List<Guid?> GetAllowedUserTags(string email, bool isWizard)
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
             .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
-        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true)
+        var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == email && ulr.Isactive == true)
             .Select(ulr => (Guid)ulr.Larpguid).ToList();
 
         var allowedTags = _context.Larptags.Where(lt =>

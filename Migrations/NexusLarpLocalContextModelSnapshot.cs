@@ -280,7 +280,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("TagGuid");
 
-                    b.ToTable("CharacterSheetApprovedTags");
+                    b.ToTable("CharacterSheetApprovedTags", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetMessageAck", b =>
@@ -317,7 +317,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex(new[] { "UserGuid" }, "IX_CharacterSheetMessageAcks_user_guid");
 
-                    b.ToTable("CharacterSheetMessageAcks");
+                    b.ToTable("CharacterSheetMessageAcks", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetReviewMessage", b =>
@@ -359,7 +359,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("CreatedbyuserGuid");
 
-                    b.ToTable("CharacterSheetReviewMessages");
+                    b.ToTable("CharacterSheetReviewMessages", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetReviewSubscription", b =>
@@ -394,7 +394,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex(new[] { "UserGuid" }, "IX_CharacterSheetReviewSubscriptions_user_guid");
 
-                    b.ToTable("CharacterSheetReviewSubscriptions");
+                    b.ToTable("CharacterSheetReviewSubscriptions", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetTag", b =>
@@ -421,7 +421,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("TagGuid");
 
-                    b.ToTable("CharacterSheetTags");
+                    b.ToTable("CharacterSheetTags", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.CharacterSheetVersion", b =>
@@ -809,7 +809,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("TagGuid");
 
-                    b.ToTable("ItemSheetApprovedTags");
+                    b.ToTable("ItemSheetApprovedTags", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetMessageAck", b =>
@@ -846,7 +846,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex(new[] { "UserGuid" }, "IX_ItemSheetMessageAcks_user_guid");
 
-                    b.ToTable("ItemSheetMessageAcks");
+                    b.ToTable("ItemSheetMessageAcks", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetReviewMessage", b =>
@@ -888,7 +888,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("CreatedbyuserGuid");
 
-                    b.ToTable("ItemSheetReviewMessages");
+                    b.ToTable("ItemSheetReviewMessages", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetReviewSubscription", b =>
@@ -923,7 +923,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex(new[] { "UserGuid" }, "IX_ItemSheetReviewSubscriptions_user_guid");
 
-                    b.ToTable("ItemSheetReviewSubscriptions");
+                    b.ToTable("ItemSheetReviewSubscriptions", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetTag", b =>
@@ -950,7 +950,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("TagGuid");
 
-                    b.ToTable("ItemSheetTags");
+                    b.ToTable("ItemSheetTags", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemSheetVersion", b =>
@@ -1074,7 +1074,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Guid")
                         .HasName("itemtypes_guid");
 
-                    b.ToTable("ItemTypes");
+                    b.ToTable("ItemTypes", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.ItemUsersContact", b =>
@@ -1612,7 +1612,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Guid")
                         .HasName("pronouns_guid");
 
-                    b.ToTable("Pronouns");
+                    b.ToTable("Pronouns", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.Role", b =>
@@ -1636,7 +1636,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Id")
                         .HasName("Roles_pkey");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.Series", b =>
@@ -1681,7 +1681,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Guid")
                         .HasName("series_guid");
 
-                    b.ToTable("Series");
+                    b.ToTable("Series", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.SeriesTag", b =>
@@ -1708,7 +1708,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("TagGuid");
 
-                    b.ToTable("SeriesTags");
+                    b.ToTable("SeriesTags", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.SheetUsersContact", b =>
@@ -1828,7 +1828,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("Tagtypeguid");
 
-                    b.ToTable("Tags");
+                    b.ToTable("Tags", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.TagType", b =>
@@ -1847,7 +1847,7 @@ namespace NEXUSDataLayerScaffold.Migrations
                     b.HasKey("Guid")
                         .HasName("tagtypes_guid");
 
-                    b.ToTable("TagTypes");
+                    b.ToTable("TagTypes", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.User", b =>
@@ -1903,7 +1903,7 @@ namespace NEXUSDataLayerScaffold.Migrations
 
                     b.HasIndex("Pronounsguid");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("NEXUSDataLayerScaffold.Models.UserLarprole", b =>
