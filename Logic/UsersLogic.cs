@@ -130,16 +130,76 @@ public class UsersLogic
             return false;
         }
 
-        // Prefer standard OIDC 'sub', fallback to NameIdentifier
-        var authId = user.FindFirstValue("sub") ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(authId))
+        // Resolve identity keys from claims
+        var subject = user.FindFirstValue("sub");
+        var nameId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email");
+
+        // Choose the best candidate for AuthId: prefer the true OIDC subject
+        var authId = !string.IsNullOrWhiteSpace(subject) ? subject : null;
+        // Only consider NameIdentifier as a subject if it doesn't look like an email
+        if (authId == null && !string.IsNullOrWhiteSpace(nameId) && !nameId.Contains("@"))
         {
-            Logger.LogWarning("IsUserAuthed could not resolve subject claim from principal");
+            authId = nameId;
+        }
+
+        // Look up the local user record
+        User? foundUser = null;
+        if (!string.IsNullOrWhiteSpace(authId))
+        {
+            foundUser = context.Users.FirstOrDefault(u => u.Authid == authId);
+            Logger.LogDebug("IsUserAuthed: lookup by AuthId (sub)='{AuthId}' => {Found}", authId, foundUser != null);
+        }
+
+        // Fallback: legacy environments may not flow 'sub'; try to match by email (warn and prefer unique active)
+        if (foundUser == null && !string.IsNullOrWhiteSpace(email))
+        {
+            var byEmail = context.Users.Where(u => u.Email == email).ToList();
+            if (byEmail.Count == 1)
+            {
+                foundUser = byEmail[0];
+                Logger.LogWarning("IsUserAuthed: falling back to email match for {Email}; consider storing subject in Users.Authid", email);
+            }
+            else if (byEmail.Count > 1)
+            {
+                // Prefer the single active if possible
+                var active = byEmail.Where(u => u.Isactive == true).ToList();
+                foundUser = active.Count == 1 ? active[0] : byEmail.First();
+                Logger.LogWarning("IsUserAuthed: multiple users found for email {Email}; selected Guid={Guid}. Please deduplicate and store subject in Users.Authid.", email, foundUser.Guid);
+            }
+        }
+
+        if (foundUser == null)
+        {
+            Logger.LogWarning("IsUserAuthed: no local user found for subject '{Sub}' or email '{Email}'", authId ?? nameId ?? "", email ?? "");
             return false;
         }
 
-        // 'accessToken' is not used in OIDC-conformant path
-        return IsUserAuthed(authId, string.Empty, authLevel, context);
+        if (foundUser.Isactive == false)
+        {
+            Logger.LogWarning("IsUserAuthed: user {Guid} is inactive", foundUser.Guid);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(authLevel))
+        {
+            Logger.LogDebug("IsUserAuthed: no auth level required; granting access for user {Guid}", foundUser.Guid);
+            return true;
+        }
+
+        var roleNum = context.Roles.Where(r => r.Rolename == authLevel).Select(r => r.Ord).FirstOrDefault();
+        var hasRequired = context.UserLarproles
+            .Where(ulr => ulr.Userguid == foundUser.Guid && ulr.Role.Ord >= roleNum && ulr.Isactive == true)
+            .FirstOrDefault() != null;
+
+        if (!hasRequired)
+        {
+            Logger.LogWarning("IsUserAuthed: user {Guid} lacks required role {Level}", foundUser.Guid, authLevel);
+            return false;
+        }
+
+        Logger.LogInformation("IsUserAuthed: access granted for user {Guid} at level {Level}", foundUser.Guid, authLevel);
+        return true;
     }
 
 
