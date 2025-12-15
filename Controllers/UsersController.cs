@@ -198,11 +198,13 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<UserOut> GetAUser(Guid id)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
+                   ?? HttpContext.User.FindFirstValue("email")
+                   ?? HttpContext.User.FindFirstValue("sub");
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        var currUseGuid = _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
+        var currUseGuid = _context.Users.Where(u => u.Email == email && u.Isactive == true).FirstOrDefault().Guid;
 
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
             UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context) ||
@@ -268,20 +270,22 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<string> GetCurrentUserAuth()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        _logger.LogInformation("GetCurrentUserAuth invoked. Subject: {Sub}; IsAuthenticated={IsAuth}",
-            authId,
+        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
+                   ?? HttpContext.User.FindFirstValue("email")
+                   ?? HttpContext.User.FindFirstValue("sub");
+        _logger.LogInformation("GetCurrentUserAuth invoked. Email: {Email}; IsAuthenticated={IsAuth}",
+            email,
             HttpContext.User?.Identity?.IsAuthenticated == true);
 
         var isReader = UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context);
         if (!isReader)
         {
-            _logger.LogInformation("User {Sub} is not authorized with minimum Reader role. Returning AuthLevel NONE.", authId);
+            _logger.LogInformation("User {Email} is not authorized with minimum Reader role. Returning AuthLevel NONE.", email);
             return Ok("{\"AuthLevel\":\"NONE\"}");
         }
 
 
-        var Rolelist = _context.UserLarproles.Where(u => u.User.Authid == authId && u.Isactive == true)
+        var Rolelist = _context.UserLarproles.Where(u => u.User.Email == email && u.Isactive == true)
             .Include("Role").ToList();
 
         var authlevel = 0;
@@ -291,14 +295,14 @@ public class UsersController : ControllerBase
 
         if (authlevel == 0)
         {
-            _logger.LogInformation("User {Sub} has no active roles. Returning AuthLevel None.", authId);
+            _logger.LogInformation("User {Email} has no active roles. Returning AuthLevel None.", email);
             return Ok("{\"AuthLevel\":\"None\"}");
         }
 
         var maxrole = _context.Roles.Where(r => r.Ord == authlevel).Select(r => r.Rolename.Replace(" ", ""))
             .FirstOrDefault();
 
-        _logger.LogInformation("Computed highest role for user {Sub}: {Role} (Ord={Ord})", authId, maxrole, authlevel);
+        _logger.LogInformation("Computed highest role for user {Email}: {Role} (Ord={Ord})", email, maxrole, authlevel);
         return Ok("{\"AuthLevel\":\"" + maxrole + "\"}");
     }
 
@@ -311,9 +315,11 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<Guid> GetCurrentUserGuid()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
+                   ?? HttpContext.User.FindFirstValue("email")
+                   ?? HttpContext.User.FindFirstValue("sub");
 
-        return _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
+        return _context.Users.Where(u => u.Email == email && u.Isactive == true).FirstOrDefault().Guid;
     }
 
 
@@ -324,7 +330,9 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> PutUser(Guid guid, Users user)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
+                   ?? HttpContext.User.FindFirstValue("email")
+                   ?? HttpContext.User.FindFirstValue("sub");
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -333,7 +341,7 @@ public class UsersController : ControllerBase
 
         var oldUserinfo = _context.Users.Where(u => u.Guid == user.Guid).FirstOrDefault();
 
-        var curUser = _context.Users.Where(u => u.Authid == authId).FirstOrDefault();
+        var curUser = _context.Users.Where(u => u.Email == email).FirstOrDefault();
         if (user.Guid != user.Guid && !UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
             return Unauthorized();
 

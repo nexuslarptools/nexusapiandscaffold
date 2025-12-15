@@ -32,29 +32,30 @@ public class UsersLogic
 
     public static MetadataRoles GetUserAuth0Info(string authIdValue, NexusLarpLocalContext context)
     {
-        Logger.LogInformation("GetUserAuth0Info (DB-backed) started for authId {AuthId}", authIdValue);
+        Logger.LogInformation("GetUserAuth0Info (DB-backed) started for identifier {Identifier}", authIdValue);
         try
         {
             var localUser = context.Users
                 .Include(u => u.UserLarproles)
                 .ThenInclude(ulr => ulr.Role)
-                .Where(u => u.Authid == authIdValue && u.Isactive == true)
+                // Per current Auth0 setup, identifiers we receive are emails; never search by Authid
+                .Where(u => u.Email == authIdValue && u.Isactive == true)
                 .FirstOrDefault();
 
             if (localUser != null)
             {
                 var roles = new MetadataRoles(localUser);
-                Logger.LogInformation("GetUserAuth0Info (DB-backed) built roles for {AuthId}", authIdValue);
+                Logger.LogInformation("GetUserAuth0Info (DB-backed) built roles for {Identifier}", authIdValue);
                 return roles;
             }
             else
             {
-                Logger.LogWarning("GetUserAuth0Info (DB-backed): No local user found for {AuthId}", authIdValue);
+                Logger.LogWarning("GetUserAuth0Info (DB-backed): No local user found for {Identifier}", authIdValue);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "GetUserAuth0Info (DB-backed) failed for {AuthId}", authIdValue);
+            Logger.LogError(ex, "GetUserAuth0Info (DB-backed) failed for {Identifier}", authIdValue);
         }
         return new MetadataRoles();
     }
@@ -130,48 +131,24 @@ public class UsersLogic
             return false;
         }
 
-        // Resolve identity keys from claims
-        var subject = user.FindFirstValue("sub");
-        var nameId = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        var email = user.FindFirstValue(ClaimTypes.Email) ?? user.FindFirstValue("email");
+        // Resolve the user's email from claims. In this deployment, Auth0 'sub' is the email.
+        var email = user.FindFirstValue(ClaimTypes.Email)
+                    ?? user.FindFirstValue("email")
+                    ?? user.FindFirstValue("sub");
 
-        // Choose the best candidate for AuthId: prefer the true OIDC subject
-        var authId = !string.IsNullOrWhiteSpace(subject) ? subject : null;
-        // Only consider NameIdentifier as a subject if it doesn't look like an email
-        if (authId == null && !string.IsNullOrWhiteSpace(nameId) && !nameId.Contains("@"))
+        if (string.IsNullOrWhiteSpace(email))
         {
-            authId = nameId;
+            Logger.LogWarning("IsUserAuthed: no email present on principal; denying access");
+            return false;
         }
 
-        // Look up the local user record
-        User? foundUser = null;
-        if (!string.IsNullOrWhiteSpace(authId))
-        {
-            foundUser = context.Users.FirstOrDefault(u => u.Authid == authId);
-            Logger.LogDebug("IsUserAuthed: lookup by AuthId (sub)='{AuthId}' => {Found}", authId, foundUser != null);
-        }
-
-        // Fallback: legacy environments may not flow 'sub'; try to match by email (warn and prefer unique active)
-        if (foundUser == null && !string.IsNullOrWhiteSpace(email))
-        {
-            var byEmail = context.Users.Where(u => u.Email == email).ToList();
-            if (byEmail.Count == 1)
-            {
-                foundUser = byEmail[0];
-                Logger.LogWarning("IsUserAuthed: falling back to email match for {Email}; consider storing subject in Users.Authid", email);
-            }
-            else if (byEmail.Count > 1)
-            {
-                // Prefer the single active if possible
-                var active = byEmail.Where(u => u.Isactive == true).ToList();
-                foundUser = active.Count == 1 ? active[0] : byEmail.First();
-                Logger.LogWarning("IsUserAuthed: multiple users found for email {Email}; selected Guid={Guid}. Please deduplicate and store subject in Users.Authid.", email, foundUser.Guid);
-            }
-        }
+        // Look up the local user record STRICTLY by email
+        var foundUser = context.Users.FirstOrDefault(u => u.Email == email);
+        Logger.LogDebug("IsUserAuthed: lookup by Email='{Email}' => {Found}", email, foundUser != null);
 
         if (foundUser == null)
         {
-            Logger.LogWarning("IsUserAuthed: no local user found for subject '{Sub}' or email '{Email}'", authId ?? nameId ?? "", email ?? "");
+            Logger.LogWarning("IsUserAuthed: no local user found for email '{Email}'", email);
             return false;
         }
 
@@ -198,7 +175,7 @@ public class UsersLogic
             return false;
         }
 
-        Logger.LogInformation("IsUserAuthed: access granted for user {Guid} at level {Level}", foundUser.Guid, authLevel);
+        Logger.LogInformation("IsUserAuthed: access granted for user {Guid} (email {Email}) at level {Level}", foundUser.Guid, email, authLevel);
         return true;
     }
 
@@ -273,7 +250,7 @@ public class UsersLogic
     public static List<Guid?> GetUserTagsList(string authIdValue, NexusLarpLocalContext _context, string level,
         bool isWizard)
     {
-        Logger.LogInformation("GetUserTagsList for {AuthId} level {Level} (isWizard={IsWizard})", authIdValue, level, isWizard);
+        Logger.LogInformation("GetUserTagsList for identifier {Identifier} level {Level} (isWizard={IsWizard})", authIdValue, level, isWizard);
         if (isWizard)
         {
             var allTags = _context.Larptags.Where(lt => lt.Isactive == true && lt.Larpguid != null).Select(lt => lt.Tagguid)
@@ -287,20 +264,20 @@ public class UsersLogic
         var querylevel = _context.Roles.Where(r => r.Rolename == level).FirstOrDefault();
 
         var userLarps = _context.UserLarproles.Where(ulr =>
-                ulr.Isactive == true && ulr.User.Authid == authIdValue && ulr.Role.Ord >= querylevel.Ord)
+                ulr.Isactive == true && ulr.User.Email == authIdValue && ulr.Role.Ord >= querylevel.Ord)
             .Select(ulr => ulr.Larpguid).ToList();
 
         returnlist = _context.Larptags.Where(lt => lt.Isactive == true && userLarps.Contains(lt.Larpguid))
             .Select(lt => lt.Tagguid).ToList();
 
-        Logger.LogDebug("GetUserTagsList returning {Count} tags for {AuthId}", returnlist.Count, authIdValue);
+        Logger.LogDebug("GetUserTagsList returning {Count} tags for {Identifier}", returnlist.Count, authIdValue);
         return returnlist;
     }
 
     public static async Task<Guid> GetUserGuid(string authIdValue, NexusLarpLocalContext _context)
     {
-        Logger.LogDebug("GetUserGuid for {AuthId}", authIdValue);
-        return await _context.Users.Where(u => u.Authid == authIdValue).Select(u => u.Guid).FirstOrDefaultAsync();
+        Logger.LogDebug("GetUserGuid for identifier {Identifier}", authIdValue);
+        return await _context.Users.Where(u => u.Email == authIdValue).Select(u => u.Guid).FirstOrDefaultAsync();
     }
 
     public static async void UpdateAuth0User(string email, MetadataRoles roles)

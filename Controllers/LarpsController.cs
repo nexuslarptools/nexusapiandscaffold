@@ -38,12 +38,14 @@ public class LarpsController : ControllerBase
     [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetCurrUserLarps()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
+                   ?? HttpContext.User.FindFirstValue("email")
+                   ?? HttpContext.User.FindFirstValue("sub");
 
         var larpList = await _context.Larps.Where(l => l.Isactive == true
                                                        && l.UserLarproles.Any(ulr => ulr.Isactive == true &&
                                                            ulr.Role.Ord > 1
-                                                           && ulr.User.Authid == authId))
+                                                           && ulr.User.Email == email))
             .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
 
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
@@ -57,7 +59,9 @@ public class LarpsController : ControllerBase
     [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetLarpsWithGMAccess()
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
+                   ?? HttpContext.User.FindFirstValue("email")
+                   ?? HttpContext.User.FindFirstValue("sub");
 
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             return await _context.Larps.Where(l =>
@@ -67,7 +71,7 @@ public class LarpsController : ControllerBase
         return await _context.Larps.Where(l => l.Isactive == true &&
                                                l.Guid != Guid.Parse("0b247b46-86fd-11ed-956d-7faf2be673cc")
                                                && l.UserLarproles.Any(ulr =>
-                                                   ulr.Roleid > 3 && ulr.User.Authid == authId &&
+                                                   ulr.Roleid > 3 && ulr.User.Email == email &&
                                                    ulr.Isactive == true))
             .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
     }

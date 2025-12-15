@@ -695,11 +695,13 @@ public class TagsController : ControllerBase
     [Authorize(Policy = "WizardOrHeadGM")]
     public async Task<ActionResult<Tags>> PostTags(TagsInput tags)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var email = HttpContext.User.FindFirstValue(ClaimTypes.Email)
+                   ?? HttpContext.User.FindFirstValue("email")
+                   ?? HttpContext.User.FindFirstValue("sub");
         if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
             UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
         {
-            var currUser = await _context.Users.Where(u => u.Authid == authId).FirstOrDefaultAsync();
+            var currUser = await _context.Users.Where(u => u.Email == email).FirstOrDefaultAsync();
 
             if (!_context.TagTypes.Any(tt => tt.Guid == tags.Tagtypeguid)) return BadRequest();
 
