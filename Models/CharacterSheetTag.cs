@@ -13,5 +13,5 @@ public partial class CharacterSheetTag
 
     public virtual CharacterSheet Charactersheet { get; set; }
 
-    public virtual Tag Tag { get; set; }
+    public virtual Tag? Tag { get; set; }
 }

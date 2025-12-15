@@ -72,7 +72,7 @@ public class CharacterSheetsController : ControllerBase
             var csrs = _context.CharacterSheetReviewMessages
                         .Where(csr => csr.Isactive == true).AsEnumerable();
 
-            var allSheets = _context.CharacterSheets.Where(c => c.Isactive == true)
+            var allSheets = await _context.CharacterSheets.Where(c => c.Isactive)
                 .Select(x => new CharacterSheetDO
                 {
                     Sheet = new CharacterSheet
@@ -98,7 +98,7 @@ public class CharacterSheetsController : ControllerBase
                     Series = x.Series,
                     CharacterSheetReviewMessages = csrs.Where(csr => csr.CharactersheetId == x.Id).ToList()
                 })
-                .OrderBy(x => x.Sheet.Name).ToList();
+                .OrderBy(x => x.Sheet.Name).ToListAsync();
 
             if (!wizardauth)
                 allSheets = allSheets.Where(ash => !disAllowedTags.Any(dat => ash.TagList.Any(tl => tl.Guid == dat)))

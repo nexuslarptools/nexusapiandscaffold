@@ -16,7 +16,7 @@ public partial class ItemSheetVersion
 
     public string Name { get; set; }
 
-    public string Img1 { get; set; }
+    public string? Img1 { get; set; }
 
     public JsonDocument Fields { get; set; }
 
@@ -34,9 +34,9 @@ public partial class ItemSheetVersion
 
     public DateTime? Secondapprovaldate { get; set; }
 
-    public string Gmnotes { get; set; }
+    public string? Gmnotes { get; set; }
 
-    public string Reason4edit { get; set; }
+    public string? Reason4edit { get; set; }
 
     public int? Version { get; set; }
 
