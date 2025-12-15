@@ -14,7 +14,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Auth0.AuthenticationApi" Version="7.41.0" />
+    <PackageReference Include="Auth0.AuthenticationApi" Version="7.41.0" />
         <PackageReference Include="Auth0.Core" Version="7.41.0" />
         <PackageReference Include="Auth0.ManagementApi" Version="7.41.0" />
         <PackageReference Include="Google.Protobuf" Version="3.32.1" />
@@ -38,15 +38,22 @@
         <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
         <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="9.0.0" />
         <PackageReference Include="Minio" Version="6.0.5" />
+        <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="9.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
         <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
-    </ItemGroup>
+  </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Repositories\" />
-    </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Repositories\" />
+  </ItemGroup>
+
+  <!-- Exclude test sources under repository root from this web project build -->
+  <ItemGroup>
+    <Compile Remove="NEXUSDataLayerScaffold.Tests\**\*.cs" />
+    <None Include="NEXUSDataLayerScaffold.Tests\**\*.cs" />
+  </ItemGroup>
 
 </Project>

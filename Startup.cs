@@ -129,6 +129,12 @@ public class Startup
             }
         );
 
+        // Bind MinIO options from configuration and validate
+        services.AddOptions<MinioOptions>()
+            .Bind(_config.GetSection("Minio"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         // Honor reverse-proxy headers (e.g., Traefik, nginx, ALB) for original client IP, scheme, and host
         services.Configure<ForwardedHeadersOptions>(options =>
         {
@@ -229,6 +235,20 @@ public class Startup
             options.Cookie.Name = "_oidc_raczylo";
             options.Cookie.SameSite = SameSiteMode.None;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            // In BFF/forward-auth mode we must never redirect to a login page from the API
+            options.Events = new CookieAuthenticationEvents
+            {
+                OnRedirectToLogin = ctx =>
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return System.Threading.Tasks.Task.CompletedTask;
+                },
+                OnRedirectToAccessDenied = ctx =>
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    return System.Threading.Tasks.Task.CompletedTask;
+                }
+            };
         })
         .AddJwtBearer(options =>
         {
@@ -242,15 +262,58 @@ public class Startup
                 ValidateAudience = !string.IsNullOrWhiteSpace(audience),
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                NameClaimType = oauth?.NameClaimType ?? "name",
-                RoleClaimType = oauth?.RoleClaimType ?? ClaimTypes.Role
+                // OIDC best practice: use 'sub' for stable identity
+                NameClaimType = "sub",
+                // Normalize roles into ClaimTypes.Role via IClaimsTransformation below
+                RoleClaimType = ClaimTypes.Role
             };
         });
+
+        // Authorization policies
+        services.AddAuthorization(options =>
+        {
+            // Hierarchical role policies (higher roles satisfy lower-role policies)
+            options.AddPolicy("Reader", policy =>
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole("Reader") ||
+                    ctx.User.IsInRole("Writer") ||
+                    ctx.User.IsInRole("Approver") ||
+                    ctx.User.IsInRole("HeadGM") ||
+                    ctx.User.IsInRole("Wizard")));
+
+            options.AddPolicy("Writer", policy =>
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole("Writer") ||
+                    ctx.User.IsInRole("Approver") ||
+                    ctx.User.IsInRole("HeadGM") ||
+                    ctx.User.IsInRole("Wizard")));
+
+            options.AddPolicy("Approver", policy =>
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole("Approver") ||
+                    ctx.User.IsInRole("HeadGM") ||
+                    ctx.User.IsInRole("Wizard")));
+
+            options.AddPolicy("HeadGM", policy =>
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole("HeadGM") ||
+                    ctx.User.IsInRole("Wizard")));
+
+            options.AddPolicy("Wizard", policy =>
+                policy.RequireRole("Wizard"));
+
+            options.AddPolicy("WizardOrHeadGM", policy =>
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole("Wizard") || ctx.User.IsInRole("HeadGM")));
+        });
+
+        // Support both namespaced and non-namespaced roles by normalizing them into ClaimTypes.Role
+        services.AddTransient<IClaimsTransformation, RoleNormalizationTransform>();
 
         services.ConfigureApplicationCookie(options =>
         {
             // Mirror the cookie name to keep a single, predictable auth cookie
-            options.Cookie.Name = "_oidc_raczylo";
+            options.Cookie.Name = "_oidc_raczylo_id_0";
             options.Cookie.SameSite = SameSiteMode.None;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         });
@@ -332,10 +395,15 @@ public class Startup
                        _config.GetValue<string>("ConnectionSrings:DBUsername");
         var password = Environment.GetEnvironmentVariable("Password") ??
                        _config.GetValue<string>("ConnectionSrings:Password");
-        var accesskey = Environment.GetEnvironmentVariable("accesskey") ??
-               _config.GetValue<string>("ConnectionSrings:accesskey");
-        var secretkey = Environment.GetEnvironmentVariable("secretkey") ??
-               _config.GetValue<string>("ConnectionSrings:secretkey");
+        // Prefer MinIO credentials from environment (MINIO__AccessKey/SecretKey),
+        // fall back to appsettings Minio section if provided (not recommended for production).
+        var minioConfigured = _config.GetSection("Minio").Get<NEXUSDataLayerScaffold.Models.MinioOptions>() ?? new NEXUSDataLayerScaffold.Models.MinioOptions();
+        var accesskey = Environment.GetEnvironmentVariable("MINIO__AccessKey")
+                        ?? minioConfigured.AccessKey
+                        ?? Environment.GetEnvironmentVariable("accesskey");
+        var secretkey = Environment.GetEnvironmentVariable("MINIO__SecretKey")
+                        ?? minioConfigured.SecretKey
+                        ?? Environment.GetEnvironmentVariable("secretkey");
 
         var connstring = "Host=" + host + ";Port=" + port
                          + ";Database=" + database + "; Username=" + username + ";Password=" + password;
@@ -355,8 +423,24 @@ public class Startup
         );
         services.AddMinio(configure =>
         {
-        configure.WithEndpoint("decade.kylebrighton.com:9000")
-                 .WithCredentials(accesskey, secretkey);
+            var endpoint = minioConfigured.Endpoint;
+            if (string.IsNullOrWhiteSpace(endpoint))
+            {
+                // Keep existing behavior if not configured, but endpoint should be provided via config
+                endpoint = "decade.kylebrighton.com:9000";
+            }
+
+            configure.WithEndpoint(endpoint);
+
+            if (!string.IsNullOrEmpty(accesskey) && !string.IsNullOrEmpty(secretkey))
+            {
+                configure.WithCredentials(accesskey, secretkey);
+            }
+
+            if (minioConfigured.UseSsl)
+            {
+                configure.WithSSL();
+            }
         });
     }
 
@@ -464,20 +548,7 @@ public class Startup
         // If Traefik ForwardAuth has authenticated the user, map headers to claims
         app.UseMiddleware<ForwardAuthClaimsMiddleware>();
         app.UseAuthentication();
-        // Bridge: if authenticated via cookie and no Authorization header, inject the saved access_token as Bearer
-        app.Use(async (context, next) =>
-        {
-            if (context.User?.Identity?.IsAuthenticated == true && !context.Request.Headers.ContainsKey("Authorization"))
-            {
-                // Try to read access_token saved by OIDC middleware or our ExchangeCode sign-in
-                var token = await context.GetTokenAsync("access_token");
-                if (!string.IsNullOrWhiteSpace(token))
-                {
-                    context.Request.Headers["Authorization"] = $"Bearer {token}";
-                }
-            }
-            await next();
-        });
+        // Removed header injection bridge to keep API strictly Bearer-based and BFF-friendly
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {

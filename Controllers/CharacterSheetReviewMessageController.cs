@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NEXUSDataLayerScaffold.Entities;
@@ -24,13 +25,12 @@ public class CharacterSheetReviewMessageController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "Writer")]
     public async Task<ActionResult<IEnumerable<ReviewMessage>>> Get()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
             var isheetReviews = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true).ToList();
 
@@ -48,13 +48,12 @@ public class CharacterSheetReviewMessageController : ControllerBase
 
     // GET api/<CharacterSheetReviewMessageController>/5
     [HttpGet("{itemSheetId}")]
+    [Authorize(Policy = "Writer")]
     public async Task<ActionResult<IEnumerable<ReviewMessage>>> GetAllForItem(int itemSheetId)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
             var csheetReviews = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Isactive == true
                 && isrm.CharactersheetId == itemSheetId).ToList();
@@ -78,14 +77,12 @@ public class CharacterSheetReviewMessageController : ControllerBase
     // POST api/<CharacterSheetReviewMessageController>
     [HttpPost]
     [DisableRequestSizeLimit]
-    [Authorize]
+    [Authorize(Policy = "Writer")]
     public async Task<IActionResult> PostItemReviewMessage([FromBody] ReviewMessage reviewMessage)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
             var newsheet = reviewMessage.ConvertToCharacterSheetMessage();
             var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
@@ -102,15 +99,14 @@ public class CharacterSheetReviewMessageController : ControllerBase
 
     // PUT api/<CharacterSheetReviewMessageController>/5
     [HttpPut("{id}")]
+    [Authorize(Policy = "Wizard")]
     public async Task<IActionResult> Put(int id, [FromBody] ReviewMessage reviewMessage)
     {
         if (id != reviewMessage.Id) return BadRequest();
 
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var currMessage = _context.CharacterSheetReviewMessages.Where(isrm => isrm.Id == id).FirstOrDefault();
 
@@ -133,13 +129,12 @@ public class CharacterSheetReviewMessageController : ControllerBase
 
     // DELETE api/<CharacterSheetReviewMessageController>/5
     [HttpDelete("{id}")]
+    [Authorize(Policy = "Approver")]
     public async Task<IActionResult> Delete(int id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Approver", _context))
         {
             var currMessage = _context.CharacterSheetReviewMessages
                 .Where(isrm => isrm.Id == id && isrm.Isactive == true).FirstOrDefault();

@@ -5,6 +5,7 @@ using Minio;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NEXUSDataLayerScaffold.Entities;
@@ -19,6 +20,7 @@ using System.Reactive.Linq;
 using System.Reactive;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Item = NEXUSDataLayerScaffold.Extensions.Item;
 
 namespace NEXUSDataLayerScaffold.Controllers;
@@ -29,11 +31,13 @@ public class ItemSheetsController : ControllerBase
 {
     private readonly NexusLarpLocalContext _context;
     private readonly IMinioClient _minio;
+    private readonly string _bucket;
 
-    public ItemSheetsController(NexusLarpLocalContext context, IMinioClient minio)
+    public ItemSheetsController(NexusLarpLocalContext context, IMinioClient minio, IOptions<MinioOptions> minioOptions)
     {
         _context = context;
         _minio = minio;
+        _bucket = minioOptions.Value.Bucket;
     }
 
     // GET: api/ItemSheets
@@ -42,13 +46,11 @@ public class ItemSheetsController : ControllerBase
     public async Task<ActionResult<IEnumerable<ItemSheet>>> GetItemSheet(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
@@ -59,7 +61,7 @@ public class ItemSheetsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSehets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -107,13 +109,11 @@ public class ItemSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IteSheet>> GetItemSheet(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var itemSheet = await _context.ItemSheets.Where(ish => ish.Isactive == true && ish.Guid == guid)
                 .Include("ItemSheetTags")
@@ -130,7 +130,7 @@ public class ItemSheetsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -162,13 +162,11 @@ public class ItemSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<ListItemsAndCharacters>> GetAllCharactersLinkedItemSheet(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             try
             {
                 var output = new ListCharacterSheets();
@@ -257,13 +255,11 @@ public class ItemSheetsController : ControllerBase
     {
         //var input = JsonSerializer.Deserialize<ItemSheetInput>(guidjson);
 
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var outputItemList = new List<IteSheet>();
             var outputItem = new IteSheet();
@@ -281,7 +277,7 @@ public class ItemSheetsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid)
                     .ToList();
 
@@ -357,13 +353,11 @@ public class ItemSheetsController : ControllerBase
     public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetItemListWithTags(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             try
             {
                 var outPutList = new List<IteSheet>();
@@ -378,7 +372,7 @@ public class ItemSheetsController : ControllerBase
                     (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                     allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
                 var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -470,16 +464,14 @@ public class ItemSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<List<IteSheet>>>> GetFullItemListWithTagsNoImagesRedo()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             try
             {
-                var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
+                var wizardauth = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
 
                 var allowedLARPS = _context.UserLarproles
@@ -550,13 +542,11 @@ public class ItemSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<List<IteSheet>>>> FullListWithTagsAndDeactive()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             try
             {
-                var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
+                var wizardauth = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
 
                 var SheetIds = _context.ItemSheets.GroupBy(x => x.Guid)
@@ -658,13 +648,11 @@ public class ItemSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<List<IteSheet>>>> FullListWithTagsAndDeactive(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             try
             {
-                var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
+                var wizardauth = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
                 var outPutList = new List<IteSheet>();
                 var itemTagGuids = _context.Tags.Where(t => t.Tagtype.Name == "Item" || t.Tagtype.Name == "LARPRun").Select(t => t.Guid).ToList();
 
@@ -735,14 +723,12 @@ public class ItemSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<FullItemsList>> FullListAllItems()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         var output = new FullItemsList();
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             try
             {
                 var outPutList = new List<IteSheet>();
@@ -759,7 +745,7 @@ public class ItemSheetsController : ControllerBase
                     (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                     allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
                 var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -789,13 +775,11 @@ public class ItemSheetsController : ControllerBase
     public async Task<ActionResult<IEnumerable<ItemSheet>>> GetItemSheetByTag(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
@@ -807,7 +791,7 @@ public class ItemSheetsController : ControllerBase
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             if (!allowedTags.Contains(pagingParameterModel
@@ -879,13 +863,11 @@ public class ItemSheetsController : ControllerBase
     {
         if (pagingParameterModel.userApproved == true && pagingParameterModel.userCreated == true) return BadRequest();
 
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             try
             {
                 var currUser = await UsersLogic.GetUserGuid(authId, _context);
@@ -901,7 +883,7 @@ public class ItemSheetsController : ControllerBase
                     (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                     allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid)
                         .ToList();
 
@@ -1141,16 +1123,14 @@ public class ItemSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IteSheet>> GetItemSearchPartial(string input)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             ItemSheetSearchLogic searchLogic = new ItemSheetSearchLogic();
             searchLogic.searchInObj = JsonConvert.DeserializeObject<ItemSearchInObj>(input);
 
-            var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
+            var wizardauth = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
 
             var allowedLARPS = _context.UserLarproles
                 .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
@@ -1239,16 +1219,14 @@ public class ItemSheetsController : ControllerBase
 
 
     [HttpPut("{guid}/Approve")]
-    [Authorize]
+    [Authorize(Policy = "Approver")]
     public async Task<IActionResult> ApproveItemSheet(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Approver", _context))
         {
             try
             {
@@ -1272,7 +1250,7 @@ public class ItemSheetsController : ControllerBase
                     (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                     allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
                 var allowedShets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -1354,7 +1332,7 @@ public class ItemSheetsController : ControllerBase
                     var huh = await Minostuff();
 
                     StatObjectArgs statObjectArgs = new StatObjectArgs()
-                                                            .WithBucket("nexusdata")
+                                                            .WithBucket(_bucket)
                                                             .WithObject("/images/Items/" + itemSheet.Guid.ToString() + ".jpg");
                     ObjectStat objectStat = await _minio.StatObjectAsync(statObjectArgs);
 
@@ -1401,16 +1379,14 @@ public class ItemSheetsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Writer")]
     public async Task<ActionResult<IteSheet>> PutItemSheet(Guid guid, [FromBody] IteSheet item)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             try
             {
                 var usersList = _context.Users.Select(x => x).ToList(); 
@@ -1452,7 +1428,7 @@ public class ItemSheetsController : ControllerBase
                     (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                     && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-                if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                     allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid)
                         .ToList();
 
@@ -1628,16 +1604,12 @@ public class ItemSheetsController : ControllerBase
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
     [DisableRequestSizeLimit]
-    [Authorize]
+    [Authorize(Policy = "Writer")]
     public async Task<ActionResult<IteSheet>> PostItemSheet([FromBody] IteSheet item)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
             var legalsheets = _context.ItemSheets.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.ItemSheetTags)).ToList();
@@ -1651,7 +1623,7 @@ public class ItemSheetsController : ControllerBase
             var usersList = _context.Users.Select(x => x).ToList();
             var listItemTypes = _context.ItemTypes.Select(x => x).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var itemSheet = new ItemSheet();
@@ -1812,16 +1784,11 @@ public class ItemSheetsController : ControllerBase
 
     // DELETE: api/ItemSheets/5
     [HttpDelete("{id}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<ItemSheet>> DeleteItemSheet(Guid id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var itemSheets = await _context.ItemSheets.Where(i => i.Guid == id).ToListAsync();
             if (itemSheets == null) return NotFound();
@@ -1848,16 +1815,11 @@ public class ItemSheetsController : ControllerBase
 
     // DELETE: api/ItemSheets/5
     [HttpPut("Deactivate/{id}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<ItemSheet>> DeacrtivateItemSheet(int id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             try
             {
@@ -1892,16 +1854,11 @@ public class ItemSheetsController : ControllerBase
 
     // DELETE: api/ItemSheets/5
     [HttpPut("Activate/{id}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<ItemSheet>> AcrtivateItemSheet(int id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             try
             {
@@ -1989,7 +1946,7 @@ public class ItemSheetsController : ControllerBase
     private async Task<string> Minostuff()
     {
 
-        string bucket = "nexusdata";
+        var bucket = _bucket;
 
         try
         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,30 +25,23 @@ public class PronounsController : ControllerBase
 
     // GET: api/v1/Pronouns
     [HttpGet]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<IEnumerable<PronounsOut>>> GetPronouns()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, string.Empty, _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, string.Empty, _context))
             return await _context.Pronouns.Select(p => new PronounsOut(p.Guid, p.Pronouns)).ToListAsync();
         return Unauthorized();
     }
 
     // GET: api/v1/Pronouns/5
     [HttpGet("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<Pronoun>> GetPronouns(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var pronouns = await _context.Pronouns.FindAsync(guid);
 
@@ -63,16 +57,11 @@ public class PronounsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<IActionResult> PutPronouns(Guid guid, Pronoun pronouns)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             if (guid != pronouns.Guid) return BadRequest();
 
@@ -99,16 +88,11 @@ public class PronounsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<Pronoun>> PostPronouns(Pronoun pronouns)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             _context.Pronouns.Add(pronouns);
             await _context.SaveChangesAsync();
@@ -121,16 +105,11 @@ public class PronounsController : ControllerBase
 
     // DELETE: api/Pronouns/5
     [HttpDelete("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<Pronoun>> DeletePronouns(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var pronouns = await _context.Pronouns.FindAsync(guid);
             if (pronouns == null) return NotFound();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,35 +27,31 @@ public class TagsController : ControllerBase
 
     // GET: api/v1/Tags
     [HttpGet]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<IEnumerable<Tag>>> GetTags()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             return await _context.Tags.Where(t => t.Larptags.Any(lt => lt.Larpguid == null)).ToListAsync();
         return Unauthorized();
     }
 
     // GET: api/v1/Tags
     [HttpGet("groupbytypeRead")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<IEnumerable<TagsOutput>>> GetTagsGroupedByType()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var userTags = UsersLogic.GetUserTagsList(authId, _context, "Reader",
-                UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context));
 
             var output = new List<TagsOutput>();
             var tagTypes = await _context.TagTypes.ToListAsync();
@@ -96,19 +93,17 @@ public class TagsController : ControllerBase
 
     // GET: api/v1/Tags
     [HttpGet("groupbytypeWrite")]
-    [Authorize]
+    [Authorize(Policy = "Writer")]
     public async Task<ActionResult<IEnumerable<TagsOutput>>> GetTagsGroupedByTypeWrite()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
             var userTags = UsersLogic.GetUserTagsList(authId, _context, "Writer",
-                UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context));
 
             var output = new List<TagsOutput>();
             var tagTypes = await _context.TagTypes.ToListAsync();
@@ -149,16 +144,14 @@ public class TagsController : ControllerBase
 
     // GET: api/v1/Tags/5
     [HttpGet("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<outTag>> GetTags(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var tags = await _context.Tags.Where(t => t.Guid == guid)
                 .Select(t => new outTag(t.Name, t.Guid, t.Tagtypeguid, t.Isactive, false)).FirstOrDefaultAsync();
@@ -182,17 +175,15 @@ public class TagsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "WizardOrHeadGM")]
     public async Task<IActionResult> PutTags(Guid guid, TagsInput tags)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
+            UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
         {
             if (guid != tags.Guid) return BadRequest();
 
@@ -302,13 +293,11 @@ public class TagsController : ControllerBase
     }
 
     [HttpPut("RedoTags")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<IActionResult> RedoTags()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var itemSheets = _context.ItemSheets.ToList();
 
@@ -409,19 +398,17 @@ public class TagsController : ControllerBase
     /// <returns></returns>
     // GET: api/v1/Tags/
     [HttpGet("AllTagsByTypeName/{TypeName}")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<TagsOutput>> GetTagTypesWithTags(string TypeName)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var userTags = UsersLogic.GetUserTagsList(authId, _context, "Reader",
-                UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context));
+                UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context));
             var tagType = await _context.TagTypes.Where(tt => tt.Name == TypeName).FirstOrDefaultAsync();
             var Foundtags = await _context.Tags.Where(t => t.Tagtype.Guid == tagType.Guid && t.Isactive == true
                 && (t.Larptags.Any(lt => lt.Larpguid == null)
@@ -449,16 +436,14 @@ public class TagsController : ControllerBase
 
     // GET: api/LinkedCharactersAndItems/5
     [HttpGet("LinkedCharactersAndItems/{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<ListAllTagOptions>> GetAllCharactersAndItemsLinkedSeries(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             try
             {
                 var output = new ListAllTagOptions();
@@ -707,17 +692,12 @@ public class TagsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "WizardOrHeadGM")]
     public async Task<ActionResult<Tags>> PostTags(TagsInput tags)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
+            UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
         {
             var currUser = await _context.Users.Where(u => u.Authid == authId).FirstOrDefaultAsync();
 
@@ -746,9 +726,9 @@ public class TagsController : ControllerBase
             {
                 foreach (var larpguid in tags.LarptagGuid)
                 {
-                    if (!UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                    if (!UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                         if (!_context.Larps.Any(tt => tt.Guid == larpguid) ||
-                            (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context)
+                            (UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context)
                              && !_context.UserLarproles.Any(ulr => ulr.Larpguid == larpguid
                                                                    && ulr.Isactive == true
                                                                    && ulr.Userguid == currUser.Guid
@@ -775,16 +755,11 @@ public class TagsController : ControllerBase
 
     // DELETE: api/v1/Tags/5
     [HttpDelete("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<Tag>> DeleteTags(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var tags = await _context.Tags.Where(t => t.Guid == guid).FirstOrDefaultAsync();
             if (tags == null) return NotFound();

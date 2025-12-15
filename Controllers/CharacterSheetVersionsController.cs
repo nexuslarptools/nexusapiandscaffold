@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,13 +33,11 @@ public class CharacterSheetVersionsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheetVersion>>> GetCharacterSheetVersion()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Approver", _context))
         {
             var sheetVersionInfo = await _context.CharacterSheetVersions.Select(csv => new
             {
@@ -69,13 +68,11 @@ public class CharacterSheetVersionsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheetVersion>>> GetCharacterSheetVersionByGuid(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Approver", _context))
         {
             var sheetVersionInfo = await _context.CharacterSheetVersions.Where(c => c.Guid == guid).Select(csv => new
             {
@@ -108,13 +105,11 @@ public class CharacterSheetVersionsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheetVersion>> GetCharacterSheetVersion(int id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Approver", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Approver", _context))
         {
             var characterSheetVersion = await _context.CharacterSheetVersions.FindAsync(id);
 
@@ -140,16 +135,14 @@ public class CharacterSheetVersionsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("revert/{id}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<IActionResult> RevertCharacterSheetVersion(int id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var oldSheet = await _context.CharacterSheetVersions.Where(csv => csv.Id == id).FirstOrDefaultAsync();
 
@@ -194,16 +187,14 @@ public class CharacterSheetVersionsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{id}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<IActionResult> PutCharacterSheetVersion(int id, CharacterSheetVersion characterSheetVersion)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             if (id != characterSheetVersion.Id) return BadRequest();
 
@@ -231,17 +222,15 @@ public class CharacterSheetVersionsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<CharacterSheetVersion>> PostCharacterSheetVersion(
         CharacterSheetVersion characterSheetVersion)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             _context.CharacterSheetVersions.Add(characterSheetVersion);
             await _context.SaveChangesAsync();
@@ -255,16 +244,11 @@ public class CharacterSheetVersionsController : ControllerBase
 
     // DELETE: api/CharacterSheetVersions/5
     [HttpDelete("{id}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<CharacterSheetVersion>> DeleteCharacterSheetVersion(int id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var characterSheetVersion = await _context.CharacterSheetVersions.FindAsync(id);
             if (characterSheetVersion == null) return NotFound();

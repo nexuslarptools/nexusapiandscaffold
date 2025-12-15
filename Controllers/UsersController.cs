@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -48,173 +49,141 @@ public class UsersController : ControllerBase
     /// <returns></returns>
     // GET api/v1/Users
     [HttpGet]
-    [Authorize]
+    [Authorize(Policy = "WizardOrHeadGM")]
     public async Task<ActionResult<IEnumerable<UserOut>>> GetAllUsers()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var UserListOut = new List<UserOut>();
+        var UsersList = _context.Users.Where(u => u.Isactive == true).ToList();
+        var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
+        var RolesList = _context.Roles.ToList();
+        var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();
+        var pronounsList = _context.Pronouns.ToList();
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var rolefirst = new RoleIDFirst();
+        Comparer<RoleOut> rc = rolefirst;
 
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        foreach (var user in UsersList)
         {
-            // var UsersList = _context.Users.Select(u => new UserOut {Guid=u.Guid, Firstname=u.Firstname, Lastname=u.Lastname,
-            // Preferredname=u.Preferredname, Email=u.Email, Pronounsguid=u.Pronounsguid
-            // }).ToList();
-            var UserListOut = new List<UserOut>();
-            var UsersList = _context.Users.Where(u => u.Isactive == true).ToList();
-            var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
-            var RolesList = _context.Roles.ToList();
-            var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();
-            var pronounsList = _context.Pronouns.ToList();
-
-            var rolefirst = new RoleIDFirst();
-            Comparer<RoleOut> rc = rolefirst;
-
-            foreach (var user in UsersList)
+            var newout = new UserOut
             {
-                var newout = new UserOut
+                Guid = user.Guid,
+                Firstname = user.Firstname,
+                Lastname = user.Lastname,
+                Preferredname = user.Preferredname,
+                Email = user.Email,
+                Pronounsguid = user.Pronounsguid
+            };
+            if (user.Pronounsguid != null)
+                newout.Pronouns = pronounsList.Where(pn => pn.Guid == user.Pronounsguid)
+                    .FirstOrDefault().Pronouns;
+            foreach (var larprole in UsersRolesList)
+                if (larprole.Userguid == newout.Guid)
                 {
-                    Guid = user.Guid,
-                    Firstname = user.Firstname,
-                    Lastname = user.Lastname,
-                    Preferredname = user.Preferredname,
-                    Email = user.Email,
-                    Pronounsguid = user.Pronounsguid
-                };
-                if (user.Pronounsguid != null)
-                    newout.Pronouns = pronounsList.Where(pn => pn.Guid == user.Pronounsguid)
-                        .FirstOrDefault().Pronouns;
-                foreach (var larprole in UsersRolesList)
-                    if (larprole.Userguid == newout.Guid)
+                    if (!newout.LarpRoles.Any(lr => lr.LarpGuid == larprole.Larpguid))
                     {
-                        if (!newout.LarpRoles.Any(lr => lr.LarpGuid == larprole.Larpguid))
+                        var newULR = new UserLarpRoleOut
                         {
-                            var newULR = new UserLarpRoleOut
-                            {
-                                LarpGuid = larprole.Larpguid,
-                                LarpName = LarpsList.Where(ll => ll.Guid == larprole.Larpguid).Select(ll => ll.Name)
-                                    .FirstOrDefault()
-                            };
+                            LarpGuid = larprole.Larpguid,
+                            LarpName = LarpsList.Where(ll => ll.Guid == larprole.Larpguid).Select(ll => ll.Name)
+                                .FirstOrDefault()
+                        };
 
-                            newout.LarpRoles.Add(newULR);
-                        }
-
-                        var currLARP = newout.LarpRoles.Where(lr => lr.LarpGuid == larprole.Larpguid)
-                            .FirstOrDefault();
-
-                        var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
-
-                        var newRoleOut = new RoleOut((int)newRole.Ord, newRole.Rolename);
-
-                        currLARP.Roles.Add(newRoleOut);
-
-                        var sortedroles = from role in currLARP.Roles
-                                          orderby role.RoleID
-                                          select role;
-
-                        currLARP.Roles = sortedroles.ToList();
+                        newout.LarpRoles.Add(newULR);
                     }
 
-                UserListOut.Add(newout);
-            }
+                    var currLARP = newout.LarpRoles.Where(lr => lr.LarpGuid == larprole.Larpguid)
+                        .FirstOrDefault();
 
-            var sortedusers = from user in UserListOut
-                              orderby user.Email
-                              select user;
+                    var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
 
-            UserListOut = sortedusers.ToList();
+                    var newRoleOut = new RoleOut((int)newRole.Ord, newRole.Rolename);
 
-            return Ok(UserListOut);
+                    currLARP.Roles.Add(newRoleOut);
+
+                    var sortedroles = from role in currLARP.Roles
+                                      orderby role.RoleID
+                                      select role;
+
+                    currLARP.Roles = sortedroles.ToList();
+                }
+
+            UserListOut.Add(newout);
         }
 
-        return Ok("Not Authorized");
+        var sortedusers = from user in UserListOut
+                          orderby user.Email
+                          select user;
+
+        UserListOut = sortedusers.ToList();
+
+        return Ok(UserListOut);
     }
 
     [HttpGet("WithInactive")]
-    [Authorize]
+    [Authorize(Policy = "WizardOrHeadGM")]
     public async Task<ActionResult<IEnumerable<UserOut>>> GetAllUsersWithInactive()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var UserListOut = new List<UserOut>();
+        var UsersList = _context.Users.ToList();
+        var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
+        var RolesList = _context.Roles.ToList();
+        var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var rolefirst = new RoleIDFirst();
+        Comparer<RoleOut> rc = rolefirst;
 
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        foreach (var user in UsersList)
         {
-            // var UsersList = _context.Users.Select(u => new UserOut {Guid=u.Guid, Firstname=u.Firstname, Lastname=u.Lastname,
-            // Preferredname=u.Preferredname, Email=u.Email, Pronounsguid=u.Pronounsguid
-            // }).ToList();
-            var UserListOut = new List<UserOut>();
-            var UsersList = _context.Users.ToList();
-            var UsersRolesList = _context.UserLarproles.Where(ulr => ulr.Isactive == true).ToList();
-            var RolesList = _context.Roles.ToList();
-            var LarpsList = _context.Larps.Where(l => l.Isactive == true).ToList();
-
-            var rolefirst = new RoleIDFirst();
-            Comparer<RoleOut> rc = rolefirst;
-
-            foreach (var user in UsersList)
+            var newout = new UserOut
             {
-                var newout = new UserOut
+                Guid = user.Guid,
+                Firstname = user.Firstname,
+                Lastname = user.Lastname,
+                Preferredname = user.Preferredname,
+                Email = user.Email,
+                Pronounsguid = user.Pronounsguid
+            };
+            foreach (var larprole in UsersRolesList)
+                if (larprole.Userguid == newout.Guid)
                 {
-                    Guid = user.Guid,
-                    Firstname = user.Firstname,
-                    Lastname = user.Lastname,
-                    Preferredname = user.Preferredname,
-                    Email = user.Email,
-                    Pronounsguid = user.Pronounsguid
-                };
-                foreach (var larprole in UsersRolesList)
-                    if (larprole.Userguid == newout.Guid)
+                    if (!newout.LarpRoles.Any(lr => lr.LarpGuid == larprole.Larpguid))
                     {
-                        if (!newout.LarpRoles.Any(lr => lr.LarpGuid == larprole.Larpguid))
+                        var newULR = new UserLarpRoleOut
                         {
-                            var newULR = new UserLarpRoleOut
-                            {
-                                LarpGuid = larprole.Larpguid,
-                                LarpName = LarpsList.Where(ll => ll.Guid == larprole.Larpguid).Select(ll => ll.Name)
-                                    .FirstOrDefault()
-                            };
+                            LarpGuid = larprole.Larpguid,
+                            LarpName = LarpsList.Where(ll => ll.Guid == larprole.Larpguid).Select(ll => ll.Name)
+                                .FirstOrDefault()
+                        };
 
-                            newout.LarpRoles.Add(newULR);
-                        }
-
-                        var currLARP = newout.LarpRoles.Where(lr => lr.LarpGuid == larprole.Larpguid)
-                            .FirstOrDefault();
-
-                        var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
-
-                        var newRoleOut = new RoleOut((int)newRole.Ord, newRole.Rolename);
-
-                        currLARP.Roles.Add(newRoleOut);
-
-                        var sortedroles = from role in currLARP.Roles
-                                          orderby role.RoleID
-                                          select role;
-
-                        currLARP.Roles = sortedroles.ToList();
+                        newout.LarpRoles.Add(newULR);
                     }
 
-                UserListOut.Add(newout);
-            }
+                    var currLARP = newout.LarpRoles.Where(lr => lr.LarpGuid == larprole.Larpguid)
+                        .FirstOrDefault();
 
-            var sortedusers = from user in UserListOut
-                              orderby user.Email
-                              select user;
+                    var newRole = RolesList.Where(rl => rl.Id == larprole.Roleid).FirstOrDefault();
 
-            UserListOut = sortedusers.ToList();
+                    var newRoleOut = new RoleOut((int)newRole.Ord, newRole.Rolename);
 
-            return Ok(UserListOut);
+                    currLARP.Roles.Add(newRoleOut);
+
+                    var sortedroles = from role in currLARP.Roles
+                                      orderby role.RoleID
+                                      select role;
+
+                    currLARP.Roles = sortedroles.ToList();
+                }
+
+            UserListOut.Add(newout);
         }
 
-        return Ok("Not Authorized");
+        var sortedusers = from user in UserListOut
+                          orderby user.Email
+                          select user;
+
+        UserListOut = sortedusers.ToList();
+
+        return Ok(UserListOut);
     }
 
     /// <summary>
@@ -226,16 +195,14 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<UserOut> GetAUser(Guid id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
         var currUseGuid = _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context) ||
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
+            UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context) ||
             currUseGuid == id)
         {
             var user = _context.Users.Where(u => u.Guid == id).FirstOrDefault();
@@ -298,11 +265,9 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<string> GetCurrentUserAuth()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (!UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context)) return Ok("{\"AuthLevel\":\"NONE\"}");
+        if (!UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context)) return Ok("{\"AuthLevel\":\"NONE\"}");
 
 
         var Rolelist = _context.UserLarproles.Where(u => u.User.Authid == authId && u.Isactive == true)
@@ -330,7 +295,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public ActionResult<Guid> GetCurrentUserGuid()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return _context.Users.Where(u => u.Authid == authId && u.Isactive == true).FirstOrDefault().Guid;
     }
@@ -343,9 +308,7 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> PutUser(Guid guid, Users user)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
@@ -355,7 +318,7 @@ public class UsersController : ControllerBase
         var oldUserinfo = _context.Users.Where(u => u.Guid == user.Guid).FirstOrDefault();
 
         var curUser = _context.Users.Where(u => u.Authid == authId).FirstOrDefault();
-        if (user.Guid != user.Guid && !UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        if (user.Guid != user.Guid && !UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
             return Unauthorized();
 
         if (oldUserinfo == null) return NotFound();
@@ -371,7 +334,7 @@ public class UsersController : ControllerBase
 
         if (oldUserinfo.Pronounsguid != user.Pronounsguid) oldUserinfo.Pronounsguid = user.Pronounsguid;
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
         {
             //check if any user larp roles were added
             if (user.UserLarproles != null)
@@ -442,14 +405,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("DeactivateUser/{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<UserOut>> Deactivate(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var user = await _context.Users.Where(u => u.Guid == guid).FirstOrDefaultAsync();
 
@@ -474,14 +435,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("ActivateUser/{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<UserOut>> Reactivate(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var user = await _context.Users.Where(u => u.Guid == guid).FirstOrDefaultAsync();
 
@@ -510,15 +469,13 @@ public class UsersController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost("AddUserRole/{guid}")]
-    [Authorize]
+    [Authorize(Policy = "WizardOrHeadGM")]
     public async Task<IActionResult> PostUserRole(Guid guid, UserRoleInput user)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
+            UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
         {
             if (guid != user.Guid) return BadRequest();
 
@@ -532,7 +489,7 @@ public class UsersController : ControllerBase
 
 
             if ((roleinfo.Rolename == "HeadGM" || roleinfo.Rolename == "Wizard") &&
-                !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context)) return Unauthorized();
+                !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context)) return Unauthorized();
 
 
             var larpInfo = _context.Larps.Where(u => u.Guid == user.LarpGuid).FirstOrDefault();
@@ -574,15 +531,13 @@ public class UsersController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost("RemoveUserRole/{guid}")]
-    [Authorize]
+    [Authorize(Policy = "WizardOrHeadGM")]
     public async Task<IActionResult> RemoveUserRole(Guid guid, UserRoleInput user)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) ||
-            UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) ||
+            UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context))
         {
             if (guid != user.Guid) return BadRequest();
 
@@ -591,7 +546,7 @@ public class UsersController : ControllerBase
             if (roleinfo == null) return NotFound();
 
             if ((roleinfo.Rolename == "HeadGM" || roleinfo.Rolename == "Wizard") &&
-                !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context)) return Unauthorized();
+                !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context)) return Unauthorized();
 
             var userLARPRoleInfo = _context.UserLarproles.Where(ulr => ulr.Larpguid == user.LarpGuid &&
                                                                        ulr.Userguid == user.Guid
@@ -599,7 +554,7 @@ public class UsersController : ControllerBase
 
             if (userLARPRoleInfo == null) return NotFound();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "HeadGM", _context) &&
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "HeadGM", _context) &&
                 (roleinfo.Rolename == "Wizard" || roleinfo.Rolename == "HeadGM")) return Unauthorized();
 
 
@@ -618,14 +573,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("UpdateAuth0")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<IActionResult> UpdateAuth0Users()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
 
             var UserList = await _context.Users.Where(u => u.Isactive == true)

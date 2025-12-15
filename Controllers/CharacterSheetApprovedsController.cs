@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -38,14 +39,13 @@ public class CharacterSheetApprovedsController : ControllerBase
     // GET: api/V1/CharacterSheetApproveds
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<CharSheetListItem>>> GetCharacterSheetApproved([OpenApiParameterIgnore][FromHeader(Name = "Authorization")] string origin)
+    public async Task<ActionResult<IEnumerable<CharSheetListItem>>> GetCharacterSheetApproved()
     {
-        var accessToken = origin.Remove(0, 7);
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var userData = UsersLogic.GetUserAuth0Info(authId, _context);
         if (userData.isAuthed("Reader"))
-        //if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        //if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             //var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
             //    .Select(it => new TagScanContainer(it.Guid, it.Fields)).ToList();
@@ -116,13 +116,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetWithDisabled()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var legalsheets = _context.CharacterSheetApproveds
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -150,13 +148,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheetApproved>> GetCharacterSheetApproved(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -167,7 +163,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -359,9 +355,8 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharListWithItemList>> GetMultiCharacterSheetItemGrouped(string guids)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var output = new CharListWithItemList();
             var guidlist = guids.Split(',');
@@ -386,7 +381,7 @@ public class CharacterSheetApprovedsController : ControllerBase
 
                     if (charSheetA == null && charSheet != null)
                     {
-                        if (!UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context)) return Unauthorized();
+                        if (!UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context)) return Unauthorized();
                         var cha = new CharSheet(charSheet, seriesList, appItemList, 
                             itemList, usersList, listCharSheets, listCSRM, listItemTypes);
                         output.Characters.Add(cha);
@@ -424,13 +419,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheet>> GetCharacterSheetBySeries(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalseries = _context.Series.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
@@ -443,7 +436,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSeries = TagScanner.ScanTags(legalseries, allowedTags);
@@ -486,13 +479,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetByAbilites(
         [FromBody] JsonElement input)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -503,7 +494,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -532,13 +523,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetByTag(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -549,7 +538,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             if (!allowedTags.Contains(guid)) return Unauthorized();
@@ -585,14 +574,12 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Series>> GetApprovedCharacterSearchPartial(string input)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-         Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
-            {
+           if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
+           {
             /*   
            var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -603,7 +590,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-           if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+           if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
            var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -640,7 +627,7 @@ public class CharacterSheetApprovedsController : ControllerBase
        return Unauthorized();*/
 
 
-            var wizardauth = UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context);
+            var wizardauth = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
 
                 var allowedLARPS = _context.UserLarproles
                     .Where(ulr => ulr.User.Authid == authId && ulr.Isactive == true).Select(ulr => (Guid)ulr.Larpguid)
@@ -725,13 +712,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<CharacterSheet>>> GetApprovedCharacterSheetBySpecialSkillsTag(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -742,7 +727,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -792,13 +777,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheet>> GetApprovedCharacterSheetWithSheetItem(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -809,7 +792,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -898,13 +881,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharacterSheet>> GetApprovedCharacterSheetWithAllItems(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             var legalsheets = _context.CharacterSheetApproveds.Where(it => it.Isactive == true)
                 .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetApprovedTags)).ToList();
@@ -915,7 +896,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                 (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
                 && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
             var allowedSheets = TagScanner.ScanTags(legalsheets, allowedTags);
@@ -1041,13 +1022,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> PutCharacterSheetApproved(int id, CharSheet characterSheetApproved)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
         //    if (characterSheetApproved.Img1 != null && characterSheetApproved.imagedata1 != null &&
         //        characterSheetApproved.imagedata1.Length != 0)
@@ -1119,13 +1098,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [HttpPut("kick/{guid}")]
     public async Task<IActionResult> KickCharacterSheetApproved(Guid guid, string newReviewMessage)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var result = _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
 
@@ -1202,13 +1179,11 @@ public class CharacterSheetApprovedsController : ControllerBase
         CharSheet characterSheetApproved)
     {
 
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var characterSheet = new CharacterSheetApproved();
 
@@ -1276,13 +1251,11 @@ public class CharacterSheetApprovedsController : ControllerBase
     [HttpDelete("{guid}")]
     public async Task<ActionResult<CharacterSheetApproved>> DeleteCharacterSheetApproved(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+        // Removed direct access token read; rely on ClaimsPrincipal
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var characterSheetApproved =
                 await _context.CharacterSheetApproveds.Where(csa => csa.Guid == guid).ToListAsync();

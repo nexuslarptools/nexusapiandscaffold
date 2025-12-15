@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -36,15 +37,14 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<Series>>> GetSeries()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             var ser = await _context.Series
                 .Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
@@ -95,15 +95,14 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<List<SeriWithCharSheets>>> GetSeriesWithApprovedCharList()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
                 .OrderBy(o => StringLogic.IgnorePunct(o.Title))
@@ -166,15 +165,16 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Series>>> GetSeriesList(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             var none = await _context.Series.Where(s => s.Isactive == true && s.Title == string.Empty)
                 .Select(sc => new { sc.Guid, sc.Title, sc.Titlejpn })
@@ -207,15 +207,16 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Series>>> GetSeriesListWithTags(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             var ser = await _context.Series.Where(s => s.Isactive == true && s.Title != string.Empty
                                                                           && allowedSeries.Contains(s.Guid)).Select(
@@ -280,15 +281,16 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<Series>>> GetFullSeriesListWithTags()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             var ser = await _context.Series
                 .Where(s => s.Isactive == true && allowedSeries.Contains(s.Guid) && s.Title != "")
@@ -341,13 +343,13 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<IEnumerable<Series>>> GetFullSeriesListWithTagsAndDeactive()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var ser = await _context.Series.Where(s => s.Title != "")
               .OrderBy(o => o.Title)
@@ -400,15 +402,14 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Series>>> GetSeriesListbyTag(
         [FromQuery] PagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             var foundTag = await _context.Tags
                 .Where(t => t.Isactive == true && (t.Tagtype.Name == "Series") && t.Guid == pagingParameterModel.guid)
@@ -441,15 +442,16 @@ public class SeriesController : ControllerBase
     public async Task<ActionResult<Series>> GetSeriesSearchPartial(
         [FromQuery] SeriesPagingParameterModel pagingParameterModel)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             var initSeries = await _context.Series.Where(c => c.Isactive == true && allowedSeries.Contains(c.Guid))
                 .ToListAsync();
@@ -528,15 +530,16 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Series>> GetSeries(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
@@ -589,17 +592,18 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<object>> GetSeriesWithChars(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             //var series = await _context.Series.FindAsync(id);
 
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
@@ -629,17 +633,16 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<object>> GetSeriesWithApprovedCharacters(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
             //var series = await _context.Series.FindAsync(id);
 
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
@@ -669,15 +672,15 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<object>> GetSeriesWithCharsandSheetItems(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
@@ -708,15 +711,16 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<object>> GetSeriesWithApprovedItems(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
         {
-            var allowedSeries = GetAllowedSeries(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedSeries = GetAllowedSeries(authId, isWizard);
 
             if (!allowedSeries.Contains(guid)) return Unauthorized();
 
@@ -746,13 +750,11 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<ListItemsAndCharacters>> GetAllCharactersAndItemsLinkedSeries(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Reader", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Reader", _context))
             try
             {
                 var output = new ListItemsAndCharacters();
@@ -794,15 +796,12 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> PutSeries(Guid guid, SeriInput series)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // Task/AuthUser... removed token usage; use ClaimsPrincipal
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
-            var allowedTags = GetAllowedUserTags(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedTags = GetAllowedUserTags(authId, isWizard);
 
             if (guid != series.Guid) return BadRequest();
             var title = await _context.Series.Where(s => s.Guid == guid).FirstOrDefaultAsync();
@@ -876,15 +875,12 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Series>> PostSeries([FromBody] SeriInput input)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        // Task/AuthUser... removed token usage; use ClaimsPrincipal
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
         {
-            var allowedTags = GetAllowedUserTags(authId, accessToken);
+            var isWizard = UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context);
+            var allowedTags = GetAllowedUserTags(authId, isWizard);
 
             var newSeries = new Series()
             {
@@ -932,12 +928,8 @@ public class SeriesController : ControllerBase
     [HttpPost("dumpin")]
     public async Task<ActionResult<Series>> PostSeriesDump([FromBody] SeriInput input)
     {
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-        if (accessToken != "IAmABanana!")
-        {
-            return Unauthorized();
-        }
+        // Removed direct Authorization header usage. Restrict to authorized Wizards via ClaimsPrincipal.
+        if (!UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context)) return Unauthorized();
 
         var newSeries = new Series()
         {
@@ -957,15 +949,16 @@ public class SeriesController : ControllerBase
     [Authorize]
     public async Task<ActionResult<Series>> DeleteSeries(Guid guid)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        // removed direct access token read; rely on ClaimsPrincipal
         // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
         // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
-            var allowedTags = GetAllowedUserTags(authId, accessToken);
+            var isWizard = true;
+            var allowedTags = GetAllowedUserTags(authId, isWizard);
 
             var series = await _context.Series.FindAsync(guid);
             if (series == null) return NotFound();
@@ -988,7 +981,7 @@ public class SeriesController : ControllerBase
     }
 
 
-    private List<Guid> GetAllowedSeries(string authId, string accessToken)
+    private List<Guid> GetAllowedSeries(string authId, bool isWizard)
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
             .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
@@ -999,13 +992,13 @@ public class SeriesController : ControllerBase
             (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
             && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (isWizard)
             allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
         return TagScanner.ScanTagsSeries(legalsheets, allowedTags);
     }
 
-    private List<Guid?> GetAllowedUserTags(string authId, string accessToken)
+    private List<Guid?> GetAllowedUserTags(string authId, bool isWizard)
     {
         var legalsheets = _context.Series.Where(it => it.Isactive == true)
             .Select(it => new TagScanContainer(it.Guid, it.SeriesTags)).ToList();
@@ -1016,7 +1009,7 @@ public class SeriesController : ControllerBase
             (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
             && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (isWizard)
             allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
 
         return allowedTags;

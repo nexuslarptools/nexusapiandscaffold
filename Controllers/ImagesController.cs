@@ -11,6 +11,7 @@ using Minio;
 using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using NEXUSDataLayerScaffold.Attributes;
 using NEXUSDataLayerScaffold.Entities;
@@ -23,30 +24,26 @@ namespace NEXUSDataLayerScaffold.Controllers;
 
 [Route("api/v1/[controller]")]
 [ApiController]
+[Authorize]
 public class ImagesController : ControllerBase
 {
     private readonly NexusLarpLocalContext _context;
     private readonly IMinioClient _minio;
+    private readonly string _bucket;
 
-    public ImagesController(NexusLarpLocalContext context, IMinioClient minio)
+    public ImagesController(NexusLarpLocalContext context, IMinioClient minio, IOptions<MinioOptions> minioOptions)
     {
         _context = context;
         _minio = minio;
+        _bucket = minioOptions.Value.Bucket;
     }
 
     // GET: api/v1/Tags
     [HttpGet]
-    public async Task<ActionResult<string>> GetAllImages([OpenApiParameterIgnore] [FromHeader(Name = "Authorization")] string origin)
+    public async Task<ActionResult<string>> GetAllImages()
     {
-
-        var accessToken = origin.Remove(0, 7);
-
-        if (accessToken != "IAmABanana!")
-        {
-            return Unauthorized();
-        }
-
-        string bucket = "nexusdata";
+        // Auth is enforced by [Authorize] and the configured authentication schemes (Cookie/JWT)
+        var bucket = _bucket;
 
         try
         {
@@ -103,16 +100,10 @@ public class ImagesController : ControllerBase
     }
 
     [HttpPut("UpdateApprovedImageLinks")]
-    public async Task<ActionResult<string>> UpdateImages([OpenApiParameterIgnore][FromHeader(Name = "Authorization")] string origin)
+    public async Task<ActionResult<string>> UpdateImages()
     {
-        var accessToken = origin.Remove(0, 7);
-
-        if (accessToken != "IAmABanana!")
-        {
-            return Unauthorized();
-        }
-
-        string bucket = "nexusdata";
+        // Auth is enforced by [Authorize] and the configured authentication schemes (Cookie/JWT)
+        var bucket = _bucket;
 
         try
         {

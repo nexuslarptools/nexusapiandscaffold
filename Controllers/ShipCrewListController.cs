@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using static Amazon.RuntimeDependencies.SecurityTokenServiceClientContext;
+using System.Security.Claims;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -27,14 +28,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
         // Get
         [HttpGet]
-        [Authorize]
+        [Authorize(Policy = "Writer")]
         public async Task<ActionResult<CrewRolesDO>> GetShipCrewList()
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
                 var output = new CrewRolesDO();
 
@@ -57,14 +55,11 @@ namespace NEXUSDataLayerScaffold.Controllers
         // Post WIZARDS ONLY
         // Get
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = "Wizard")]
         public async Task<ActionResult<CrewRole>> AddShipCrew([FromBody] CrewRole input)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             {
                 try
                 {
@@ -83,14 +78,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
         // Put WIZARDS ONLY
         [HttpPut("{guid}")]
-        [Authorize]
+        [Authorize(Policy = "Wizard")]
         public async Task<IActionResult> PutCrewPosition(Guid guid, CrewRole input)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             {
                 if (input.Guid != guid) 
                 {
@@ -120,14 +112,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
         // Put WIZARDS ONLY
         [HttpPut("disable/{guid}")]
-        [Authorize]
+        [Authorize(Policy = "Wizard")]
         public async Task<IActionResult> DeactivateCrewPosition(Guid guid)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             {
                 try
                 {
@@ -149,14 +138,11 @@ namespace NEXUSDataLayerScaffold.Controllers
 
         // Put WIZARDS ONLY
         [HttpPut("enable/{guid}")]
-        [Authorize]
+        [Authorize(Policy = "Wizard")]
         public async Task<IActionResult> ReactivateCrewPosition(Guid guid)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             {
                 try
                 {
@@ -179,14 +165,11 @@ namespace NEXUSDataLayerScaffold.Controllers
         // Delete WIZARDS ONLY
         // Put WIZARDS ONLY
         [HttpDelete("{guid}")]
-        [Authorize]
+        [Authorize(Policy = "Wizard")]
         public async Task<IActionResult> FullDeleteCrewPosition(Guid guid)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             {
                 try
                 {

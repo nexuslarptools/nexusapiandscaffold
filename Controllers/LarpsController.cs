@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ public class LarpsController : ControllerBase
 
     // GET: api/Larps
     [HttpGet]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetLarps()
     {
         var larpList = await _context.Larps.Where(l => l.Isactive == true)
@@ -34,11 +35,10 @@ public class LarpsController : ControllerBase
     }
 
     [HttpGet("Accessible")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetCurrUserLarps()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         var larpList = await _context.Larps.Where(l => l.Isactive == true
                                                        && l.UserLarproles.Any(ulr => ulr.Isactive == true &&
@@ -46,7 +46,7 @@ public class LarpsController : ControllerBase
                                                            && ulr.User.Authid == authId))
             .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             larpList = await _context.Larps.Where(l => l.Isactive == true)
                 .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
 
@@ -54,13 +54,12 @@ public class LarpsController : ControllerBase
     }
 
     [HttpGet("GMAccess")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetLarpsWithGMAccess()
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             return await _context.Larps.Where(l =>
                     l.Isactive == true && l.Guid != Guid.Parse("0b247b46-86fd-11ed-956d-7faf2be673cc"))
                 .Select(l => new LARPOut(l.Guid, l.Name, l.Shortname, l.Location, l.Isactive)).ToListAsync();
@@ -74,7 +73,7 @@ public class LarpsController : ControllerBase
     }
 
     [HttpGet("WithGMs")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<List<LARPOut>>> GetLarpsWithAssignedGMs()
     {
         var larpList = await _context.Larps.Where(l => l.Isactive == true).ToListAsync();
@@ -123,7 +122,7 @@ public class LarpsController : ControllerBase
 
     // GET: api/Larps/5
     [HttpGet("{id}")]
-    [Authorize]
+    [Authorize(Policy = "Reader")]
     public async Task<ActionResult<Larp>> GetLarps(Guid id)
     {
         var larps = await _context.Larps.FindAsync(id);
@@ -137,16 +136,11 @@ public class LarpsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPut("{guid}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<Larps>> PutLarps(Guid guid, Larps larps)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (!UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context)) return Unauthorized();
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context)) return Unauthorized();
 
         var currentLarp = _context.Larps.Where(l => l.Isactive == true && l.Guid == guid).FirstOrDefault();
 
@@ -187,16 +181,11 @@ public class LarpsController : ControllerBase
     // To protect from overposting attacks, enable the specific properties you want to bind to, for
     // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<Larp>> PostLarps(Larp larps)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (!UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context)) return Unauthorized();
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context)) return Unauthorized();
 
         _context.Larps.Add(larps);
         await _context.SaveChangesAsync();
@@ -206,16 +195,11 @@ public class LarpsController : ControllerBase
 
     // DELETE: api/Larps/5
     [HttpDelete("{id}")]
-    [Authorize]
+    [Authorize(Policy = "Wizard")]
     public async Task<ActionResult<Larp>> DeleteLarps(Guid id)
     {
-        var authId = HttpContext.User.Claims.ToList()[1].Value;
-
-        var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
         {
             var larps = await _context.Larps.FindAsync(id);
             if (larps == null) return NotFound();

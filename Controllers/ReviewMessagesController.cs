@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace NEXUSDataLayerScaffold.Controllers
 {
@@ -28,11 +29,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<ReviewMessage>>> GetItemReviewMessages(int id)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var rmal = new ReviewMessageAcksLogic(_context);
@@ -64,11 +63,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<ReviewMessage>>> GetCharacterReviewMessages(int id)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var rmal = new ReviewMessageAcksLogic(_context);
@@ -101,11 +98,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<ReviewMessage>>> GetItemReviewMessages(Guid guid)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var rmal = new ReviewMessageAcksLogic(_context);
@@ -139,11 +134,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<ReviewMessage>>> GetCharacterReviewMessages(Guid guid)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var rmal = new ReviewMessageAcksLogic(_context);
@@ -180,11 +173,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> PostItemReviewMessage([FromBody] ReviewMessage itemReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -248,11 +239,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> PostCharacterReviewMessage([FromBody] ReviewMessage characterReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var rmsl = new ReviewMessageSubsLogic(_context);
@@ -315,17 +304,15 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> PutItemReviewMessage(int id, [FromBody] ReviewMessage itemReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == itemReview.Id)
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context) && id == itemReview.Id)
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
 
                 var result = await rml.GetItemMessage(id);
-                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 {
                     return Unauthorized();
                 }
@@ -347,17 +334,15 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> PutCharacterReviewMessage(int id, [FromBody] ReviewMessage characterReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == characterReview.Id)
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context) && id == characterReview.Id)
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
 
                 var result = await rml.GetCharacterMessage(id);
-                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 {
                     return Unauthorized();
                 }
@@ -379,17 +364,15 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult> RemoveItemReviewMessage(int id)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
 
                 var result = await rml.GetItemMessage(id);
-                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 {
                     return Unauthorized();
                 }
@@ -410,17 +393,15 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> RemoveCharacterReviewMessage(int id)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
 
                 var result = await rml.GetCharacterMessage(id);
-                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 {
                     return Unauthorized();
                 }
@@ -440,17 +421,15 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> ReactivateItemReviewMessage(int id, [FromBody] ReviewMessage itemReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == itemReview.Id)
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context) && id == itemReview.Id)
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
 
                 var result = await rml.GetItemMessage(id);
-                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 {
                     return Unauthorized();
                 }
@@ -471,17 +450,15 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> ReactivateCharacterReviewMessage(int id, [FromBody] ReviewMessage characterReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Writer", _context) && id == characterReview.Id)
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context) && id == characterReview.Id)
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
 
                 var result = await rml.GetCharacterMessage(id);
-                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context))
+                if (currUserGuid != result.CreatedbyuserGuid && !UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
                 {
                     return Unauthorized();
                 }
@@ -502,11 +479,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> DeleteItemReviewMessage(int id, [FromBody] ReviewMessage itemReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) && id == itemReview.Id)
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) && id == itemReview.Id)
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);
@@ -525,11 +500,9 @@ namespace NEXUSDataLayerScaffold.Controllers
         [Authorize]
         public async Task<ActionResult<ReviewMessage>> DeleteCharacterReviewMessage(int id, [FromBody] ReviewMessage characterReview)
         {
-            var authId = HttpContext.User.Claims.ToList()[1].Value;
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            var accessToken = HttpContext.Request.Headers["Authorization"].ToString().Remove(0, 7);
-
-            if (UsersLogic.IsUserAuthed(authId, accessToken, "Wizard", _context) && id == characterReview.Id)
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context) && id == characterReview.Id)
             {
                 var rml = new ReviewMessageLogic(_context);
                 var currUserGuid = await UsersLogic.GetUserGuid(authId, _context);

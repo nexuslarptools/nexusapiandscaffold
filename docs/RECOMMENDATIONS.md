@@ -55,6 +55,24 @@ Note: Minimal, low-risk code/config changes were applied as part of this review:
 - Minimal token surface
   - Avoid storing tokens server-side unless necessary (options.SaveToken = false unless a feature requires it).
 
+### Finalized configuration (Auth0 + BFF)
+- Authority: https://dev-3xazewbu.auth0.com/
+- Audience: https://databasedev.kylebrighton.com/
+- JWT bearer for API only; BFF (reverse proxy) performs front-channel OIDC, browser never handles access tokens.
+- Claims mapping
+  - NameClaimType = "sub"
+  - RoleClaimType = ClaimTypes.Role (populated by a claims transformation)
+  - RoleNormalizationTransform maps both claim shapes into roles:
+    - non-namespaced array: `roles`
+    - namespaced array: `https://nexuslarps.com/roles`
+- Policies (hierarchical): Reader, Writer, Approver, HeadGM, Wizard, WizardOrHeadGM.
+- Controllers use `[Authorize(Policy = "...")]` and avoid reading Authorization headers or positional claims.
+
+### Removed anti-patterns
+- No parsing of Authorization headers in controllers.
+- No positional access to `HttpContext.User.Claims`.
+- No header-injection bridge from cookies to Authorization header in the middleware/pipeline.
+
 ## 5) Observability
 
 - OpenTelemetry

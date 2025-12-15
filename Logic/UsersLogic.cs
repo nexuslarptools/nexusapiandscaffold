@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using Azure.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -58,6 +59,7 @@ public class UsersLogic
         return new MetadataRoles();
     }
 
+    [Obsolete("Use ClaimsPrincipal overload: IsUserAuthed(ClaimsPrincipal user, string authLevel, NexusLarpLocalContext context)")]
     public static bool IsUserAuthed(string authIdValue, string accessToken, string authLevel,
         NexusLarpLocalContext _context)
     {
@@ -84,48 +86,16 @@ public class UsersLogic
 
         var foundUser = foundUsers.FirstOrDefault();
 
+        // OIDC-aligned behavior: do not create local users from tokens here; rely on middleware-validated identity
         if (foundUser == null)
         {
-            Logger.LogInformation("User {AuthId} not found locally. Attempting to create from access token.", authIdValue);
-            var autheduser = GetUserInfo(accessToken, _context);
-
-            if (!string.IsNullOrEmpty(autheduser.Result.authid))
-            {
-                var newUsers = new User
-                {
-                    Email = autheduser.Result.email,
-                    Preferredname = autheduser.Result.name,
-                    Authid = autheduser.Result.authid,
-                    Isactive = true
-                };
-
-                try
-                {
-                    _context.Users.Add(newUsers);
-                    _context.SaveChanges();
-                    Logger.LogInformation("Created new user record for {AuthId}", authIdValue);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogError(e, "Failed to create new user record for {AuthId}", authIdValue);
-                }
-            }
-
+            Logger.LogWarning("User {AuthId} not found in local store; denying access (OIDC-aligned)", authIdValue);
             return false;
         }
 
         if (foundUser.Isactive == false)
         {
-            Logger.LogWarning("User {AuthId} is inactive", authIdValue);
-            if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
-            {
-                foundUser.Isactive = true;
-                _context.Users.Update(foundUser);
-                _context.SaveChanges();
-                Logger.LogInformation("Admin override: reactivated user {AuthId}", authIdValue);
-                return true;
-            }
-
+            Logger.LogWarning("User {AuthId} is inactive; denying access (no overrides)", authIdValue);
             return false;
         }
 
@@ -143,42 +113,33 @@ public class UsersLogic
 
         if (foundrole == null)
         {
-            Logger.LogWarning("User {AuthId} lacks required role {Level}", authIdValue, authLevel);
-            if (authIdValue == "auth0|5eb6c2556b69bc0c120737e9")
-            {
-                Logger.LogInformation("Admin override path for {AuthId} and level {Level}", authIdValue, authLevel);
-                foundrole = _context.UserLarproles.Where(ulr =>
-                        ulr.Userguid == foundUser.Guid && ulr.Role.Rolename == authLevel && ulr.Isactive == false)
-                    .FirstOrDefault();
-
-                if (foundrole == null)
-                {
-                    foundrole = new UserLarprole
-                    {
-                        Userguid = foundUser.Guid,
-                        Larpguid = _context.Larps.Where(l => l.Isactive == true && l.Name == "Default")
-                            .Select(l => l.Guid).FirstOrDefault(),
-                        Roleid = _context.Roles.Where(r => r.Rolename == "Wizard").Select(l => l.Id).FirstOrDefault()
-                    };
-
-                    _context.UserLarproles.Add(foundrole);
-                    Logger.LogInformation("Admin override: created role mapping for {AuthId} to {Level}", authIdValue, authLevel);
-                }
-                else
-                {
-                    foundrole.Isactive = true;
-                    _context.UserLarproles.Update(foundrole);
-                    Logger.LogInformation("Admin override: reactivated role mapping for {AuthId} to {Level}", authIdValue, authLevel);
-                }
-
-                _context.SaveChanges();
-            }
-
+            Logger.LogWarning("User {AuthId} lacks required role {Level}; denying access (no overrides)", authIdValue, authLevel);
             return false;
         }
 
         Logger.LogInformation("Access granted for {AuthId} at level {Level}", authIdValue, authLevel);
         return true;
+    }
+
+    // OIDC-conformant overload that accepts the authenticated principal directly
+    public static bool IsUserAuthed(ClaimsPrincipal user, string authLevel, NexusLarpLocalContext context)
+    {
+        if (user == null || user.Identity == null || user.Identity.IsAuthenticated == false)
+        {
+            Logger.LogWarning("IsUserAuthed called with unauthenticated principal");
+            return false;
+        }
+
+        // Prefer standard OIDC 'sub', fallback to NameIdentifier
+        var authId = user.FindFirstValue("sub") ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(authId))
+        {
+            Logger.LogWarning("IsUserAuthed could not resolve subject claim from principal");
+            return false;
+        }
+
+        // 'accessToken' is not used in OIDC-conformant path
+        return IsUserAuthed(authId, string.Empty, authLevel, context);
     }
 
 
