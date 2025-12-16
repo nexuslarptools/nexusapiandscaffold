@@ -630,6 +630,8 @@ public class Startup
         // If Traefik ForwardAuth has authenticated the user, map headers to claims
         app.UseMiddleware<ForwardAuthClaimsMiddleware>();
         app.UseAuthentication();
+        // Log authenticated principal/claims to aid debugging (after authentication, before authorization)
+        app.UseMiddleware<NEXUSDataLayerScaffold.Extensions.ClaimsLoggingMiddleware>();
         // Removed header injection bridge to keep API strictly Bearer-based and BFF-friendly
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>

@@ -3,11 +3,19 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 
 namespace NEXUSDataLayerScaffold
 {
     public sealed class RoleNormalizationTransform : IClaimsTransformation
     {
+        private readonly ILogger<RoleNormalizationTransform> _logger;
+
+        public RoleNormalizationTransform(ILogger<RoleNormalizationTransform> logger)
+        {
+            _logger = logger;
+        }
+
         public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
             if (principal?.Identity is not ClaimsIdentity id || !id.IsAuthenticated)
@@ -32,6 +40,17 @@ namespace NEXUSDataLayerScaffold
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
+            try
+            {
+                // Log the incoming role sources for diagnostics
+                var sources = id.Claims
+                    .Where(c => roleTypeCandidates.Any(t => string.Equals(c.Type, t, StringComparison.OrdinalIgnoreCase)))
+                    .GroupBy(c => c.Type)
+                    .ToDictionary(g => g.Key, g => g.Select(c => c.Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
+                _logger.LogDebug("RoleNormalization: input role sources: {Sources}", sources);
+            }
+            catch { /* ignore */ }
+
             // Known canonical roles used in policies (match case exactly as policies require)
             var canonical = new[] { "Reader", "Writer", "Approver", "HeadGM", "Wizard" };
 
@@ -47,6 +66,15 @@ namespace NEXUSDataLayerScaffold
                     id.AddClaim(new Claim(ClaimTypes.Role, canonicalMatch));
                 }
             }
+
+            try
+            {
+                var finalRoles = id.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                _logger.LogInformation("RoleNormalization: final roles for subject {Sub}: {Roles}",
+                    id.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? id.FindFirst("sub")?.Value,
+                    finalRoles);
+            }
+            catch { /* ignore */ }
 
             return Task.FromResult(principal);
         }

@@ -43,6 +43,7 @@ namespace NEXUSDataLayerScaffold.Authentication
             var idToken = Request.Headers["X-Auth-Request-Token"].ToString();
             if (!string.IsNullOrWhiteSpace(idToken))
             {
+                Logger.LogDebug("ForwardAuth: X-Auth-Request-Token detected; attempting to parse ID token (length={Len})", idToken.Length);
                 // Allow optional "Bearer " prefix
                 if (idToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 {
@@ -147,6 +148,32 @@ namespace NEXUSDataLayerScaffold.Authentication
                             }
                         }
 
+                        // Log summary of extracted claims (mask PII outside Development)
+                        try
+                        {
+                            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                            var dev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+                            string Mask(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? string.Empty : (s!.Length <= 3 ? "***" : s.Substring(0, 3) + "***");
+                            string MaskEmail(string? s)
+                            {
+                                if (string.IsNullOrWhiteSpace(s)) return s ?? string.Empty;
+                                var at = s.IndexOf('@');
+                                if (at <= 1) return "***@***";
+                                return s.Substring(0, 1) + "***" + s.Substring(at);
+                            }
+
+                            var subVal = tokenIdentity.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? tokenIdentity.FindFirst("sub")?.Value;
+                            var emailVal = tokenIdentity.FindFirst(ClaimTypes.Email)?.Value ?? tokenIdentity.FindFirst("email")?.Value;
+                            var rolesVals = tokenIdentity.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                            if (!dev)
+                            {
+                                subVal = Mask(subVal);
+                                emailVal = MaskEmail(emailVal);
+                            }
+                            Logger.LogInformation("ForwardAuth(IDToken): sub={Sub}, email={Email}, rolesCount={Count}, roles={Roles}", subVal, emailVal, rolesVals.Length, rolesVals);
+                        }
+                        catch { /* ignore logging errors */ }
+
                         var principalFromToken = new ClaimsPrincipal(tokenIdentity);
                         var ticketFromToken = new AuthenticationTicket(principalFromToken, Scheme);
                         return Task.FromResult(AuthenticateResult.Success(ticketFromToken));
@@ -206,6 +233,31 @@ namespace NEXUSDataLayerScaffold.Authentication
                     identity.AddClaim(new Claim("groups", g));
                 }
             }
+
+            // Log summary for header-based auth
+            try
+            {
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+                var dev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+                string Mask(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? string.Empty : (s!.Length <= 3 ? "***" : s.Substring(0, 3) + "***");
+                string MaskEmail(string? s)
+                {
+                    if (string.IsNullOrWhiteSpace(s)) return s ?? string.Empty;
+                    var at = s.IndexOf('@');
+                    if (at <= 1) return "***@***";
+                    return s.Substring(0, 1) + "***" + s.Substring(at);
+                }
+                var subVal = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? identity.FindFirst("sub")?.Value;
+                var emailVal = identity.FindFirst(ClaimTypes.Email)?.Value ?? identity.FindFirst("email")?.Value;
+                var rolesVals = identity.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                if (!dev)
+                {
+                    subVal = Mask(subVal);
+                    emailVal = MaskEmail(emailVal);
+                }
+                Logger.LogInformation("ForwardAuth(Headers): sub={Sub}, email={Email}, rolesCount={Count}, roles={Roles}", subVal, emailVal, rolesVals.Length, rolesVals);
+            }
+            catch { /* ignore */ }
 
             var principal = new ClaimsPrincipal(identity);
             var ticket2 = new AuthenticationTicket(principal, Scheme);
