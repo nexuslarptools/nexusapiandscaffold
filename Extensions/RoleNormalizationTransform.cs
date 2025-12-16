@@ -16,7 +16,8 @@ namespace NEXUSDataLayerScaffold
             }
 
             // Gather roles from both namespaced and non-namespaced claim sources
-            var roles = id.FindAll("https://nexuslarps.com/roles").Select(c => c.Value)
+            // Updated namespace per ForwardAuth provider: https://Nexuslarp.com/roles
+            var roles = id.FindAll("https://Nexuslarp.com/roles").Select(c => c.Value)
                 .Concat(id.FindAll("roles").Select(c => c.Value))
                 .Where(v => !string.IsNullOrWhiteSpace(v))
                 .Distinct(StringComparer.OrdinalIgnoreCase)

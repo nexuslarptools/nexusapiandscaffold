@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace NEXUSDataLayerScaffold.Authentication
 {
@@ -34,6 +37,106 @@ namespace NEXUSDataLayerScaffold.Authentication
             {
                 var ticket = new AuthenticationTicket(Context.User, Scheme);
                 return Task.FromResult(AuthenticateResult.Success(ticket));
+            }
+
+            // Prefer ID Token forwarded by the proxy if present (X-Auth-Request-Token)
+            var idToken = Request.Headers["X-Auth-Request-Token"].ToString();
+            if (!string.IsNullOrWhiteSpace(idToken))
+            {
+                // Allow optional "Bearer " prefix
+                if (idToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    idToken = idToken.Substring("Bearer ".Length).Trim();
+                }
+
+                try
+                {
+                    // Parse token without validating (proxy is trusted in ForwardAuth pattern)
+                    // Use lightweight base64url JSON parsing to reliably extract arrays
+                    static string B64Url(string s)
+                    {
+                        s = s.Replace('-', '+').Replace('_', '/');
+                        switch (s.Length % 4)
+                        {
+                            case 2: s += "=="; break;
+                            case 3: s += "="; break;
+                        }
+                        var bytes = Convert.FromBase64String(s);
+                        return Encoding.UTF8.GetString(bytes);
+                    }
+
+                    var parts = idToken.Split('.');
+                    if (parts.Length >= 2)
+                    {
+                        var payloadJson = B64Url(parts[1]);
+                        using var doc = JsonDocument.Parse(payloadJson);
+                        var root = doc.RootElement;
+
+                        var tokenIdentity = new ClaimsIdentity(Scheme);
+                        if (root.TryGetProperty("sub", out var sub))
+                        {
+                            var s = sub.GetString();
+                            if (!string.IsNullOrWhiteSpace(s))
+                            {
+                                tokenIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, s!));
+                                tokenIdentity.AddClaim(new Claim("sub", s!));
+                            }
+                        }
+                        if (root.TryGetProperty("name", out var nameEl))
+                        {
+                            var n = nameEl.GetString();
+                            if (!string.IsNullOrWhiteSpace(n))
+                            {
+                                tokenIdentity.AddClaim(new Claim(ClaimTypes.Name, n!));
+                                tokenIdentity.AddClaim(new Claim("name", n!));
+                            }
+                        }
+                        if (root.TryGetProperty("email", out var emailEl))
+                        {
+                            var e = emailEl.GetString();
+                            if (!string.IsNullOrWhiteSpace(e))
+                            {
+                                tokenIdentity.AddClaim(new Claim(ClaimTypes.Email, e!));
+                                tokenIdentity.AddClaim(new Claim("email", e!));
+                            }
+                        }
+
+                        // Roles: prefer new namespace, also accept plain 'roles' array
+                        if (root.TryGetProperty("https://Nexuslarp.com/roles", out var nsRoles) && nsRoles.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var r in nsRoles.EnumerateArray())
+                            {
+                                var rv = r.GetString();
+                                if (!string.IsNullOrWhiteSpace(rv))
+                                {
+                                    tokenIdentity.AddClaim(new Claim(ClaimTypes.Role, rv!));
+                                    tokenIdentity.AddClaim(new Claim("https://Nexuslarp.com/roles", rv!));
+                                }
+                            }
+                        }
+                        else if (root.TryGetProperty("roles", out var roles) && roles.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var r in roles.EnumerateArray())
+                            {
+                                var rv = r.GetString();
+                                if (!string.IsNullOrWhiteSpace(rv))
+                                {
+                                    tokenIdentity.AddClaim(new Claim(ClaimTypes.Role, rv!));
+                                    tokenIdentity.AddClaim(new Claim("roles", rv!));
+                                }
+                            }
+                        }
+
+                        var principalFromToken = new ClaimsPrincipal(tokenIdentity);
+                        var ticketFromToken = new AuthenticationTicket(principalFromToken, Scheme);
+                        return Task.FromResult(AuthenticateResult.Success(ticketFromToken));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to parse ID token from X-Auth-Request-Token header");
+                    // fall through to header-based mapping
+                }
             }
 
             // Otherwise, attempt to build a principal from common forward-auth headers

@@ -11,7 +11,7 @@ namespace NEXUSDataLayerScaffold.Tests.Infrastructure;
 // based on request headers:
 // - X-Test-Sub => sets 'sub' and NameIdentifier
 // - X-Test-Roles => adds non-namespaced roles claim array entries ("roles")
-// - X-Test-Roles-Namespace => adds namespaced roles claim entries ("https://nexuslarps.com/roles")
+// - X-Test-Roles-Namespace => adds namespaced roles claim entries ("https://Nexuslarp.com/roles")
 public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
     public const string DefaultScheme = "Test";
@@ -60,7 +60,7 @@ public sealed class TestAuthHandler : AuthenticationHandler<AuthenticationScheme
         {
             foreach (var r in nsRoles.Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
             {
-                identity.AddClaim(new Claim("https://nexuslarps.com/roles", r));
+                identity.AddClaim(new Claim("https://Nexuslarp.com/roles", r));
             }
         }
 

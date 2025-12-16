@@ -237,7 +237,8 @@ public class Startup
                 }
                 // Detect forward-auth headers from reverse proxy and prefer ForwardAuth scheme
                 bool Has(string k) => context.Request.Headers.ContainsKey(k) && !string.IsNullOrWhiteSpace(context.Request.Headers[k]);
-                var hasForwardAuth = Has("X-Forwarded-Email") || Has("X-Auth-Request-Email") ||
+                var hasForwardAuth = Has("X-Auth-Request-Token") ||
+                                     Has("X-Forwarded-Email") || Has("X-Auth-Request-Email") ||
                                      Has("X-Forwarded-User") || Has("X-Auth-Request-User") ||
                                      Has("X-Forwarded-Subject") || Has("X-Auth-Request-Userid");
                 if (hasForwardAuth)

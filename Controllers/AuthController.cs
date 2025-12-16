@@ -282,7 +282,7 @@ namespace NEXUSDataLayerScaffold.Controllers
             var sub = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? principal?.FindFirst("sub")?.Value;
             var name = principal?.FindFirst("name")?.Value ?? principal?.Identity?.Name;
             var email = principal?.FindFirst(ClaimTypes.Email)?.Value ?? principal?.FindFirst("email")?.Value;
-            var roles = principal?.FindAll("https://NexusLarps.com/roles").Select(c => c.Value).Distinct().ToArray() ?? Array.Empty<string>();
+            var roles = principal?.FindAll("https://Nexuslarp.com/roles").Select(c => c.Value).Distinct().ToArray() ?? Array.Empty<string>();
 
             var result = new
             {
