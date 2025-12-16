@@ -11,7 +11,7 @@ public partial class ItemSheetReviewMessage
 
     public bool? Isactive { get; set; }
 
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     public DateTime Createdate { get; set; }
 

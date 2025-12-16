@@ -130,6 +130,14 @@ public class Startup
             }
         );
 
+        // Configure HTTP logging and unredact headers for diagnostics (ForwardAuth scenarios)
+        services.AddHttpLogging(logging =>
+        {
+            logging.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.All;
+            // NOTE: The built-in HttpLogging redacts some headers by default.
+            // To fully log headers unredacted, a custom middleware is added below.
+        });
+
         // Bind MinIO options from configuration and validate
         services.AddOptions<MinioOptions>()
             .Bind(_config.GetSection("Minio"))
@@ -218,7 +226,7 @@ public class Startup
             // Challenge with Bearer to avoid OIDC redirects in BFF/middleware scenario
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         })
-        .AddPolicyScheme("Smart", "Smart selector between Bearer and Cookies", opt =>
+        .AddPolicyScheme("Smart", "Smart selector between Bearer, ForwardAuth, and Cookies", opt =>
         {
             opt.ForwardDefaultSelector = context =>
             {
@@ -227,9 +235,20 @@ public class Startup
                 {
                     return JwtBearerDefaults.AuthenticationScheme;
                 }
+                // Detect forward-auth headers from reverse proxy and prefer ForwardAuth scheme
+                bool Has(string k) => context.Request.Headers.ContainsKey(k) && !string.IsNullOrWhiteSpace(context.Request.Headers[k]);
+                var hasForwardAuth = Has("X-Forwarded-Email") || Has("X-Auth-Request-Email") ||
+                                     Has("X-Forwarded-User") || Has("X-Auth-Request-User") ||
+                                     Has("X-Forwarded-Subject") || Has("X-Auth-Request-Userid");
+                if (hasForwardAuth)
+                {
+                    return NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme;
+                }
                 return CookieAuthenticationDefaults.AuthenticationScheme;
             };
         })
+        .AddScheme<AuthenticationSchemeOptions, NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler>(
+            NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme, _ => { })
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
             // Ensure the authentication cookie uses the required OIDC prefix
@@ -491,7 +510,7 @@ public class Startup
         });
 
         // Global exception handling to log and return ProblemDetails
-        app.Use(async (context, next) =>
+        app.Use(async (HttpContext context, Func<System.Threading.Tasks.Task> next) =>
         {
             try
             {
@@ -530,7 +549,7 @@ public class Startup
         //app.UseCertificateForwarding();
         //app.UseCookiePolicy();
         // Add a simple logging scope that carries correlation info and expose trace and server-timing headers for frontend
-        app.Use(async (context, next) =>
+        app.Use(async (HttpContext context, Func<System.Threading.Tasks.Task> next) =>
         {
             var activity = System.Diagnostics.Activity.Current;
             var traceId = activity?.TraceId.ToString() ?? context.TraceIdentifier;
@@ -562,7 +581,49 @@ public class Startup
                 ["RequestPath"] = context.Request.Path.ToString(),
             }))
             {
+                // Log request headers unredacted for diagnostics (ForwardAuth / proxy scenarios)
+                try
+                {
+                    var sbReq = new System.Text.StringBuilder();
+                    foreach (var kvp in context.Request.Headers)
+                    {
+                        if (sbReq.Length > 0) sbReq.Append("; ");
+                        sbReq.Append(kvp.Key);
+                        sbReq.Append('=');
+                        var first = true;
+                        foreach (var v in kvp.Value)
+                        {
+                            if (!first) sbReq.Append(',');
+                            sbReq.Append(v);
+                            first = false;
+                        }
+                    }
+                    logger.LogInformation("HTTP Request Headers: {Headers}", sbReq.ToString());
+                }
+                catch { /* ignore */ }
+
                 await next();
+
+                // Log response headers unredacted
+                try
+                {
+                    var sbResp = new System.Text.StringBuilder();
+                    foreach (var kvp in context.Response.Headers)
+                    {
+                        if (sbResp.Length > 0) sbResp.Append("; ");
+                        sbResp.Append(kvp.Key);
+                        sbResp.Append('=');
+                        var firstR = true;
+                        foreach (var v in kvp.Value)
+                        {
+                            if (!firstR) sbResp.Append(',');
+                            sbResp.Append(v);
+                            firstR = false;
+                        }
+                    }
+                    logger.LogInformation("HTTP Response Headers: {Headers}", sbResp.ToString());
+                }
+                catch { /* ignore */ }
             }
         });
         // If Traefik ForwardAuth has authenticated the user, map headers to claims
