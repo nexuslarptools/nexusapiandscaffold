@@ -799,7 +799,8 @@ public partial class NexusLarpLocalContext : DbContext
             entity.Property(e => e.Isactive)
                 .HasDefaultValue(true)
                 .HasColumnName("isactive");
-            entity.Property(e => e.Type).HasMaxLength(1000);
+            entity.Property(e => e.Type)
+                .HasMaxLength(1000);
         });
 
         modelBuilder.Entity<ItemUsersContact>(entity =>
@@ -1326,7 +1327,6 @@ public partial class NexusLarpLocalContext : DbContext
 
             entity.HasOne(d => d.Tagtype).WithMany(p => p.Tags)
                 .HasForeignKey(d => d.Tagtypeguid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_tagtype_guid_tags");
         });
 

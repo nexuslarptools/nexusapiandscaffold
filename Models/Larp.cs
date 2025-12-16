@@ -7,11 +7,11 @@ public partial class Larp
 {
     public Guid Guid { get; set; }
 
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
-    public string Shortname { get; set; }
+    public string? Shortname { get; set; }
 
-    public string Location { get; set; }
+    public string? Location { get; set; }
 
     public bool Isactive { get; set; }
 

@@ -7,7 +7,7 @@ public partial class Tag
 {
     public Guid Guid { get; set; }
 
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     public Guid Tagtypeguid { get; set; }
 

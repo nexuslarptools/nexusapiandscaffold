@@ -7,7 +7,7 @@ public partial class Role
 {
     public int Id { get; set; }
 
-    public string Rolename { get; set; }
+    public string? Rolename { get; set; }
 
     public int? Ord { get; set; }
 

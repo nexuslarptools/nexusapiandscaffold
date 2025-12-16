@@ -7,7 +7,7 @@ public partial class ItemType
 {
     public Guid Guid { get; set; }
 
-    public string Type { get; set; }
+    public string? Type { get; set; }
 
     public bool Isactive { get; set; }
 
