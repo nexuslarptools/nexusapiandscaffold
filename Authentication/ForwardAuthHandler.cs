@@ -193,7 +193,8 @@ namespace NEXUSDataLayerScaffold.Authentication
             var hasAny = Has("X-Forwarded-Email") || Has("X-Auth-Request-Email") ||
                          Has("X-Forwarded-User") || Has("X-Auth-Request-User") ||
                          Has("X-Forwarded-Subject") || Has("X-Auth-Request-Userid") ||
-                         Has("X-Forwarded-Groups") || Has("X-Auth-Request-Groups");
+                         Has("X-Forwarded-Groups") || Has("X-Auth-Request-Groups") ||
+                         Has("X-User-Roles");
 
             if (!hasAny)
             {
@@ -206,6 +207,7 @@ namespace NEXUSDataLayerScaffold.Authentication
             var user = Get("X-Forwarded-User") ?? Get("X-Auth-Request-User");
             var subject = Get("X-Forwarded-Subject") ?? Get("X-Auth-Request-Userid") ?? user ?? email;
             var groupsHeader = Get("X-Forwarded-Groups") ?? Get("X-Auth-Request-Groups");
+            var rolesHeader = Get("X-User-Roles");
 
             var identity = new ClaimsIdentity(Scheme);
             if (!string.IsNullOrWhiteSpace(subject))
@@ -224,15 +226,21 @@ namespace NEXUSDataLayerScaffold.Authentication
                 identity.AddClaim(new Claim("email", email!));
             }
 
-            if (!string.IsNullOrWhiteSpace(groupsHeader))
+            // Support roles coming from either Groups headers or X-User-Roles (comma/semicolon separated)
+            void AddDelimitedRoles(string? raw, string mirrorClaimType)
             {
-                var groups = groupsHeader.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                foreach (var g in groups)
+                if (string.IsNullOrWhiteSpace(raw)) return;
+                var items = raw.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var item in items)
                 {
-                    identity.AddClaim(new Claim(ClaimTypes.Role, g));
-                    identity.AddClaim(new Claim("groups", g));
+                    identity.AddClaim(new Claim(ClaimTypes.Role, item));
+                    // Mirror the original source as a raw claim to help diagnostics/transform
+                    identity.AddClaim(new Claim(mirrorClaimType, item));
                 }
             }
+
+            AddDelimitedRoles(groupsHeader, "groups");
+            AddDelimitedRoles(rolesHeader, "roles");
 
             // Log summary for header-based auth
             try

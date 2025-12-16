@@ -41,6 +41,7 @@ namespace NEXUSDataLayerScaffold.Extensions
 
                 var groupsHeader = context.Request.Headers["X-Forwarded-Groups"].FirstOrDefault()
                                  ?? context.Request.Headers["X-Auth-Request-Groups"].FirstOrDefault();
+                var rolesHeader = context.Request.Headers["X-User-Roles"].FirstOrDefault();
 
                 if (!string.IsNullOrWhiteSpace(user) || !string.IsNullOrWhiteSpace(subject) || !string.IsNullOrWhiteSpace(email))
                 {
@@ -62,15 +63,19 @@ namespace NEXUSDataLayerScaffold.Extensions
                     }
 
                     // traefikoidc aggregates groups/roles; support comma or semicolon separators
-                    if (!string.IsNullOrWhiteSpace(groupsHeader))
+                    void AddDelimited(string? raw, string mirrorType)
                     {
-                        var groups = groupsHeader.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                        foreach (var g in groups)
+                        if (string.IsNullOrWhiteSpace(raw)) return;
+                        var items = raw.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                        foreach (var it in items)
                         {
-                            identity.AddClaim(new Claim(ClaimTypes.Role, g));
-                            identity.AddClaim(new Claim("groups", g));
+                            identity.AddClaim(new Claim(ClaimTypes.Role, it));
+                            identity.AddClaim(new Claim(mirrorType, it));
                         }
                     }
+
+                    AddDelimited(groupsHeader, "groups");
+                    AddDelimited(rolesHeader, "roles");
 
                     var principal = new ClaimsPrincipal(identity);
                     context.User = principal;

@@ -240,7 +240,8 @@ public class Startup
                 var hasForwardAuth = Has("X-Auth-Request-Token") ||
                                      Has("X-Forwarded-Email") || Has("X-Auth-Request-Email") ||
                                      Has("X-Forwarded-User") || Has("X-Auth-Request-User") ||
-                                     Has("X-Forwarded-Subject") || Has("X-Auth-Request-Userid");
+                                     Has("X-Forwarded-Subject") || Has("X-Auth-Request-Userid") ||
+                                     Has("X-User-Roles");
                 if (hasForwardAuth)
                 {
                     return NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme;

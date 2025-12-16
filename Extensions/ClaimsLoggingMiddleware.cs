@@ -71,7 +71,7 @@ namespace NEXUSDataLayerScaffold.Extensions
             {
                 // If forward-auth signals exist but no principal, note it for diagnostics
                 bool Has(string k) => context.Request.Headers.ContainsKey(k) && !string.IsNullOrWhiteSpace(context.Request.Headers[k]);
-                var hasForwardSignals = Has("X-Auth-Request-Token") || Has("X-Forwarded-Email") || Has("X-Forwarded-User") || Has("X-Forwarded-Subject");
+                var hasForwardSignals = Has("X-Auth-Request-Token") || Has("X-Forwarded-Email") || Has("X-Forwarded-User") || Has("X-Forwarded-Subject") || Has("X-User-Roles");
                 if (hasForwardSignals)
                 {
                     _logger.LogWarning("No authenticated principal, but forward-auth headers detected for path {Path}", context.Request.Path);
