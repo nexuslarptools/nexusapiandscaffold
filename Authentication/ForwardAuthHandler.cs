@@ -101,28 +101,48 @@ namespace NEXUSDataLayerScaffold.Authentication
                             }
                         }
 
-                        // Roles: prefer new namespace, also accept plain 'roles' array
-                        if (root.TryGetProperty("https://Nexuslarp.com/roles", out var nsRoles) && nsRoles.ValueKind == JsonValueKind.Array)
+                        // Roles: prefer new namespace; accept legacy namespaces and plain 'roles' array (case-insensitive)
+                        var canonical = new[] { "Reader", "Writer", "Approver", "HeadGM", "Wizard" };
+
+                        void AddRoleValues(JsonElement arr, string? mirrorClaimType)
                         {
-                            foreach (var r in nsRoles.EnumerateArray())
+                            if (arr.ValueKind != JsonValueKind.Array) return;
+                            foreach (var r in arr.EnumerateArray())
                             {
                                 var rv = r.GetString();
-                                if (!string.IsNullOrWhiteSpace(rv))
-                                {
+                                if (string.IsNullOrWhiteSpace(rv)) continue;
+                                // Add as role
+                                if (!tokenIdentity.HasClaim(ClaimTypes.Role, rv!))
                                     tokenIdentity.AddClaim(new Claim(ClaimTypes.Role, rv!));
-                                    tokenIdentity.AddClaim(new Claim("https://Nexuslarp.com/roles", rv!));
-                                }
+                                // Mirror original claim shape for compatibility
+                                if (!string.IsNullOrEmpty(mirrorClaimType))
+                                    tokenIdentity.AddClaim(new Claim(mirrorClaimType!, rv!));
+                                // Add canonical variant if applicable
+                                var canon = canonical.FirstOrDefault(x => string.Equals(x, rv, StringComparison.OrdinalIgnoreCase));
+                                if (canon != null && !tokenIdentity.HasClaim(ClaimTypes.Role, canon))
+                                    tokenIdentity.AddClaim(new Claim(ClaimTypes.Role, canon));
                             }
                         }
-                        else if (root.TryGetProperty("roles", out var roles) && roles.ValueKind == JsonValueKind.Array)
+
+                        // Try new namespace first
+                        if (root.TryGetProperty("https://Nexuslarp.com/roles", out var nsRolesNew))
                         {
-                            foreach (var r in roles.EnumerateArray())
+                            AddRoleValues(nsRolesNew, "https://Nexuslarp.com/roles");
+                        }
+                        else if (root.TryGetProperty("roles", out var roles))
+                        {
+                            AddRoleValues(roles, "roles");
+                        }
+                        else
+                        {
+                            // Search for legacy namespaces case-insensitively
+                            foreach (var prop in root.EnumerateObject())
                             {
-                                var rv = r.GetString();
-                                if (!string.IsNullOrWhiteSpace(rv))
+                                if (string.Equals(prop.Name, "https://nexuslarps.com/roles", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(prop.Name, "https://NexusLarps.com/roles", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    tokenIdentity.AddClaim(new Claim(ClaimTypes.Role, rv!));
-                                    tokenIdentity.AddClaim(new Claim("roles", rv!));
+                                    AddRoleValues(prop.Value, prop.Name);
+                                    break;
                                 }
                             }
                         }
