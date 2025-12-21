@@ -13,11 +13,11 @@ COPY ["NEXUSDataLayerScaffold.csproj", "."]
 RUN dotnet restore -a $TARGETARCH "./NEXUSDataLayerScaffold.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "NEXUSDataLayerScaffold.csproj" -c Release -o /app/build
+RUN dotnet build "NEXUSDataLayerScaffold.csproj" -c Debug -o /app/build
 
 FROM build AS publish
 ARG TARGETARCH
-RUN dotnet publish "NEXUSDataLayerScaffold.csproj" -c Release -a $TARGETARCH -o /app/publish
+RUN dotnet publish "NEXUSDataLayerScaffold.csproj" -c Debug -a $TARGETARCH -o /app/publish
 
 FROM base AS final
 ARG OTEL_VERSION=1.12.0
