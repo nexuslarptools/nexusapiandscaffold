@@ -25,12 +25,17 @@ ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/relea
 RUN apt-get update && apt-get install -y curl unzip && \
     OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto" sh otel-dotnet-auto-install.sh && \
     chmod +x /otel-dotnet-auto/instrument.sh && \
-    useradd -m -s /bin/bash appuser
+    useradd -m -s /bin/bash appuser | \
+    curl -sSL https://aka.ms/getvsdbgsh | \
+    bash /dev/stdin -v latest -l /vsdbg && \
+    chmod -R 755 /vsdbg && \
+    chmod +x /vsdbg/vsdbg
 
 WORKDIR /app
 COPY --from=publish /app/publish .
+copy --from=publish /vsdbg/vsdbg /vsdbg /vsdbg/
 # Ensure non-root user can access app files and otel agent
-RUN chown -R appuser:appuser /app /otel-dotnet-auto
+RUN chown -R appuser:appuser /app /otel-dotnet-auto /vsdbg
 
 # Run as non-root user
 USER appuser
@@ -41,5 +46,5 @@ ENV OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED="true"
 ENV OTEL_SERVICE_NAME="nexusapi"
 ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
 
-ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll"]
+ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll", "--wait-for-debugger"]
 #ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
