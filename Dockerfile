@@ -33,7 +33,6 @@ RUN apt-get update && apt-get install -y curl unzip && \
 
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY --from=publish /vsdbg/vsdbg /vsdbg /vsdbg/
 # Ensure non-root user can access app files and otel agent
 RUN chown -R appuser:appuser /app /otel-dotnet-auto /vsdbg
 
