@@ -43,6 +43,8 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 # Ensure non-root user can access app files and otel agent
 RUN chown -R appuser:appuser /app /otel-dotnet-auto /vsdbg
+RUN /usr/sbin/sshd
+
 
 # Run as non-root user
 USER appuser
@@ -52,8 +54,6 @@ ENV OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED="true"
 ENV OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED="true"
 ENV OTEL_SERVICE_NAME="nexusapi"
 ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
-
-RUN /usr/sbin/sshd
 
 ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll", "--wait-for-debugger"]
 #ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
