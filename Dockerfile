@@ -36,7 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssh-server 
     curl -sSL https://aka.ms/getvsdbgsh | \
     bash /dev/stdin -v latest -l /vsdbg && \
     chmod -R 755 /vsdbg && \
-    chmod +x /vsdbg/vsdbg
+    chmod +x /vsdbg/vsdbg && \
+    mkdir -p /root/.ssh && chmod 700 /root/.ssh
 
 WORKDIR /app
 COPY --from=publish /app/publish .
