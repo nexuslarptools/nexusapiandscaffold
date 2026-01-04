@@ -2,7 +2,8 @@
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
-EXPOSE 80
+EXPOSE 8080
+EXPOSE 22
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG TARGETARCH
@@ -22,7 +23,13 @@ RUN dotnet publish "NEXUSDataLayerScaffold.csproj" -c Debug -a $TARGETARCH -o /a
 FROM base AS final
 ARG OTEL_VERSION=1.12.0
 ADD https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v${OTEL_VERSION}/otel-dotnet-auto-install.sh otel-dotnet-auto-install.sh
-RUN apt-get update && apt-get install -y curl unzip && \
+RUN apt-get update && apt-get install -y --no-install-recommends openssh-server curl unzip && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir /var/run/sshd && \
+    echo 'root:password123!' | chpasswd && \
+    sed -i 's/^#*PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    echo "PermitUserEnvironment yes" >> /etc/ssh/sshd_config && \
     OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto" sh otel-dotnet-auto-install.sh && \
     chmod +x /otel-dotnet-auto/instrument.sh && \
     useradd -m -s /bin/bash appuser | \
