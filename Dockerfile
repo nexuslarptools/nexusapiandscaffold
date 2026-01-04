@@ -43,7 +43,6 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 # Ensure non-root user can access app files and otel agent
 RUN chown -R appuser:appuser /app /otel-dotnet-auto /vsdbg
-RUN /usr/sbin/sshd
 
 
 # Run as non-root user
@@ -55,5 +54,10 @@ ENV OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED="true"
 ENV OTEL_SERVICE_NAME="nexusapi"
 ENV OTEL_DOTNET_AUTO_HOME="/otel-dotnet-auto"
 
-ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll", "--wait-for-debugger"]
+COPY ./entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Use our entrypoint script to start SSH, vsdbg, and your application.
+ENTRYPOINT ["/app/entrypoint.sh"]
+#ENTRYPOINT ["/otel-dotnet-auto/instrument.sh", "dotnet", "NEXUSDataLayerScaffold.dll", "--wait-for-debugger"]
 #ENTRYPOINT ["dotnet", "NEXUSDataLayerScaffold.dll"]
