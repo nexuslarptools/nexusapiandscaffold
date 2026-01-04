@@ -44,12 +44,9 @@ COPY --from=publish /app/publish .
 COPY ./entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 # Ensure non-root user can access app files and otel agent
-RUN chown -R appuser:appuser /app /otel-dotnet-auto /vsdbg
 
 
 # Run as non-root user
-USER appuser
-
 ENV OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED="true"
 ENV OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED="true"
 ENV OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED="true"

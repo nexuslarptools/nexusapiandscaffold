@@ -1,6 +1,6 @@
 #!/bin/bash
 echo "Starting SSH server..."
-sudo /usr/sbin/sshd
+/usr/sbin/sshd
 
 # Optional: Wait a few seconds for services to initialize.
 sleep 2
