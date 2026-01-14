@@ -11,6 +11,13 @@ jobs:
   publish-nexus-backend:
     runs-on: ubuntu-latest
     steps:
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_GH_CID }}
+          oauth-secret: ${{ secrets.TS_GH_CSEC }}
+          tags: tag:ci
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -37,3 +44,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm64/v8
           build-args: |
             TAG=${{ github.ref_name }}
+            
+      - name: Trigger Portainer Webhook
+        run: curl -k -X POST ${{ secrets.PORTAINER_WEBHOOK }}
+
