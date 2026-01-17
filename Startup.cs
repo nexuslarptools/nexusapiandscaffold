@@ -500,15 +500,18 @@ public class Startup
         // Note: The correct middleware order is UseRouting -> UseCors -> UseAuthentication -> UseAuthorization -> UseEndpoints
 
         // Enable middleware to serve generated Swagger as a JSON endpoint.
-        app.UseSwagger();
+        app.UseSwagger(c =>
+        {
+            c.RouteTemplate = "api/swagger/{documentName}/swagger.json";
+        });
 
 
         // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
         // specifying the Swagger JSON endpoint.
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexus API V1");
-            c.RoutePrefix = string.Empty;
+            c.SwaggerEndpoint("/api/swagger/v1/swagger.json", "Nexus API V1");
+            c.RoutePrefix = "api/swagger";
         });
 
         // Global exception handling to log and return ProblemDetails
