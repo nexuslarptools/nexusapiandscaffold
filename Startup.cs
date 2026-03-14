@@ -221,8 +221,6 @@ public class Startup
         var connstring = "Host=" + host + ";Port=" + port
                          + ";Database=" + database + "; Username=" + username + ";Password=" + password;
 
-        
-        
         //connstring = "Host=localhost;Port=5433;Database=NexusLarp_Local_FromNick2;Username=postgres;Password=L4RPEverywhere!";
         accesskey = "S6epybsl7DRwSNmstqaq";
         secretkey = "UCMzYZCJ1pXG5AQ9eAEsDmfAYkeeCPr4vWjba9EM";
@@ -274,7 +272,8 @@ public class Startup
         {
             app.UseCors(builder => builder
                 //.SetIsOriginAllowed(origin => true) // allow any origin
-                .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000")
+                .WithOrigins("https://decade.kylebrighton.com:3000", "http://localhost:3000", 
+                             "http://192.168.0.127:6004", "http://192.168.0.127:6005")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials());
