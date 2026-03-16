@@ -162,7 +162,7 @@ public class SeriesController : ControllerBase
     // GET: api/v1/Series/ShortList
     [HttpGet("ShortList")]
     [Authorize]
-    public async Task<ActionResult<IEnumerable<Series>>> GetSeriesList(
+    public async Task<ActionResult<IEnumerable<Series>>> GetSeriesList()
        // [FromQuery] PagingParameterModel pagingParameterModel)
     {
         var email = IdentityHelpers.GetEmail(HttpContext.User);
