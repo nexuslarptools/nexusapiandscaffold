@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -163,7 +163,7 @@ public class SeriesController : ControllerBase
     [HttpGet("ShortList")]
     [Authorize]
     public async Task<ActionResult<IEnumerable<Series>>> GetSeriesList(
-        [FromQuery] PagingParameterModel pagingParameterModel)
+       // [FromQuery] PagingParameterModel pagingParameterModel)
     {
         var email = IdentityHelpers.GetEmail(HttpContext.User);
 
