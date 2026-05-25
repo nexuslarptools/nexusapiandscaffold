@@ -234,13 +234,11 @@ public class CharacterSheetApprovedsController : ControllerBase
                     outputSheet.Sheet_Item = Item.CreateItem(appItem,
                         usersList, listItemTypes);
 
-                    if (outputSheet.Sheet_Item.ItemTypeGuid == null
-                        && await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && appItem.Id ==
-                             isa.Id).FirstOrDefaultAsync() != null)
-                    {
-                        var origitem = await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && outputSheet.Sheet_Item.Id ==
+                    var origitem = await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && appItem.Id ==
                              isa.Id).FirstOrDefaultAsync();
 
+                    if (outputSheet.Sheet_Item.ItemTypeGuid == null &&  origitem != null)
+                    {
                         appItem!.ItemtypeGuid = origitem!.ItemtypeGuid;
                         appItem!.Fields2ndside = origitem!.Fields2ndside;
                         appItem!.Isdoubleside = origitem!.Isdoubleside;
