@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -1835,186 +1835,193 @@ public class CharacterSheetsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<CharSheet>> PostCharacterSheet([FromBody] CharSheet charSheet)
     {
-        var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
-
-        // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
-        if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
+        try
         {
-            var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
-                .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
-            var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
-                .Select(ulr => (Guid)ulr.Larpguid).ToList();
+            var authId = HttpContext.User.FindFirstValue("sub") ?? HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Task<AuthUser> result = UsersLogic.GetUserInfo(accessToken, _context);
 
-            var allowedTags = _context.Larptags.Where(lt =>
-                (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
-                && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
-                allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
-
-            var characterSheet = new CharacterSheet();
-
-            characterSheet.Guid = charSheet.Guid;
-
-            if (charSheet.Name != null) characterSheet.Name = charSheet.Name;
-
-            if (charSheet.Img1 != null) characterSheet.Img1 = charSheet.Img1;
-
-            if (charSheet.Img2 != null) characterSheet.Img2 = charSheet.Img2;
-
-            //if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
-            //{
-            //    charSheet.Img1 = charSheet.Img1;
-
-            //    var folderName = Path.Combine("images", "characters", "UnApproved");
-            //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-
-            //    if (charSheet.imagedata1.Length > 0)
-            //    {
-            //        if (!Directory.Exists(pathToSave + "/"))
-            //        {
-            //            var di = Directory.CreateDirectory(pathToSave + "/");
-            //        }
-
-            //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
-
-            //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
-            //    }
-            //}
-
-            //if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
-            //{
-            //    charSheet.Img2 = charSheet.Img2;
-
-            //    var folderName = Path.Combine("images", "characters", "UnApproved");
-            //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-
-            //    if (charSheet.imagedata2.Length > 0)
-            //    {
-            //        if (!Directory.Exists(pathToSave + "/"))
-            //        {
-            //            var di = Directory.CreateDirectory(pathToSave + "/");
-            //        }
-
-            //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
-            //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false);
-            //        ;
-            //    }
-            //}
-
-            if (charSheet.Gmnotes != null) characterSheet.Gmnotes = charSheet.Gmnotes;
-
-            var listTags = new TagsObject();
-
-            if (charSheet.Fields != null)
+            // if (UsersController.UserPermissionAuth(result.Result, "SheetDBRead"))
+            if (UsersLogic.IsUserAuthed(HttpContext.User, "Writer", _context))
             {
-                foreach (var tag in charSheet.Fields)
+                var legalsheets = _context.CharacterSheets.Where(it => it.Isactive == true)
+                    .Select(it => new TagScanContainer(it.Guid, it.CharacterSheetTags)).ToList();
+                var allowedLARPS = _context.UserLarproles.Where(ulr => ulr.User.Email == authId && ulr.Isactive == true)
+                    .Select(ulr => (Guid)ulr.Larpguid).ToList();
+
+                var allowedTags = _context.Larptags.Where(lt =>
+                    (allowedLARPS.Any(al => al == (Guid)lt.Larpguid) || lt.Larpguid == null)
+                    && lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                if (UsersLogic.IsUserAuthed(HttpContext.User, "Wizard", _context))
+                    allowedTags = _context.Larptags.Where(lt => lt.Isactive == true).Select(lt => lt.Tagguid).ToList();
+
+                var characterSheet = new CharacterSheet();
+
+                characterSheet.Guid = charSheet.Guid;
+
+                if (charSheet.Name != null) characterSheet.Name = charSheet.Name;
+
+                if (charSheet.Img1 != null) characterSheet.Img1 = charSheet.Img1;
+
+                if (charSheet.Img2 != null) characterSheet.Img2 = charSheet.Img2;
+
+                //if (charSheet.Img1 != null && charSheet.imagedata1 != null && charSheet.imagedata1.Length > 3)
+                //{
+                //    charSheet.Img1 = charSheet.Img1;
+
+                //    var folderName = Path.Combine("images", "characters", "UnApproved");
+                //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                //    if (charSheet.imagedata1.Length > 0)
+                //    {
+                //        if (!Directory.Exists(pathToSave + "/"))
+                //        {
+                //            var di = Directory.CreateDirectory(pathToSave + "/");
+                //        }
+
+                //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img1, charSheet.imagedata1);
+
+                //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img1, true);
+                //    }
+                //}
+
+                //if (charSheet.Img2 != null && charSheet.imagedata2 != null && charSheet.imagedata2.Length > 3)
+                //{
+                //    charSheet.Img2 = charSheet.Img2;
+
+                //    var folderName = Path.Combine("images", "characters", "UnApproved");
+                //    var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+
+                //    if (charSheet.imagedata2.Length > 0)
+                //    {
+                //        if (!Directory.Exists(pathToSave + "/"))
+                //        {
+                //            var di = Directory.CreateDirectory(pathToSave + "/");
+                //        }
+
+                //        System.IO.File.WriteAllBytes(pathToSave + "/" + charSheet.Img2, charSheet.imagedata2);
+                //        ImageLogic.ResizeJpg(pathToSave + "/" + charSheet.Img2, false);
+                //        ;
+                //    }
+                //}
+
+                if (charSheet.Gmnotes != null) characterSheet.Gmnotes = charSheet.Gmnotes;
+
+                var listTags = new TagsObject();
+
+                if (charSheet.Fields != null)
                 {
-                    if (tag.Key == "Tags")
+                    foreach (var tag in charSheet.Fields)
                     {
-                        var TestJsonFeilds = charSheet.Fields["Tags"];
-
-                        foreach (Guid tagValue in TestJsonFeilds)
+                        if (tag.Key == "Tags")
                         {
-                            if (!allowedTags.Contains(tagValue)) return Unauthorized();
-                            if (!listTags.MainTags.Contains(tagValue))
-                                listTags.MainTags.Add(tagValue);
-                        }
-                    }
+                            var TestJsonFeilds = charSheet.Fields["Tags"];
 
-                    if (tag.Key == "Special_Skills")
-                    {
-                        var TestJsonFeilds = charSheet.Fields["Special_Skills"];
-
-                        foreach (var tagValues in TestJsonFeilds)
-                        {
-                            var fields = tagValues["Tags"];
-
-                            foreach (Guid tagValue in fields)
+                            foreach (Guid tagValue in TestJsonFeilds)
                             {
                                 if (!allowedTags.Contains(tagValue)) return Unauthorized();
-                                if (!listTags.AbilityTags.Contains(tagValue))
-                                    listTags.AbilityTags.Add(tagValue);
+                                if (!listTags.MainTags.Contains(tagValue))
+                                    listTags.MainTags.Add(tagValue);
+                            }
+                        }
+
+                        if (tag.Key == "Special_Skills")
+                        {
+                            var TestJsonFeilds = charSheet.Fields["Special_Skills"];
+
+                            foreach (var tagValues in TestJsonFeilds)
+                            {
+                                var fields = tagValues["Tags"];
+
+                                foreach (Guid tagValue in fields)
+                                {
+                                    if (!allowedTags.Contains(tagValue)) return Unauthorized();
+                                    if (!listTags.AbilityTags.Contains(tagValue))
+                                        listTags.AbilityTags.Add(tagValue);
+                                }
                             }
                         }
                     }
+
+                    characterSheet.Taglists = JsonConvert.SerializeObject(listTags);
+                    characterSheet.Fields = JsonDocument.Parse(charSheet.Fields.ToString());
                 }
 
-                characterSheet.Taglists = JsonConvert.SerializeObject(listTags);
-                characterSheet.Fields = JsonDocument.Parse(charSheet.Fields.ToString());
-            }
+                if (charSheet.Reason4edit != null) characterSheet.Reason4edit = charSheet.Reason4edit;
 
-            if (charSheet.Reason4edit != null) characterSheet.Reason4edit = charSheet.Reason4edit;
-
-            if (charSheet.Seriesguid != null) characterSheet.Seriesguid = (Guid)charSheet.Seriesguid;
+                if (charSheet.Seriesguid != null) characterSheet.Seriesguid = (Guid)charSheet.Seriesguid;
 
 
-            characterSheet.Createdate = DateTime.UtcNow;
-            characterSheet.CreatedbyuserGuid =
-                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
-            characterSheet.EditbyUserGuid =
-                _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
-            characterSheet.FirstapprovalbyuserGuid = null;
-            characterSheet.Firstapprovaldate = null;
-            characterSheet.SecondapprovalbyuserGuid = null;
-            characterSheet.Secondapprovaldate = null;
-            characterSheet.Isactive = true;
-            characterSheet.Readyforapproval = charSheet.Readyforapproval;
+                characterSheet.Createdate = DateTime.UtcNow;
+                characterSheet.CreatedbyuserGuid =
+                    _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+                characterSheet.EditbyUserGuid =
+                    _context.Users.Where(u => u.Authid == authId).Select(u => u.Guid).FirstOrDefault();
+                characterSheet.FirstapprovalbyuserGuid = null;
+                characterSheet.Firstapprovaldate = null;
+                characterSheet.SecondapprovalbyuserGuid = null;
+                characterSheet.Secondapprovaldate = null;
+                characterSheet.Isactive = true;
+                characterSheet.Readyforapproval = charSheet.Readyforapproval;
 
-            var approvedSheets =
-                await _context.CharacterSheets.Where(csa => csa.Guid == characterSheet.Guid).ToListAsync();
+                var approvedSheets =
+                    await _context.CharacterSheets.Where(csa => csa.Guid == characterSheet.Guid).ToListAsync();
 
-            if (approvedSheets != null && approvedSheets.Count > 0)
-            {
-                var maxsheet = approvedSheets.MaxBy(csa => csa.Version);
-                charSheet.Version = maxsheet.Version++;
-            }
-
-            _context.CharacterSheets.Add(characterSheet);
-            await _context.SaveChangesAsync();
-
-            try
-            {
-                var newSheetId = _context.CharacterSheets
-                    .Where(iss => iss.Guid == characterSheet.Guid && iss.Isactive == true).FirstOrDefault().Id;
-
-                var addNewCST = new List<CharacterSheetTag>();
-
-                foreach (var taginfo in listTags.MainTags)
+                if (approvedSheets != null && approvedSheets.Count > 0)
                 {
-                    var newCST = new CharacterSheetTag
-                    {
-                        CharactersheetId = newSheetId,
-                        TagGuid = taginfo
-                    };
-
-                    addNewCST.Add(newCST);
+                    var maxsheet = approvedSheets.MaxBy(csa => csa.Version);
+                    charSheet.Version = maxsheet.Version++;
                 }
 
-                foreach (var taginfo in listTags.AbilityTags)
-                {
-                    var newCST = new CharacterSheetTag
-                    {
-                        CharactersheetId = newSheetId,
-                        TagGuid = taginfo
-                    };
-
-                    addNewCST.Add(newCST);
-                }
-
-                _context.CharacterSheetTags.AddRange(addNewCST);
+                _context.CharacterSheets.Add(characterSheet);
                 await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
+
+                try
+                {
+                    var newSheetId = _context.CharacterSheets
+                        .Where(iss => iss.Guid == characterSheet.Guid && iss.Isactive == true).FirstOrDefault().Id;
+
+                    var addNewCST = new List<CharacterSheetTag>();
+
+                    foreach (var taginfo in listTags.MainTags)
+                    {
+                        var newCST = new CharacterSheetTag
+                        {
+                            CharactersheetId = newSheetId,
+                            TagGuid = taginfo
+                        };
+
+                        addNewCST.Add(newCST);
+                    }
+
+                    foreach (var taginfo in listTags.AbilityTags)
+                    {
+                        var newCST = new CharacterSheetTag
+                        {
+                            CharactersheetId = newSheetId,
+                            TagGuid = taginfo
+                        };
+
+                        addNewCST.Add(newCST);
+                    }
+
+                    _context.CharacterSheetTags.AddRange(addNewCST);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+
+                return CreatedAtAction("GetCharacterSheet", new { id = characterSheet.Guid }, charSheet);
             }
 
-            return CreatedAtAction("GetCharacterSheet", new { id = characterSheet.Guid }, charSheet);
+            return Unauthorized();
         }
-
-        return Unauthorized();
+        catch(Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
 
