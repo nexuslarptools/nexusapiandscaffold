@@ -227,29 +227,28 @@ public class CharacterSheetApprovedsController : ControllerBase
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                         .FirstOrDefault() != null)
                 {
-                    outputSheet.Sheet_Item = Item.CreateItem( await _context.ItemSheetApproveds
+                    var appItem = await _context.ItemSheetApproveds
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
-                            .FirstOrDefaultAsync(),
+                            .FirstOrDefaultAsync();
+
+                    outputSheet.Sheet_Item = Item.CreateItem(appItem,
                         usersList, listItemTypes);
 
                     if (outputSheet.Sheet_Item.ItemTypeGuid == null
-                        && await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && outputSheet.Sheet_Item.Id ==
+                        && await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && appsheet.Id ==
                              isa.Id).FirstOrDefaultAsync() != null)
                     {
                         var origitem = await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && outputSheet.Sheet_Item.Id ==
                              isa.Id).FirstOrDefaultAsync();
-                        var appitem = await _context.ItemSheetApproveds
-                            .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
-                            .FirstOrDefaultAsync();
 
-                        appitem!.ItemtypeGuid = origitem!.ItemtypeGuid;
-                        appitem!.Fields2ndside = origitem!.Fields2ndside;
-                        appitem!.Isdoubleside = origitem!.Isdoubleside;
+                        appItem!.ItemtypeGuid = origitem!.ItemtypeGuid;
+                        appItem!.Fields2ndside = origitem!.Fields2ndside;
+                        appItem!.Isdoubleside = origitem!.Isdoubleside;
 
-                        _context.Update(appitem);
+                        _context.Update(appItem);
                         await _context.SaveChangesAsync();
 
-                        outputSheet.Sheet_Item = Item.CreateItem(appitem, usersList, listItemTypes);
+                        outputSheet.Sheet_Item = Item.CreateItem(appItem, usersList, listItemTypes);
                     }
 
 
