@@ -235,7 +235,7 @@ public class CharacterSheetApprovedsController : ControllerBase
                         usersList, listItemTypes);
 
                     if (outputSheet.Sheet_Item.ItemTypeGuid == null
-                        && await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && appsheet.Id ==
+                        && await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && appItem.Id ==
                              isa.Id).FirstOrDefaultAsync() != null)
                     {
                         var origitem = await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && outputSheet.Sheet_Item.Id ==
