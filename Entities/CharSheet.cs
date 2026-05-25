@@ -307,7 +307,7 @@ public class CharSheet
     public int Id { get; set; }
     public Guid Guid { get; set; }
     public Guid? Seriesguid { get; set; }
-    public string SeriesTitle { get; set; }
+    public string? SeriesTitle { get; set; }
     public string Name { get; set; }
     public string? Img1 { get; set; }
     public string? Img2 { get; set; }
