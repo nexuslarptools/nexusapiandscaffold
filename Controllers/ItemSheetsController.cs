@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Minio;
@@ -1314,6 +1314,8 @@ public class ItemSheetsController : ControllerBase
                         Seriesguid = itemSheet.Seriesguid,
                         Name = itemSheet.Name,
                         Fields = itemSheet.Fields,
+                        Fields2ndside = itemSheet.Fields2ndside,
+                        Reason4edit = itemSheet.Reason4edit,
                         Isactive = true,
                         Createdate = DateTime.Now,
                         CreatedbyuserGuid = itemSheet.CreatedbyuserGuid,
@@ -1324,7 +1326,9 @@ public class ItemSheetsController : ControllerBase
                         Gmnotes = itemSheet.Gmnotes,
                         Version = maxversion,
                         Taglists = itemSheet.Taglists,
-                        EditbyUserGuid = itemSheet.EditbyUserGuid
+                        EditbyUserGuid = itemSheet.EditbyUserGuid,
+                        Isdoubleside = itemSheet.Isdoubleside,
+                        ItemtypeGuid = itemSheet.ItemtypeGuid
                     };
 
                     // Grab the latest version of the image in the store and point it to the new approved item. 

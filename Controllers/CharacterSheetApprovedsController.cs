@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -227,10 +227,32 @@ public class CharacterSheetApprovedsController : ControllerBase
                         .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
                         .FirstOrDefault() != null)
                 {
-                    outputSheet.Sheet_Item = Item.CreateItem(_context.ItemSheetApproveds
+                    outputSheet.Sheet_Item = Item.CreateItem( await _context.ItemSheetApproveds
                             .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
-                            .FirstOrDefault(),
+                            .FirstOrDefaultAsync(),
                         usersList, listItemTypes);
+
+                    if (outputSheet.Sheet_Item.ItemTypeGuid == null
+                        && await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && outputSheet.Sheet_Item.Id ==
+                             isa.Id).FirstOrDefaultAsync() != null)
+                    {
+                        var origitem = await _context.ItemSheets.Where(isa => isa.Guid.ToString() == sheet_item_guid && outputSheet.Sheet_Item.Id ==
+                             isa.Id).FirstOrDefaultAsync();
+                        var appitem = await _context.ItemSheetApproveds
+                            .Where(isa => isa.Guid.ToString() == sheet_item_guid && isa.Isactive == true)
+                            .FirstOrDefaultAsync();
+
+                        appitem!.ItemtypeGuid = origitem!.ItemtypeGuid;
+                        appitem!.Fields2ndside = origitem!.Fields2ndside;
+                        appitem!.Isdoubleside = origitem!.Isdoubleside;
+
+                        _context.Update(appitem);
+                        await _context.SaveChangesAsync();
+
+                        outputSheet.Sheet_Item = Item.CreateItem(appitem, usersList, listItemTypes);
+                    }
+
+
                     //if (outputSheet.Sheet_Item.Img1 != null)
                     //    if (System.IO.File.Exists(@"./images/items/Approved/" + outputSheet.Sheet_Item.Img1))
                     //        outputSheet.Sheet_Item.imagedata =

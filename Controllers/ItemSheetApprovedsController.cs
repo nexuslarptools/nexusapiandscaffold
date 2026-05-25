@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Claims;
@@ -524,7 +524,11 @@ public class ItemSheetApprovedsController : ControllerBase
                             Firstapprovaldate = x.Firstapprovaldate,
                             SecondapprovalbyuserGuid = x.SecondapprovalbyuserGuid,
                             Secondapprovaldate = x.Secondapprovaldate,
-                            EditbyUserGuid = x.EditbyUserGuid
+                            EditbyUserGuid = x.EditbyUserGuid,
+                            ItemtypeGuid = x.ItemtypeGuid,
+                            Fields2ndside = x.Fields2ndside,
+                            Fields = x.Fields,
+                            Isdoubleside = x.Isdoubleside
                         },
                         TagList = x.ItemSheetApprovedTags.Select(ist => ist.Tag).OrderBy(ist => ist.Name).ToList(),
                         Createdbyuser = x.Createdbyuser,
@@ -1165,6 +1169,7 @@ public class ItemSheetApprovedsController : ControllerBase
                 Name = newApprovedSheet.Name,
                 Img1 = newApprovedSheet.Img1,
                 Fields = newApprovedSheet.Fields,
+                Fields2ndside = newApprovedSheet.Fields2ndside,
                 Isactive = true,
                 CreatedbyuserGuid = newApprovedSheet.CreatedbyuserGuid,
                 Gmnotes = newApprovedSheet.Gmnotes,
@@ -1176,6 +1181,8 @@ public class ItemSheetApprovedsController : ControllerBase
                 Secondapprovaldate = DateTime.Now,
                 SecondapprovalbyuserGuid = result,
                 Reason4edit = "Instant Approval Performed (What was I THINKING!?)",
+                ItemtypeGuid = newApprovedSheet.ItemtypeGuid,
+                Isdoubleside = newApprovedSheet.Isdoubleside,
             };
 
             foreach (var sheet in selectedApprovedSheets) sheet.Isactive = false;

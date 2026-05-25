@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
@@ -169,6 +169,8 @@ public class Item
         }
 
         var thisType = listItemTypes.Where(i => i.Guid == iSheet.ItemtypeGuid).FirstOrDefault();
+
+
 
         if (thisType != null)
         {
