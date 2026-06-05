@@ -192,104 +192,16 @@ public class Startup
 
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-        // Bind and validate Auth0 options; fail fast on missing values
-        services.AddOptions<Auth0Options>()
-            .Bind(_config.GetSection("Auth0"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-        services.AddOptions<FrontendOptions>().Bind(_config.GetSection("Frontend"));
-        services.AddOptions<SecurityOptions>().Bind(_config.GetSection("Security"));
-
-        var auth0 = _config.GetSection("Auth0").Get<Auth0Options>() ?? new Auth0Options();
-        // Bind generic OAuth options (preferred when present)
-        var oauth = _config.GetSection("OAuth").Get<OAuthOptions>();
-        string authority;
-        string? audience;
-        if (oauth != null && !string.IsNullOrWhiteSpace(oauth.Authority))
-        {
-            authority = oauth.Authority.TrimEnd('/');
-            audience = oauth.Audience;
-        }
-        else
-        {
-            authority = $"https://{auth0.Domain}";
-            audience = auth0.ApiIdentifier;
-        }
 
         services.AddHttpClient();
 
         services.AddAuthentication(options =>
         {
-            // Use a policy scheme to decide between Bearer and Cookies at runtime
-            options.DefaultAuthenticateScheme = "Smart";
-            options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-            // Challenge with Bearer to avoid OIDC redirects in BFF/middleware scenario
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddPolicyScheme("Smart", "Smart selector between Bearer, ForwardAuth, and Cookies", opt =>
-        {
-            opt.ForwardDefaultSelector = context =>
-            {
-                var hasAuthHeader = context.Request.Headers.ContainsKey("Authorization");
-                if (hasAuthHeader)
-                {
-                    return JwtBearerDefaults.AuthenticationScheme;
-                }
-                // Detect forward-auth headers from reverse proxy and prefer ForwardAuth scheme
-                bool Has(string k) => context.Request.Headers.ContainsKey(k) && !string.IsNullOrWhiteSpace(context.Request.Headers[k]);
-                var hasForwardAuth = Has("X-Auth-Request-Token") ||
-                                     Has("X-Forwarded-Email") || Has("X-Auth-Request-Email") ||
-                                     Has("X-Forwarded-User") || Has("X-Auth-Request-User") ||
-                                     Has("X-Forwarded-Subject") || Has("X-Auth-Request-Userid") ||
-                                     Has("X-User-Roles");
-                if (hasForwardAuth)
-                {
-                    return NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme;
-                }
-                return CookieAuthenticationDefaults.AuthenticationScheme;
-            };
+            options.DefaultAuthenticateScheme = NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme;
+            options.DefaultChallengeScheme = NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme;
         })
         .AddScheme<AuthenticationSchemeOptions, NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler>(
-            NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme, _ => { })
-        .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-        {
-            // Ensure the authentication cookie uses the required OIDC prefix
-            options.Cookie.Name = "_oidc_raczylo";
-            options.Cookie.SameSite = SameSiteMode.None;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            // In BFF/forward-auth mode we must never redirect to a login page from the API
-            options.Events = new CookieAuthenticationEvents
-            {
-                OnRedirectToLogin = ctx =>
-                {
-                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    return System.Threading.Tasks.Task.CompletedTask;
-                },
-                OnRedirectToAccessDenied = ctx =>
-                {
-                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return System.Threading.Tasks.Task.CompletedTask;
-                }
-            };
-        })
-        .AddJwtBearer(options =>
-        {
-            options.Authority = authority;
-            options.Audience = audience;
-            options.SaveToken = false;
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = !string.IsNullOrWhiteSpace(audience),
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                // OIDC best practice: use 'sub' for stable identity
-                NameClaimType = "sub",
-                // Normalize roles into ClaimTypes.Role via IClaimsTransformation below
-                RoleClaimType = ClaimTypes.Role
-            };
-        });
+            NEXUSDataLayerScaffold.Authentication.ForwardAuthHandler.Scheme, _ => { });
 
         // Authorization policies
         services.AddAuthorization(options =>
@@ -332,13 +244,6 @@ public class Startup
         // Support both namespaced and non-namespaced roles by normalizing them into ClaimTypes.Role
         services.AddTransient<IClaimsTransformation, RoleNormalizationTransform>();
 
-        services.ConfigureApplicationCookie(options =>
-        {
-            // Mirror the cookie name to keep a single, predictable auth cookie
-            options.Cookie.Name = "_oidc_raczylo_id_0";
-            options.Cookie.SameSite = SameSiteMode.None;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        });
 
 
 
@@ -457,6 +362,11 @@ public class Startup
             if (!string.IsNullOrEmpty(accesskey) && !string.IsNullOrEmpty(secretkey))
             {
                 configure.WithCredentials(accesskey, secretkey);
+            }
+            else
+            {
+                // Fallback for tests or local development where credentials might be missing
+                configure.WithCredentials("dummy", "dummy");
             }
 
             if (minioConfigured.UseSsl)

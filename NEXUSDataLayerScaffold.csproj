@@ -13,6 +13,7 @@
         <AnalysisLevel>latest</AnalysisLevel>
         <DebugType>portable</DebugType>
         <DebugSymbols>true</DebugSymbols>
+        <DefaultItemExcludes>$(DefaultItemExcludes);_build\**;NEXUSDataLayerScaffold.Tests\**</DefaultItemExcludes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -52,11 +53,6 @@
     <Folder Include="Repositories\" />
   </ItemGroup>
 
-  <!-- Exclude test sources under repository root from this web project build -->
-  <ItemGroup>
-    <Compile Remove="NEXUSDataLayerScaffold.Tests\**\*.cs" />
-    <None Include="NEXUSDataLayerScaffold.Tests\**\*.cs" />
-  </ItemGroup>
 
   <!-- Exclude legacy duplicate model types that conflict with canonical EF models -->
   <ItemGroup>
